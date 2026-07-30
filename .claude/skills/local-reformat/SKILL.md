@@ -1,6 +1,6 @@
 ---
 name: local-reformat
-description: 'Run every formatter and validation from the reformat GitHub Actions workflow locally through Super-Linter. Use when applying repository-wide format fixes, reproducing reformat.yml, or running the Super-Linter ruff, Ansible, clang-format, and Prettier passes. Keywords: reformat, formatter, ruff, ansible-lint, Ansible, Super-Linter, clang-format, prettier.'
+description: "Run every formatter and validation from the reformat GitHub Actions workflow locally through Super-Linter. Use when applying repository-wide format fixes, reproducing reformat.yml, or running the Super-Linter ruff, Ansible, clang-format, and Prettier passes. Keywords: reformat, formatter, ruff, ansible-lint, Ansible, Super-Linter, clang-format, prettier."
 ---
 
 # Run the Reformat Workflow Locally

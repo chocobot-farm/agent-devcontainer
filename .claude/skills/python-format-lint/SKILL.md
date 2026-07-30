@@ -1,6 +1,6 @@
 ---
 name: python-format-lint
-description: 'Format and lint Python in this repository with ruff — autofixes come from pre-commit and Super-Linter, verification from a fast non-mutating check. Use when formatting Python, fixing style/lint violations, organizing imports, or checking why a lint job fails in CI. Keywords: ruff, format, lint, isort, style, E501, I001, noqa, pre-commit, super-linter, python-lint-check.'
+description: "Format and lint Python in this repository with ruff — autofixes come from pre-commit and Super-Linter, verification from a fast non-mutating check. Use when formatting Python, fixing style/lint violations, organizing imports, or checking why a lint job fails in CI. Keywords: ruff, format, lint, isort, style, E501, I001, noqa, pre-commit, super-linter, python-lint-check."
 ---
 
 # Python Format & Lint (ruff)
