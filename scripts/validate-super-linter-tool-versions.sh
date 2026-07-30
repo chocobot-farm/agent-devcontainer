@@ -2,14 +2,11 @@
 
 set -euo pipefail
 
-set -x
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 root_dir=$(cd "$script_dir/.." && pwd)
 pre_commit_config="$root_dir/.pre-commit-config.yaml"
 zizmor_defaults="$root_dir/ansible/playbooks/roles/dev_tools/defaults/main.yml"
 . "$script_dir/super-linter-defaults.sh"
-
-set +x
 
 usage()
 {
@@ -182,8 +179,6 @@ hadolint_entry_version=$(sed -nE \
 if ! check_configured_version "hadolint entry" hadolint "$hadolint_entry_version"; then
   validation_failed=1
 fi
-
-set -x
 
 super_linter_tag="v${image##*:v}"
 workflow_super_linter_tags=$(sed -nE \
