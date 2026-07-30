@@ -53,7 +53,7 @@ on:
         description: Whether formatting produced file changes in the checked out tree.
         value: ${{ jobs.gate.outputs.changed }}
       reformat_result:
-        description: Result of the internal reformat job (success, failure, cancelled, skipped).
+        description: Result of the formatting pass (success, failure, cancelled, skipped).
         value: ${{ jobs.gate.outputs.reformat_result }}
       run_downstream:
         description: Whether downstream workflows should run (reformat skipped or no changes produced).
@@ -64,7 +64,6 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-  REFORMAT_COMMIT_MESSAGE: Apply Python formatter fixes
   SUPER_LINTER_COMMIT_MESSAGE: Apply super-linter fixes
 
 defaults:
@@ -80,7 +79,6 @@ jobs:
     timeout-minutes: 10
     outputs:
       pass: ${{ steps.override.outputs.pass }}
-      skip_reformat: ${{ steps.skip-tags.outputs.skip_reformat }}
       skip_super_linter: ${{ steps.skip-tags.outputs.skip_super_linter }}
     steps:
       - name: Checkout repository
@@ -99,7 +97,6 @@ jobs:
             - ansible/**
             - py_packages/**/*.py
             - scripts/**/*.py
-            - scripts/python-reformat.sh
             - .clang-format
             - '**/*.md'
             - '**/*.markdown'
@@ -137,7 +134,6 @@ jobs:
             trusted_skip=true
           fi
 
-          skip_reformat=false
           skip_super_linter=false
           if [[ "$trusted_skip" == 'true' ]]; then
             if [[ "${INPUTS_CALLER_EVENT_NAME}" == "pull_request" ]]; then
@@ -146,91 +142,24 @@ jobs:
                 head_commit_subject="$(git show -s --format=%s "${INPUTS_CALLER_PR_HEAD_SHA}")"
               fi
               case "$head_commit_subject" in
-                "${INPUTS_SUPER_LINTER_COMMIT_MESSAGE}"|"${INPUTS_REFORMAT_COMMIT_MESSAGE}")
-                  echo "Formatter commit detected. Skipping reformat and super-linter."
-                  skip_reformat=true
+                "${INPUTS_SUPER_LINTER_COMMIT_MESSAGE}")
+                  echo "Formatter commit detected. Skipping super-linter."
                   skip_super_linter=true
                   ;;
               esac
-            fi
-            if [[ "${INPUTS_CALLER_PR_BODY}" == *'[ci:no-reformat]'* ]]; then
-              skip_reformat=true
             fi
             if [[ "${INPUTS_CALLER_PR_BODY}" == *'[ci:no-super-linter]'* ]]; then
               skip_super_linter=true
             fi
           fi
 
-          {
-            echo "skip_reformat=$skip_reformat"
-            echo "skip_super_linter=$skip_super_linter"
-          } >> "$GITHUB_OUTPUT"
+          echo "skip_super_linter=$skip_super_linter" >> "$GITHUB_OUTPUT"
         env:
           INPUTS_CALLER_EVENT_NAME: ${{ inputs.caller_event_name }}
           INPUTS_CALLER_PR_BODY: ${{ inputs.caller_pr_body }}
           INPUTS_CALLER_PR_HEAD_SHA: ${{ inputs.caller_pr_head_sha }}
           INPUTS_CALLER_PR_HEAD_REPO_FULL_NAME: ${{ inputs.caller_pr_head_repo_full_name }}
-          INPUTS_REFORMAT_COMMIT_MESSAGE: ${{ env.REFORMAT_COMMIT_MESSAGE }}
           INPUTS_SUPER_LINTER_COMMIT_MESSAGE: ${{ env.SUPER_LINTER_COMMIT_MESSAGE }}
-
-      - name: Log debug stats
-        if: ${{ always() }}
-        uses: ./.github/actions/log-debug-stats
-        with:
-          github-token: ${{ github.token }}
-
-  reformat:
-    name: Reformat
-    needs: paths-filter
-    if: >-
-      inputs.should_run &&
-      needs.paths-filter.outputs.skip_reformat != 'true' &&
-      (needs.paths-filter.outputs.pass == 'true' || inputs.force_run)
-    runs-on: ${{ vars.AMD_ONLY == '1' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
-    container:
-      image: ghcr.io/${{ github.repository_owner }}/agent-desktop:edge
-    outputs:
-      changed: ${{ steps.patch.outputs.changed }}
-    permissions: {}
-    timeout-minutes: 15
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.3
-        with:
-          fetch-depth: 0 # Required for git diff to work properly
-          persist-credentials: false
-
-      - name: Add workspace to safe directories
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Setup Python venv
-        uses: ./.github/actions/setup-python-venv
-
-      - name: Reformat Python
-        run: ./scripts/python-reformat.sh
-
-      - name: Create formatter patch
-        id: patch
-        run: |
-          if [[ -n "$(git status --porcelain -- . ':(exclude).tmp')" ]]; then
-            git add --intent-to-add -- . ':(exclude).tmp'
-            mkdir -p ./.tmp/format-patches
-            git diff --binary > ./.tmp/format-patches/reformat.patch
-            git reset -- . ':(exclude).tmp'
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Upload formatter patch
-        if: steps.patch.outputs.changed == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: format-patch-reformat
-          path: ./.tmp/format-patches/reformat.patch
-          if-no-files-found: error
-          retention-days: 1
 
       - name: Log debug stats
         if: ${{ always() }}
@@ -331,12 +260,12 @@ jobs:
 
   commit-format-changes:
     name: Commit format changes
-    needs: [paths-filter, super-linter, reformat]
+    needs: [paths-filter, super-linter]
     if: >-
       always() &&
       inputs.should_run &&
       (needs.paths-filter.outputs.pass == 'true' || inputs.force_run) &&
-      (needs.super-linter.outputs.changed == 'true' || needs.reformat.outputs.changed == 'true')
+      needs.super-linter.outputs.changed == 'true'
     runs-on: ${{ vars.AMD_ONLY == '1' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
     environment: reformat-commit
     outputs:
@@ -374,7 +303,7 @@ jobs:
           else
             head_commit_subject="$(git show -s --format=%s "${GITHUB_EVENT_PULL_REQUEST_HEAD_SHA}")"
             case "$head_commit_subject" in
-              "${INPUTS_SUPER_LINTER_COMMIT_MESSAGE}"|"${INPUTS_REFORMAT_COMMIT_MESSAGE}")
+              "${INPUTS_SUPER_LINTER_COMMIT_MESSAGE}")
                 echo "Reformatted in previous commit. Skipping commit."
                 skip_commit=true
                 ;;
@@ -386,7 +315,6 @@ jobs:
           GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME: ${{ inputs.caller_pr_head_repo_full_name }}
           GITHUB_EVENT_PULL_REQUEST_HEAD_SHA: ${{ inputs.caller_pr_head_sha }}
           INPUTS_CALLER_EVENT_NAME: ${{ inputs.caller_event_name }}
-          INPUTS_REFORMAT_COMMIT_MESSAGE: ${{ env.REFORMAT_COMMIT_MESSAGE }}
           INPUTS_SUPER_LINTER_COMMIT_MESSAGE: ${{ env.SUPER_LINTER_COMMIT_MESSAGE }}
 
       - name: Apply Super-Linter patch
@@ -426,57 +354,17 @@ jobs:
           git diff --exit-code
           git diff --exit-code --cached
 
-      - name: Apply Python formatter patch
-        if: steps.verify.outputs.skip_commit != 'true'
-        id: apply-reformat
-        continue-on-error: true
-        run: |
-          patch_file="./.tmp/format-patches/reformat.patch"
-          if [[ ! -s "$patch_file" ]]; then
-            echo "applied=false" >> "$GITHUB_OUTPUT"
-            echo "failed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if git apply --check --3way "$patch_file" && git apply --index --3way "$patch_file"; then
-            echo "applied=true" >> "$GITHUB_OUTPUT"
-            echo "failed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "applied=false" >> "$GITHUB_OUTPUT"
-            echo "failed=true" >> "$GITHUB_OUTPUT"
-            git reset --hard HEAD
-          fi
-
-      - name: Commit Python formatter patch
-        uses: stefanzweifel/git-auto-commit-action@v7
-        if: steps.apply-reformat.outputs.applied == 'true'
-        id: commit-reformat
-        with:
-          # Specify the branch to commit to instead of checkout, otherwise super-linter's GITHUB_SHA validation fails to find the commit.
-          # For pull requests, this will be the source branch; for pushes, this will be the current branch.
-          branch: ${{ inputs.caller_pr_head_ref || github.head_ref || github.ref }}
-          commit_message: ${{ env.REFORMAT_COMMIT_MESSAGE }}
-
-      - name: Verify Python formatter patch committed
-        if: steps.apply-reformat.outputs.applied == 'true'
-        run: |
-          git diff --exit-code
-          git diff --exit-code --cached
-
       - name: Record commit result
         id: result
         run: |
           committed_any=false
-          if [[ "${STEPS_COMMIT_SUPER_LINTER_OUTCOME}" == 'success' || "${STEPS_COMMIT_REFORMAT_OUTCOME}" == 'success' ]]; then
+          if [[ "${STEPS_COMMIT_SUPER_LINTER_OUTCOME}" == 'success' ]]; then
             committed_any=true
           fi
 
           failed_patches=()
           if [[ "${STEPS_APPLY_SUPER_LINTER_OUTPUTS_FAILED}" == 'true' ]]; then
             failed_patches+=('super-linter')
-          fi
-          if [[ "${STEPS_APPLY_REFORMAT_OUTPUTS_FAILED}" == 'true' ]]; then
-            failed_patches+=('reformat')
           fi
 
           failed_patches_csv="$(IFS=,; echo "${failed_patches[*]}")"
@@ -495,9 +383,7 @@ jobs:
             exit 1
           fi
         env:
-          STEPS_APPLY_REFORMAT_OUTPUTS_FAILED: ${{ steps.apply-reformat.outputs.failed }}
           STEPS_APPLY_SUPER_LINTER_OUTPUTS_FAILED: ${{ steps.apply-super-linter.outputs.failed }}
-          STEPS_COMMIT_REFORMAT_OUTCOME: ${{ steps.commit-reformat.outcome }}
           STEPS_COMMIT_SUPER_LINTER_OUTCOME: ${{ steps.commit-super-linter.outcome }}
           STEPS_VERIFY_OUTPUTS_SKIP_COMMIT: ${{ steps.verify.outputs.skip_commit }}
 
@@ -509,7 +395,7 @@ jobs:
 
   gate:
     name: Reformat outputs gate
-    needs: [paths-filter, super-linter, reformat, commit-format-changes]
+    needs: [paths-filter, super-linter, commit-format-changes]
     if: always()
     runs-on: ${{ vars.AMD_ONLY == '1' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
     permissions:
@@ -528,18 +414,15 @@ jobs:
         id: compute
         run: |
           reformat_result='success'
-          if [[ "${NEEDS_REFORMAT_RESULT}" == 'failure' || "${NEEDS_SUPER_LINTER_RESULT}" == 'failure' || "${NEEDS_COMMIT_FORMAT_CHANGES_RESULT}" == 'failure' ]]; then
+          if [[ "${NEEDS_SUPER_LINTER_RESULT}" == 'failure' || "${NEEDS_COMMIT_FORMAT_CHANGES_RESULT}" == 'failure' ]]; then
             reformat_result='failure'
-          elif [[ "${NEEDS_REFORMAT_RESULT}" == 'cancelled' || "${NEEDS_SUPER_LINTER_RESULT}" == 'cancelled' || "${NEEDS_COMMIT_FORMAT_CHANGES_RESULT}" == 'cancelled' ]]; then
+          elif [[ "${NEEDS_SUPER_LINTER_RESULT}" == 'cancelled' || "${NEEDS_COMMIT_FORMAT_CHANGES_RESULT}" == 'cancelled' ]]; then
             reformat_result='cancelled'
-          elif [[ "${NEEDS_REFORMAT_RESULT}" == 'skipped' && "${NEEDS_SUPER_LINTER_RESULT}" == 'skipped' ]]; then
+          elif [[ "${NEEDS_SUPER_LINTER_RESULT}" == 'skipped' ]]; then
             reformat_result='skipped'
           fi
 
-          changed='false'
-          if [[ "${NEEDS_REFORMAT_OUTPUT_CHANGED}" == 'true' || "${NEEDS_SUPER_LINTER_OUTPUT_CHANGED}" == 'true' ]]; then
-            changed='true'
-          fi
+          changed="${NEEDS_SUPER_LINTER_OUTPUT_CHANGED:-false}"
 
           run_downstream='false'
           if [[ "$reformat_result" == 'skipped' || "$changed" != 'true' ]]; then
@@ -552,8 +435,6 @@ jobs:
             echo "run_downstream=$run_downstream"
           } >> "$GITHUB_OUTPUT"
         env:
-          NEEDS_REFORMAT_RESULT: ${{ needs.reformat.result }}
-          NEEDS_REFORMAT_OUTPUT_CHANGED: ${{ needs.reformat.outputs.changed }}
           NEEDS_SUPER_LINTER_RESULT: ${{ needs.super-linter.result }}
           NEEDS_SUPER_LINTER_OUTPUT_CHANGED: ${{ needs.super-linter.outputs.changed }}
           NEEDS_COMMIT_FORMAT_CHANGES_RESULT: ${{ needs.commit-format-changes.result }}

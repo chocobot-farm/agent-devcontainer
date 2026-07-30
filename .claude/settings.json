@@ -33,7 +33,8 @@
       "Bash(python3 -c *)",
       "Bash(python3 -m pytest *)",
       "Bash(scripts/python-lint-check.sh *)",
-      "Bash(scripts/python-reformat.sh *)",
+      "Bash(scripts/super-linter-local.sh *)",
+      "Bash(pre-commit run *)",
       "mcp__gateway__*",
       "mcp__github__*"
     ],

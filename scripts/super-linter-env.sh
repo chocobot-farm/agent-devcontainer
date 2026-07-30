@@ -60,6 +60,17 @@ echo VALIDATE_CLANG_FORMAT=true
 echo VALIDATE_ANSIBLE=true
 echo ANSIBLE_DIRECTORY=ansible
 
+# Python formatting and linting, both via ruff. Super-Linter runs
+#   ruff check  --config "$PYTHON_RUFF_CONFIG_FILE"        [--fix]
+#   ruff format --config "$PYTHON_RUFF_FORMAT_CONFIG_FILE" [--check]
+# Its default config filename is .ruff.toml; ours is ruff.toml (resolved
+# relative to LINTER_RULES_PATH above). Import sorting needs no separate pass:
+# "I" is in ruff.toml's select list, so `ruff check --fix` handles it.
+echo VALIDATE_PYTHON_RUFF=true
+echo VALIDATE_PYTHON_RUFF_FORMAT=true
+echo PYTHON_RUFF_CONFIG_FILE=ruff.toml
+echo PYTHON_RUFF_FORMAT_CONFIG_FILE=ruff.toml
+
 echo FIX_MARKDOWN_PRETTIER="${autofix}"
 echo FIX_YAML_PRETTIER="${autofix}"
 echo FIX_JSON_PRETTIER="${autofix}"
@@ -67,5 +78,7 @@ echo FIX_JSONC_PRETTIER="${autofix}"
 echo FIX_GITHUB_ACTIONS_ZIZMOR="${autofix}"
 echo FIX_CLANG_FORMAT="${autofix}"
 echo FIX_ANSIBLE="${autofix}"
+echo FIX_PYTHON_RUFF="${autofix}"
+echo FIX_PYTHON_RUFF_FORMAT="${autofix}"
 
 echo SAVE_SUPER_LINTER_SUMMARY=true

@@ -1,15 +1,15 @@
 ---
 name: local-reformat
-description: 'Run every formatter and Super-Linter validation from the reformat GitHub Actions workflow locally. Use when applying repository-wide format fixes, reproducing reformat.yml, running Python formatting, or running Super-Linter Ansible, clang-format, Prettier, and validation passes. Keywords: reformat, formatter, python-reformat, ansible-lint, Ansible, Super-Linter, clang-format, prettier.'
+description: 'Run every formatter and validation from the reformat GitHub Actions workflow locally through Super-Linter. Use when applying repository-wide format fixes, reproducing reformat.yml, or running the Super-Linter ruff, Ansible, clang-format, and Prettier passes. Keywords: reformat, formatter, ruff, ansible-lint, Ansible, Super-Linter, clang-format, prettier.'
 ---
 
 # Run the Reformat Workflow Locally
 
-Run the local entry points that mirror the formatter jobs in
-[reformat.yml](../../../.github/workflows/reformat.yml): Python formatting,
-then Super-Linter's Ansible and Prettier pass.
-These commands modify files; inspect the resulting diff and keep only intended
-changes.
+Run the local entry point that mirrors the formatter job in
+[reformat.yml](../../../.github/workflows/reformat.yml). Super-Linter owns every
+formatter — ruff for Python, plus Ansible, clang-format, and Prettier — so one
+command reproduces the whole CI pass. It modifies files; inspect the resulting
+diff and keep only intended changes.
 
 ## When to Use This Skill
 
@@ -49,13 +49,9 @@ autofixes and must run with the same elevated sandbox permission.
 
 ## Full Workflow
 
-1. Format and autofix Python sources and scripts:
-
-   ```bash
-   scripts/python-reformat.sh
-   ```
-
-2. Run Super-Linter using the pinned CI image and configuration:
+1. Run Super-Linter using the pinned CI image and configuration. This is the
+   only formatting command — it includes the ruff format/autofix pass that CI
+   runs:
 
    ```bash
    scripts/super-linter-local.sh
@@ -66,7 +62,7 @@ autofixes and must run with the same elevated sandbox permission.
    formatting patch before validating the resulting commit; that split is not
    needed for local feedback.
 
-3. Inspect and validate the results:
+2. Inspect and validate the results:
 
    ```bash
    git diff --check
@@ -173,9 +169,8 @@ pinned CI image unless the workflow itself is intentionally being updated.
 
 | Entry point                                                     | CI-equivalent responsibility                                                                |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| [python-reformat.sh](../../../scripts/python-reformat.sh)       | Run Ruff format/autofix/import sorting across Python sources and scripts.                   |
 | [super-linter-local.sh](../../../scripts/super-linter-local.sh) | Run one local pass with all checks enabled and available autofixes applied.                 |
 | [super-linter-env.sh](../../../scripts/super-linter-env.sh)     | Generate the shared Ansible, clang-format, Prettier, and validation settings for each pass. |
 
-For Python linting beyond the reformat workflow, use the
-[python-format-lint](../python-format-lint/SKILL.md) skill.
+For a fast, Docker-free Python check (and the pre-commit-based autofix loop),
+use the [python-format-lint](../python-format-lint/SKILL.md) skill.

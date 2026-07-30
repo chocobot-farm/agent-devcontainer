@@ -37,8 +37,9 @@ confirmation — act, then report.
 
 Run before finishing — CI gates on these:
 
-- **Python** — reformat with `scripts/python-reformat.sh` (ruff), then verify with
-  `scripts/python-lint-check.sh`. See the
+- **Python** — verify with `scripts/python-lint-check.sh` (ruff, non-mutating).
+  Autofixes come from the pre-commit hooks; run `pre-commit run --files <paths>`
+  to apply them. See the
   [python-format-lint](../skills/python-format-lint/SKILL.md) skill.
 - **Test** — `uv run pytest <path>` for Python, `bun test <path>` for JavaScript.
 
@@ -57,6 +58,6 @@ Run before finishing — CI gates on these:
 - [ ] Names clearly express intent
 - [ ] Functions have a single responsibility
 - [ ] External inputs validated; no secrets in code
-- [ ] `scripts/python-reformat.sh` and `scripts/python-lint-check.sh` pass
+- [ ] `scripts/python-lint-check.sh` passes
 - [ ] All tests remain green
 - [ ] Technical-debt follow-ups listed in the report

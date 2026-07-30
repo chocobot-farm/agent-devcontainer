@@ -43,10 +43,10 @@ repos:
     rev: v0.15.0
     hooks:
       - id: ruff-format
-      - id: ruff # lint
+      # `I` (isort) is in ruff.toml's select list, so this single pass also
+      # sorts imports. Mirrors what Super-Linter runs in CI.
+      - id: ruff
         args: [--fix]
-      - id: ruff # isort
-        args: [--fix, --select, I]
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1

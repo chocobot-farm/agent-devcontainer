@@ -2,8 +2,9 @@
 #
 # Verify Python style compliance with ruff (the CI gate).
 #
-# python-reformat.sh applies ruff's formatter and autofixes; this script is the
-# non-mutating check, so it is safe to run in CI or a pre-push hook.
+# The pre-commit hooks (locally) and Super-Linter (in CI) apply ruff's formatter
+# and autofixes; this script is the non-mutating check, so it is safe to run
+# anywhere and needs no Docker.
 #
 # Usage:
 #   scripts/python-lint-check.sh [PATH ...]
@@ -26,9 +27,17 @@ else
   targets=("$sources_dir" "$script_dir")
 fi
 
-# shellcheck source=/dev/null
-# shellcheck disable=SC2154 # exported by __utils.sh
-source "$root_dir/.venv/bin/activate"
+# Prefer the project virtualenv, so the ruff version matches the pinned one.
+# Fall back to whatever ruff is on PATH (CI containers, `uv run`, the dev image)
+# rather than hard-failing when .venv has not been created yet.
+# shellcheck disable=SC2154 # root_dir is exported by __utils.sh
+if [ -f "$root_dir/.venv/bin/activate" ]; then
+  # shellcheck source=/dev/null
+  source "$root_dir/.venv/bin/activate"
+elif ! command -v ruff >/dev/null 2>&1; then
+  echo "ruff not found: run scripts/uv-sync.sh (or 'uv sync'), or invoke via 'uv run'." >&2
+  exit 1
+fi
 
 ruff format --check --quiet "${targets[@]}"
 ruff check --quiet "${targets[@]}"

@@ -24,7 +24,7 @@ Consult the **[Principal Engineer](/.claude/agents/principal-engineer.agent.md)*
 
 - Follow **PEP 8**: 4 spaces per indentation level, descriptive names. The line limit is **99** (`ruff.toml`), not 79.
 - Use type hints (PEP 484, `typing` module) and PEP 257 docstrings placed immediately after `def`/`class`
-- Format and autofix with **ruff** (`scripts/python-reformat.sh`), then verify with `scripts/python-lint-check.sh` — the CI gate. Never judge style with stock `flake8` or `black`: their defaults (79-char limit, double quotes, different isort grouping) produce false positives that do not match this repo and do not fail CI. Full workflow in the [python-format-lint](/.claude/skills/python-format-lint/) skill
+- Formatting and autofixes are applied by **ruff**, via the pre-commit hooks locally and Super-Linter in CI (`scripts/super-linter-local.sh` reproduces the CI pass). Verify with `scripts/python-lint-check.sh` for a fast, Docker-free check. Never judge style with stock `flake8` or `black`: their defaults (79-char limit, double quotes, different isort grouping) produce false positives that do not match this repo and do not fail CI. Full workflow in the [python-format-lint](/.claude/skills/python-format-lint/) skill
 - **Exception handling**: never write empty handlers (`except ...: pass`). Handle expected exceptions explicitly by at least one of: logging context, returning a safe fallback value, re-raising with context, or raising `SystemExit` for CLI interruption paths (`raise SystemExit(130)` for user interrupts). If an exception must be intentionally ignored, document the reason in a comment and keep the ignored scope minimal. Prefer specific exception types over broad `except Exception`
 
 ### Python Testing
