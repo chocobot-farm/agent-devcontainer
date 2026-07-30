@@ -1,6 +1,6 @@
 ---
 name: get-codeql-data
-description: "Fetch CodeQL code scanning data with the GitHub CLI. Use when asked to get CodeQL alerts, inspect code scanning findings for a pull request, list open security findings, or retrieve CodeQL alert metadata from GitHub. Keywords: CodeQL, code scanning, security alerts, gh api, pull request alerts, codeql data."
+description: 'Fetch CodeQL code scanning data with the GitHub CLI. Use when asked to get CodeQL alerts, inspect code scanning findings for a pull request, list open security findings, or retrieve CodeQL alert metadata from GitHub. Keywords: CodeQL, code scanning, security alerts, gh api, pull request alerts, codeql data.'
 ---
 
 # Get CodeQL Data

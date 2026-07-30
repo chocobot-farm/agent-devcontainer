@@ -1,6 +1,6 @@
 ---
 name: update-branch
-description: "Update the current Git feature branch from a remote base branch by fetching and merging its remote-tracking ref. Use when asked to sync a feature branch, bring a branch up to date with `origin/main`, refresh a stale PR branch, or unblock CI after base-branch drift. Keywords: update branch, sync with origin/main, fetch and merge main, refresh feature branch."
+description: 'Update the current Git feature branch from a remote base branch by fetching and merging its remote-tracking ref. Use when asked to sync a feature branch, bring a branch up to date with `origin/main`, refresh a stale PR branch, or unblock CI after base-branch drift. Keywords: update branch, sync with origin/main, fetch and merge main, refresh feature branch.'
 ---
 
 # Update Branch from origin/main

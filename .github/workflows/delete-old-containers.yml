@@ -4,19 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       name:
-        description: "Container name"
+        description: 'Container name'
         required: true
       versions_to_keep:
-        description: "Number of versions to keep"
+        description: 'Number of versions to keep'
         required: false
-        default: "10"
+        default: '10'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
   cancel-in-progress: true
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   delete-container-version:
@@ -27,23 +27,23 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@v6.0.3
         with:
           persist-credentials: false
 
       - name: Delete package version
-        uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5.0.0
+        uses: actions/delete-package-versions@v5.0.0
         with:
           package-name: ${{ inputs.name }}
-          package-type: "container"
+          package-type: 'container'
           min-versions-to-keep: ${{ inputs.versions_to_keep }}
           ignore-versions: (latest|main|edge).*
 
       - name: Delete all untagged
-        uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5.0.0
+        uses: actions/delete-package-versions@v5.0.0
         with:
           package-name: ${{ inputs.name }}
-          package-type: "container"
+          package-type: 'container'
           delete-only-untagged-versions: true
 
       - name: Log debug stats
