@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: 'Perform a thorough automated code review of a GitHub pull request, publishing feedback as a single GitHub pull request review with inline comments (a standalone comment only as fallback when inline posting fails). Use when asked to review a pull request, or when a PR is opened/reopened and an automated review is required. Keywords: PR review, code review, pull request review, automated review.'
+description: "Perform a thorough automated code review of a GitHub pull request, publishing feedback as a single GitHub pull request review with inline comments (a standalone comment only as fallback when inline posting fails). Use when asked to review a pull request, or when a PR is opened/reopened and an automated review is required. Keywords: PR review, code review, pull request review, automated review."
 ---
 
 # Review PR

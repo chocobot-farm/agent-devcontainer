@@ -3,12 +3,12 @@
 This directory is the **single source of truth** for the repository's agent
 configuration. Everything else is generated from it or symlinked to it.
 
-| Path            | Purpose                                                                 |
-| --------------- | ----------------------------------------------------------------------- |
-| `agents/`       | Agent specs, one `*.agent.md` per agent. Canonical.                     |
-| `skills/`       | Skills, one `<name>/SKILL.md` per skill (+ optional `scripts/`).         |
-| `hooks/`        | Claude Code lifecycle hooks wired up from `settings.json`.               |
-| `settings.json` | Permissions, additional directories, hooks, enabled plugins.             |
+| Path            | Purpose                                                          |
+| --------------- | ---------------------------------------------------------------- |
+| `agents/`       | Agent specs, one `*.agent.md` per agent. Canonical.              |
+| `skills/`       | Skills, one `<name>/SKILL.md` per skill (+ optional `scripts/`). |
+| `hooks/`        | Claude Code lifecycle hooks wired up from `settings.json`.       |
+| `settings.json` | Permissions, additional directories, hooks, enabled plugins.     |
 
 ## Editing rules
 

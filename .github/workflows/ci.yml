@@ -6,7 +6,7 @@ on:
       caller_event_name:
         description: Event name from the calling workflow.
         required: false
-        default: ''
+        default: ""
         type: string
       clean_build:
         description: Build images from scratch instead of reusing the edge image.
@@ -24,7 +24,7 @@ defaults:
     shell: bash -xeuo pipefail {0}
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
   REGISTRY: ghcr.io
   REGISTRY_USERNAME: ${{ github.actor }} # for nektos/act, use your own username via --actor option
   ANSIBLE_IMAGE_NAME: ubuntu-ansible
@@ -40,7 +40,7 @@ jobs:
       pass: ${{ steps.filter.outputs.pass }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
 
@@ -74,14 +74,14 @@ jobs:
           - arch: ${{ vars.ARM_ONLY == '1' && 'arm64' || 'amd64' }}
     runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
 
       - name: Check commit message for clean-build
         id: clean_build_msg
         if: inputs.caller_event_name == 'push' || inputs.caller_event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const pattern = /\[ci:clean_build\]/;
@@ -174,7 +174,7 @@ jobs:
       image: ${{ steps.merge.outputs.image }}
       image_pinned: ${{ steps.merge.outputs.image_pinned }}
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
 
@@ -220,11 +220,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install skopeo -y
 
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
-      - uses: docker/setup-buildx-action@v4.1.0
-      - uses: docker/login-action@v4.2.0
+      - uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+      - uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ env.REGISTRY_USERNAME }}
@@ -239,7 +239,7 @@ jobs:
           grep -n 'image:' .devcontainer/docker-compose.yml
 
       - name: Build and test dev container image
-        uses: devcontainers/ci@v0.3.1900000450
+        uses: devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca # v0.3.1900000450
         with:
           configFile: .devcontainer/devcontainer.json
           noCache: true

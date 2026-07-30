@@ -1,6 +1,6 @@
 ---
 name: git-merge-resolve
-description: 'Merge a Git ref into the current branch and resolve merge conflicts with confidence-based escalation. Use when asked to merge branches or refs, finish a conflicted merge, resolve Git conflicts, or preserve both sides of divergent changes. Keywords: git merge, merge branch, merge conflict, resolve conflicts, conflicted files.'
+description: "Merge a Git ref into the current branch and resolve merge conflicts with confidence-based escalation. Use when asked to merge branches or refs, finish a conflicted merge, resolve Git conflicts, or preserve both sides of divergent changes. Keywords: git merge, merge branch, merge conflict, resolve conflicts, conflicted files."
 ---
 
 # Merge a Git Ref and Resolve Conflicts

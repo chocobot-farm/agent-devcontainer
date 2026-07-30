@@ -10,19 +10,19 @@ copy the template in and go.
 
 ## What's in the image
 
-| Area          | Contents                                                                                     |
-| ------------- | -------------------------------------------------------------------------------------------- |
-| Python        | `uv` (installer, resolver, venv manager), system `python3`, `pre-commit`                       |
-| JavaScript    | `bun` (also used to install global CLIs), Node.js 24 from NodeSource, `yarn`                   |
-| Agents        | `@anthropic-ai/claude-code`, `@openai/codex`, `@modelcontextprotocol/inspector`               |
-| Build tooling | `build-essential`, CMake (Kitware), Ninja, `pkg-config`                                        |
-| Lint / CI     | `shellcheck`, `zizmor` (pinned + checksummed), `jq`, `ffmpeg`, `btop`                           |
-| Git / GitHub  | `git`, `git-lfs`, `gh` + a transparent auth wrapper that injects `GH_TOKEN` from the host      |
-| Shells        | `bash` and `fish` (with fisher + bass), UTC timezone, `en_US.UTF-8` locale                     |
-| Desktop       | Xpra 6.4.3 with the HTML5 client, xpra-html5 v19, VirtualGL 3.1.4, mesa, Xvfb                  |
-| Containers    | Docker CE + CLI + buildx + compose (daemon started by the devcontainer DinD feature)           |
-| Secrets       | GNOME Keyring Secret Service, brought up headless so `gh auth login` can persist a token       |
-| Firewall      | `init-firewall.sh` + a NOPASSWD sudoers entry — **installed but inert unless enabled**          |
+| Area          | Contents                                                                                  |
+| ------------- | ----------------------------------------------------------------------------------------- |
+| Python        | `uv` (installer, resolver, venv manager), system `python3`, `pre-commit`                  |
+| JavaScript    | `bun` (also used to install global CLIs), Node.js 24 from NodeSource, `yarn`              |
+| Agents        | `@anthropic-ai/claude-code`, `@openai/codex`, `@modelcontextprotocol/inspector`           |
+| Build tooling | `build-essential`, CMake (Kitware), Ninja, `pkg-config`                                   |
+| Lint / CI     | `shellcheck`, `zizmor` (pinned + checksummed), `jq`, `ffmpeg`, `btop`                     |
+| Git / GitHub  | `git`, `git-lfs`, `gh` + a transparent auth wrapper that injects `GH_TOKEN` from the host |
+| Shells        | `bash` and `fish` (with fisher + bass), UTC timezone, `en_US.UTF-8` locale                |
+| Desktop       | Xpra 6.4.3 with the HTML5 client, xpra-html5 v19, VirtualGL 3.1.4, mesa, Xvfb             |
+| Containers    | Docker CE + CLI + buildx + compose (daemon started by the devcontainer DinD feature)      |
+| Secrets       | GNOME Keyring Secret Service, brought up headless so `gh auth login` can persist a token  |
+| Firewall      | `init-firewall.sh` + a NOPASSWD sudoers entry — **installed but inert unless enabled**    |
 
 Images are published multi-arch (`linux/amd64` + `linux/arm64`), built on native
 runners and merged into a single manifest:
@@ -39,11 +39,11 @@ runners and merged into a single manifest:
 {
   "image": "ghcr.io/chocobot-farm/agent-desktop:edge",
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:4.0.0": {}
+    "ghcr.io/devcontainers/features/docker-in-docker:4.0.0": {},
   },
   "containerEnv": {
-    "DEV_WORKSPACE_FOLDER": "/workspaces/${localWorkspaceFolderBasename}"
-  }
+    "DEV_WORKSPACE_FOLDER": "/workspaces/${localWorkspaceFolderBasename}",
+  },
 }
 ```
 
@@ -91,14 +91,14 @@ Manage it directly with `/start-xpra.sh --background`, `--stop`, or
 build a leaner image, flip them off — they default to `false` in
 `ansible/playbooks/group_vars/all.yml`:
 
-| Variable                       | Effect when `true`                                                     |
-| ------------------------------ | ---------------------------------------------------------------------- |
-| `install_xpra`                 | Xpra + xpra-html5 + VirtualGL + mesa/Xvfb (the largest single addition) |
-| `install_docker`               | Docker CE, CLI, buildx, compose (installed, daemon not started)         |
-| `install_agentic_tools`        | Claude Code, Codex, MCP inspector                                       |
-| `install_devcontainer_firewall`| `init-firewall.sh` + sudoers entry (still runtime-gated)                |
-| `setup_user`                   | Create a non-root `devuser` (1001:1001) instead of running as root      |
-| `workspace_folder`             | Fallback workspace path baked into the image                            |
+| Variable                        | Effect when `true`                                                      |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| `install_xpra`                  | Xpra + xpra-html5 + VirtualGL + mesa/Xvfb (the largest single addition) |
+| `install_docker`                | Docker CE, CLI, buildx, compose (installed, daemon not started)         |
+| `install_agentic_tools`         | Claude Code, Codex, MCP inspector                                       |
+| `install_devcontainer_firewall` | `init-firewall.sh` + sudoers entry (still runtime-gated)                |
+| `setup_user`                    | Create a non-root `devuser` (1001:1001) instead of running as root      |
+| `workspace_folder`              | Fallback workspace path baked into the image                            |
 
 ## Building locally
 
