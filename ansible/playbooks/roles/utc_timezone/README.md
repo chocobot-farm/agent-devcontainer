@@ -9,5 +9,5 @@ This Ansible role configures the system timezone to UTC, ensuring consistent tim
   hosts: all
   become: true
   roles:
-    - { role: utc_timezone, tags: ["utc_timezone"] }
+    - { role: utc_timezone, tags: ['utc_timezone'] }
 ```

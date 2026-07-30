@@ -38,7 +38,11 @@
       "mcp__gateway__*",
       "mcp__github__*"
     ],
-    "additionalDirectories": ["/tmp", "/workspaces", "/__w"]
+    "additionalDirectories": [
+      "/tmp",
+      "/workspaces",
+      "/__w"
+    ]
   },
   "hooks": {
     "SessionStart": [

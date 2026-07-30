@@ -11,5 +11,5 @@ drops a `conf.d/dev.fish` with the `find_up`, `xpra_display`, and
 - name: Setup fish shell
   hosts: all
   roles:
-    - { role: fish_setup, tags: ["fish_setup"] }
+    - { role: fish_setup, tags: ['fish_setup'] }
 ```

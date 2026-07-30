@@ -9,5 +9,5 @@ This Ansible role configures the Bash shell for development: it puts
 - name: Setup Bash shell
   hosts: all
   roles:
-    - { role: bash_setup, tags: ["bash_setup"] }
+    - { role: bash_setup, tags: ['bash_setup'] }
 ```

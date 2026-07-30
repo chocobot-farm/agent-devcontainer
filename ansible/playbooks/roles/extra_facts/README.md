@@ -8,7 +8,7 @@ This Ansible role gathers additional system facts needed by other roles, includi
 - name: Gather extra facts
   hosts: all
   roles:
-    - { role: extra_facts, tags: ["extra_facts"] }
+    - { role: extra_facts, tags: ['extra_facts'] }
 ```
 
 ## Notes

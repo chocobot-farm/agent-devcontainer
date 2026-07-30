@@ -35,7 +35,7 @@ Xpra is a persistent remote application server that allows you to run X11 applic
   vars:
     install_xpra: true
   roles:
-    - { role: xpra_setup, tags: ["xpra_setup"] }
+    - { role: xpra_setup, tags: ['xpra_setup'] }
 ```
 
 Or with conditional installation:
@@ -45,7 +45,7 @@ Or with conditional installation:
   hosts: all
   become: true
   roles:
-    - { role: xpra_setup, tags: ["xpra_setup"] }
+    - { role: xpra_setup, tags: ['xpra_setup'] }
 ```
 
 Then enable at runtime:

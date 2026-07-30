@@ -9,7 +9,7 @@ This Ansible role installs the latest CMake version from Kitware's official repo
   hosts: all
   become: true
   roles:
-    - { role: cmake_kitware, tags: ["cmake"] }
+    - { role: cmake_kitware, tags: ['cmake'] }
 ```
 
 ## Notes

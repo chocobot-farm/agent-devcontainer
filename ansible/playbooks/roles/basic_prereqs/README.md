@@ -9,5 +9,5 @@ This Ansible role installs basic prerequisites required for development, includi
   hosts: all
   become: true
   roles:
-    - { role: basic_prereqs, tags: ["basic_prereqs"] }
+    - { role: basic_prereqs, tags: ['basic_prereqs'] }
 ```

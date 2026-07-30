@@ -9,7 +9,7 @@ This Ansible role configures the system locale to en_US.UTF-8.
   hosts: all
   become: true
   roles:
-    - { role: locale_setup, tags: ["locale_setup"] }
+    - { role: locale_setup, tags: ['locale_setup'] }
 ```
 
 ## Notes

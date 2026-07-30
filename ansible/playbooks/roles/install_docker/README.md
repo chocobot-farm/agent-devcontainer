@@ -11,7 +11,7 @@ configuring the daemon, and adding the user to the `docker` group.
   hosts: all
   become: true
   roles:
-    - { role: install_docker, tags: ["install_docker"] }
+    - { role: install_docker, tags: ['install_docker'] }
 ```
 
 ## Notes
