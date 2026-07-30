@@ -1,6 +1,6 @@
 ---
 name: implement-agent-specs
-description: "Implement numbered, implementation-ready specs from docs/agents/specs one at a time, respecting their dependencies and producing one main-targeted pull request per spec while allowing dependent commit stacks. Use when asked to implement a single spec path, continue a spec, or ship a specs program such as locomotion, roadmap, or formatting-linting. Keywords: agent specs, implementation specs, docs/agents/specs, spec path, spec program, stacked commits, draft dependency PR, one spec per PR."
+description: 'Implement numbered, implementation-ready specs from docs/agents/specs one at a time, respecting their dependencies and producing one main-targeted pull request per spec while allowing dependent commit stacks. Use when asked to implement a single spec path, continue a spec, or ship a specs program such as locomotion, roadmap, or formatting-linting. Keywords: agent specs, implementation specs, docs/agents/specs, spec path, spec program, stacked commits, draft dependency PR, one spec per PR.'
 ---
 
 # Implement Agent Specs

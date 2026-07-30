@@ -22,7 +22,7 @@ Gated by `install_agentic_tools` in the playbook.
   roles:
     - {
         role: agentic_tools,
-        tags: ["agentic_tools"],
+        tags: ['agentic_tools'],
         when: install_agentic_tools | default(false) | bool,
       }
 ```

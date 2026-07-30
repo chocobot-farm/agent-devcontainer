@@ -3,7 +3,7 @@ services:
     image: docker/mcp-gateway
     pull_policy: if_not_present
     restart: unless-stopped
-    profiles: ["mcp"]
+    profiles: ['mcp']
     environment:
       DOCKER_SECRETS_ENGINE_SOCKET: ${DOCKER_SECRETS_ENGINE_SOCKET:-/root/.cache/docker-secrets-engine/engine.sock}
     volumes:
@@ -90,7 +90,7 @@ services:
       - agentdev-claude:/root/.claude
       - agentdev-codex:/root/.codex
 
-    command: ["sleep", "infinity"]
+    command: ['sleep', 'infinity']
 
 volumes:
   # `name:` pins the literal Docker volume name so it's shared across every
