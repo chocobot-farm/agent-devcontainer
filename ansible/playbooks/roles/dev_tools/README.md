@@ -12,5 +12,5 @@ and the pinned `zizmor` GitHub Actions auditor.
   hosts: all
   become: true
   roles:
-    - { role: dev_tools, tags: ['dev_tools'] }
+    - { role: dev_tools, tags: ["dev_tools"] }
 ```
