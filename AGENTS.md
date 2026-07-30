@@ -1,0 +1,64 @@
+# Agents Guidelines
+
+NEVER use "$TMPDIR" env variable.
+ALWAYS use "./.tmp" (relative to the repo root) for temporary files; create it if it does not exist.
+NEVER use GitHub API or GitHub MCP tools to update branch refs or push branch contents. Use local git branch workflows instead; if push authentication is unavailable, stop and report the blocker rather than updating the branch remotely via API.
+
+## Best Practices for Agents
+
+0. NEVER change git config on local or global level unless explicitly instructed. NEVER switch/change remote.
+1. **Use `uv` for Python and `bun` for JavaScript.** Run project commands through `uv run`; sync with `scripts/uv-sync.sh` (or `uv sync`) after changing dependencies. Never install packages globally.
+2. **Scope test runs narrowly** while iterating: `uv run pytest <path>::<test_name>`, `bun test <path>`. Run the full suite only when asked.
+3. **Escalate to a container when the host lacks the toolchain — never give up after a local failure.** If `uv` or `bun` is missing, or a command needs the provisioned image, escalate in this order: (a) Docker daemon available → use the [microvm-sandbox](/.claude/skills/microvm-sandbox/SKILL.md) skill to run the command through `devcontainer exec`; (b) no Docker daemon → use the [remote-codespace-session](/.claude/skills/remote-codespace-session/SKILL.md) skill to run it on a GitHub Codespace over SSH. Only report a blocker if both escalation paths are unavailable (e.g. no `gh` auth).
+4. **For yes/no and multiple-choice questions, prefer the assistant's structured-question tool** over free-text (VS Code Copilot: `vscode/askQuestions`; Claude Code: `AskUserQuestion`).
+5. **Validate the agent catalog after editing it**: `uv run validate_agent_files --recommend .claude`. A Codex trampoline's `name`/`description` must match its canonical agent exactly.
+6. **Ansible changes** must pass `uv run ansible-lint ansible/` and `uv run ansible-playbook --syntax-check -i ansible/inventories/localhost.yml ansible/playbooks/setup-dev.yml`. The real gate is a local image build — see the README.
+
+### When in Doubt
+
+Consult the **[Principal Engineer](/.claude/agents/principal-engineer.agent.md)** agent for architecture, design decisions, and implementation strategies.
+
+## Coding Conventions
+
+### Python
+
+- Follow **PEP 8**: 4 spaces per indentation level, descriptive names. The line limit is **99** (`ruff.toml`), not 79.
+- Use type hints (PEP 484, `typing` module) and PEP 257 docstrings placed immediately after `def`/`class`
+- Format and autofix with **ruff** (`scripts/python-reformat.sh`), then verify with `scripts/python-lint-check.sh` — the CI gate. Never judge style with stock `flake8` or `black`: their defaults (79-char limit, double quotes, different isort grouping) produce false positives that do not match this repo and do not fail CI. Full workflow in the [python-format-lint](/.claude/skills/python-format-lint/) skill
+- **Exception handling**: never write empty handlers (`except ...: pass`). Handle expected exceptions explicitly by at least one of: logging context, returning a safe fallback value, re-raising with context, or raising `SystemExit` for CLI interruption paths (`raise SystemExit(130)` for user interrupts). If an exception must be intentionally ignored, document the reason in a comment and keep the ignored scope minimal. Prefer specific exception types over broad `except Exception`
+
+### Python Testing
+
+- **Always use `pytest`** — never `unittest`
+- Prefer multiple smaller, focused test files over large monolithic ones
+
+### Shell
+
+- All scripts are `#!/usr/bin/env bash` with `set -euo pipefail`, and must pass `shellcheck` (enforced by pre-commit and Super-Linter)
+- Quote every expansion; prefer `"${var:-default}"` over assuming a variable is set
+
+### C++
+
+- Follow the C++ Core Guidelines with modern C++ (C++17 or later): RAII for resource management, value semantics by default, smart pointers instead of raw pointers, standard library containers and algorithms
+- Make ownership explicit in API design; focus on correctness first, then optimize with evidence
+- Formatting is `clang-format` per [.clang-format](.clang-format)
+
+### Ansible
+
+- One responsibility per role. Prefix role variables with the role name (`dev_tools_*`, `agentic_tools_*`); the shared facts `workspace_folder`, `user_home`, and `dev_user` are the documented exceptions
+- Roles must be independently runnable. Do not rely on a `register:` from another role without tolerating it being undefined
+- Pin every external download with a version **and** a per-architecture checksum, as `dev_tools` does for `zizmor`
+- Read paths that vary per consuming project from the environment at runtime (`DEV_WORKSPACE_FOLDER`) with `workspace_folder` as the fallback. Never hardcode a workspace path
+
+## Catalog Locations
+
+- **Claude** (canonical source of truth): `.claude/agents/`, `.claude/skills/`
+- **Codex**: `.codex/agents/` (trampolines to `.claude/agents/`), `.codex/skills` (symlink to `.claude/skills`)
+
+Update `.claude` sources; the symlink picks up changes automatically. When adding or renaming an agent, or editing its description, also update its `.codex/agents/` trampoline to match (CI enforces this via `validate_agent_files`).
+
+**Edit `AGENTS.md`; `CLAUDE.md` only includes it (`@AGENTS.md`), so changes there cover all agents.**
+
+## Spikes
+
+When doing investigation work aka spikes document your findings in specs under `docs/agents/specs/<spike-topic>` in a structured way, create new subfolder `<spike-topic>` for the subject of investigation. Create `README.md` with raw findings, including list of issues with assigned priorities. Create a series of spec files with implementation guidance.

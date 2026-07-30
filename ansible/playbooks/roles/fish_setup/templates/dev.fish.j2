@@ -1,0 +1,34 @@
+function find_up
+  # find file in parent directories
+  set -l target $argv[1]
+  set -l dir (pwd)
+  while true
+    if test -e "$dir/$target"
+      echo "$dir"
+      return 0
+    end
+    set dir (dirname "$dir")
+    if test "$dir" = /
+      return 1
+    end
+  end
+end
+
+function xpra_display
+  set -xg DISPLAY ":100"
+end
+
+function venv_activate
+  # Activate the project's uv-managed virtualenv from anywhere in the tree.
+  set -l ws (find_up .venv)
+  if test -z "$ws"
+    echo "No .venv found in this directory or any parent"
+    return 1
+  end
+  echo "Activating $ws/.venv"
+  source "$ws/.venv/bin/activate.fish"
+end
+
+if status is-interactive
+  fish_add_path -g "$HOME/.local/bin"
+end

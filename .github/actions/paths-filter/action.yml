@@ -1,0 +1,63 @@
+name: Shared paths filters
+description: A set of filters to be used to fitler jobs
+inputs:
+  event-name:
+    description: GitHub event name
+    required: false
+    default: ''
+  base-branch:
+    description: Base branch
+    required: false
+    default: main
+  extra-filter:
+    description: Extra filters (YAML list entries, one per line)
+    required: false
+    default: 'default-path-that-will-never-match'
+outputs:
+  pass:
+    description: Filtered file present
+    value: ${{ steps.filter-pr.outputs.image || steps.filter-base.outputs.image }}
+runs:
+  using: composite
+  steps:
+    - name: Build filters
+      id: build-filters
+      shell: bash -xeuo pipefail {0}
+      run: |
+        # Build the filters YAML with proper formatting for extra-filter
+        EXTRA=$(printf '%s\n' "${INPUTS_EXTRA_FILTER}" | \
+          sed -En 's/^[[:space:]]*-[[:space:]]*//p' | \
+          sed -E 's/^/  - /' | \
+          sed '/^  - $/d')
+        {
+          echo "filters<<EOF"
+          cat <<'YAML'
+        image:
+          - .devcontainer/**
+          - .github/actions/**
+          - ansible/**
+          - docker/**
+          - scripts/**
+        YAML
+          if [ -n "$EXTRA" ]; then
+            printf '%s\n' "$EXTRA"
+          fi
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+      env:
+        INPUTS_EXTRA_FILTER: ${{ inputs.extra-filter }}
+
+    - name: Filter (pull request)
+      if: inputs.event-name == 'pull_request'
+      id: filter-pr
+      uses: dorny/paths-filter@v4.0.1
+      with:
+        filters: ${{ steps.build-filters.outputs.filters }}
+
+    - name: Filter (non pull request)
+      if: inputs.event-name != 'pull_request'
+      id: filter-base
+      uses: dorny/paths-filter@v4.0.1
+      with:
+        base: ${{ inputs.base-branch }}
+        filters: ${{ steps.build-filters.outputs.filters }}

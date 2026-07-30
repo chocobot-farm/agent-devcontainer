@@ -1,0 +1,169 @@
+# agent-devcontainer
+
+A general-purpose, Ansible-provisioned development container built for
+agent-driven development. Python + Node, Docker-in-Docker, an Xpra remote
+desktop, Claude Code and Codex preinstalled, an opt-in egress firewall, and a
+curated catalog of agents and skills.
+
+Nothing in here is project-specific — point your repo at the published image, or
+copy the template in and go.
+
+## What's in the image
+
+| Area          | Contents                                                                                     |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| Python        | `uv` (installer, resolver, venv manager), system `python3`, `pre-commit`                       |
+| JavaScript    | `bun` (also used to install global CLIs), Node.js 24 from NodeSource, `yarn`                   |
+| Agents        | `@anthropic-ai/claude-code`, `@openai/codex`, `@modelcontextprotocol/inspector`               |
+| Build tooling | `build-essential`, CMake (Kitware), Ninja, `pkg-config`                                        |
+| Lint / CI     | `shellcheck`, `zizmor` (pinned + checksummed), `jq`, `ffmpeg`, `btop`                           |
+| Git / GitHub  | `git`, `git-lfs`, `gh` + a transparent auth wrapper that injects `GH_TOKEN` from the host      |
+| Shells        | `bash` and `fish` (with fisher + bass), UTC timezone, `en_US.UTF-8` locale                     |
+| Desktop       | Xpra 6.4.3 with the HTML5 client, xpra-html5 v19, VirtualGL 3.1.4, mesa, Xvfb                  |
+| Containers    | Docker CE + CLI + buildx + compose (daemon started by the devcontainer DinD feature)           |
+| Secrets       | GNOME Keyring Secret Service, brought up headless so `gh auth login` can persist a token       |
+| Firewall      | `init-firewall.sh` + a NOPASSWD sudoers entry — **installed but inert unless enabled**          |
+
+Images are published multi-arch (`linux/amd64` + `linux/arm64`), built on native
+runners and merged into a single manifest:
+
+- `ghcr.io/chocobot-farm/agent-desktop:edge` — the development image
+- `ghcr.io/chocobot-farm/ubuntu-ansible:edge` — the Ansible base it is built from
+
+## Using it in another project
+
+### Option 1 — point an existing devcontainer at the image
+
+```jsonc
+// .devcontainer/devcontainer.json
+{
+  "image": "ghcr.io/chocobot-farm/agent-desktop:edge",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:4.0.0": {}
+  },
+  "containerEnv": {
+    "DEV_WORKSPACE_FOLDER": "/workspaces/${localWorkspaceFolderBasename}"
+  }
+}
+```
+
+`DEV_WORKSPACE_FOLDER` is the one variable the image cares about: the `gh`
+wrapper PATH shim and the firewall allowlist lookup both read it, falling back to
+the `workspace_folder` baked in at build time.
+
+### Option 2 — copy the template
+
+Copy `.devcontainer/`, `scripts/`, and optionally `.claude/` + `.codex/` into your
+repo. The compose file already wires up the shared agent-auth volumes, the MCP
+gateway sidecar, and worktree-safe mounts. Adjust `workspaceFolder` and the
+`agentdev-*` volume names if you want per-project isolation.
+
+## Enabling the firewall
+
+The firewall is installed in the image but does nothing until you ask for it.
+Set `ENABLE_FIREWALL=true` and edit the allowlist:
+
+```jsonc
+// .devcontainer/devcontainer.json
+"containerEnv": { "ENABLE_FIREWALL": "true" }
+```
+
+`.devcontainer/firewall-allowlist.txt` is read at container start, so per-branch
+edits take effect on the next start with no image rebuild. It default-DROPs IPv4
+egress, blocks IPv6 entirely, preserves Docker's embedded-DNS NAT rules, and
+self-verifies (a known-blocked host must fail, `api.github.com` must succeed) —
+exiting non-zero if either check goes the wrong way.
+
+## Reaching the Xpra desktop
+
+`scripts/devcontainer-postStartCommand.sh` starts Xpra in the background on
+display `:100`. The HTML5 client port is derived per devcontainer as
+`14500 + cksum(DEVCONTAINER_ID) % 100`, so parallel worktrees never collide;
+`forwardPorts` covers the whole `14500-14599` range. Open the forwarded port in a
+browser. For GPU-accelerated rendering, prefix the app with `vglrun`.
+
+Manage it directly with `/start-xpra.sh --background`, `--stop`, or
+`--port <n>`.
+
+## Provisioning knobs
+
+`docker/desktop/agent-desktop.dockerfile` enables all four capability roles. To
+build a leaner image, flip them off — they default to `false` in
+`ansible/playbooks/group_vars/all.yml`:
+
+| Variable                       | Effect when `true`                                                     |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| `install_xpra`                 | Xpra + xpra-html5 + VirtualGL + mesa/Xvfb (the largest single addition) |
+| `install_docker`               | Docker CE, CLI, buildx, compose (installed, daemon not started)         |
+| `install_agentic_tools`        | Claude Code, Codex, MCP inspector                                       |
+| `install_devcontainer_firewall`| `init-firewall.sh` + sudoers entry (still runtime-gated)                |
+| `setup_user`                   | Create a non-root `devuser` (1001:1001) instead of running as root      |
+| `workspace_folder`             | Fallback workspace path baked into the image                            |
+
+## Building locally
+
+The desktop image's build context is the repository root — the dockerfile
+bind-mounts the whole context at `/provision` so Ansible can read both `ansible/`
+and `docker/bin/gh`.
+
+```bash
+docker build -t local/ubuntu-ansible docker/ansible
+
+docker buildx build \
+  -f docker/desktop/agent-desktop.dockerfile \
+  --build-arg FROM_IMAGE=local/ubuntu-ansible \
+  -t local/agent-desktop .
+```
+
+Then smoke it:
+
+```bash
+docker run --rm local/agent-desktop bash -lc '
+  bun --version && node --version && uv --version &&
+  gh --version | head -1 && cmake --version | head -1 && zizmor --version &&
+  command -v xpra init-firewall.sh gnome-keyring-daemon'
+```
+
+Ansible alone, without a build:
+
+```bash
+uv run ansible-lint ansible/
+uv run ansible-playbook --syntax-check \
+  -i ansible/inventories/localhost.yml ansible/playbooks/setup-dev.yml
+```
+
+## The agent catalog
+
+`.claude/` is the canonical source; `.codex/skills` is a symlink to it and
+`.codex/agents/*.md` are generated trampolines. Four agents (Principal Engineer
+plus the TDD Red/Green/Refactor trio) and 21 skills covering git, pull requests,
+review, CI log extraction, formatting, and container/Codespace escalation.
+
+See [.claude/README.md](.claude/README.md) for the editing rules and
+[AGENTS.md](AGENTS.md) for the repository conventions agents follow.
+
+```bash
+uv sync --all-groups
+uv run validate_agent_files --recommend .claude
+uv run pytest py_packages
+```
+
+## Repository layout
+
+```
+.devcontainer/   devcontainer.json, compose (devcontainer + mcp-gateway), init, firewall allowlist
+docker/
+  ansible/       ubuntu-ansible base image
+  desktop/       agent-desktop image, entrypoint, Xpra launcher
+  bin/gh         transparent gh auth wrapper baked onto PATH
+ansible/         inventories + setup-dev.yml + 18 roles
+scripts/         devcontainer lifecycle hooks, format/lint, Super-Linter wrappers
+.claude/         agents, skills, hooks, settings  (canonical)
+.codex/          trampolines + skills symlink
+py_packages/     validate_agent_files — the agent-catalog validator
+.github/         composite docker actions + CI, reformat, and validation workflows
+```
+
+## License
+
+MIT — see [LICENSE](LICENSE).
