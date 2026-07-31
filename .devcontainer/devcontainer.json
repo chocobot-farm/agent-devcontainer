@@ -127,6 +127,18 @@
           "**/ansible/**/*.yml": "ansible",
           "**/ansible/**/*.yaml": "ansible"
         },
+        // Roles live under ansible/playbooks/roles/, so schemastore's
+        // "**/playbooks/*.yml" (playbook/play schema) glob incorrectly
+        // also matches role tasks/handlers files nested under it, which
+        // otherwise correctly match "**/tasks|handlers/*.yml" (tasks schema).
+        // Force the tasks schema explicitly to stop false-positive
+        // "Property ansible.builtin.<module> is not allowed" warnings.
+        "yaml.schemas": {
+          "https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/tasks": [
+            "ansible/playbooks/roles/*/tasks/*.yml",
+            "ansible/playbooks/roles/*/handlers/*.yml"
+          ]
+        },
 
         "cmake.configureOnEdit": false,
         "cmake.configureOnOpen": false,
