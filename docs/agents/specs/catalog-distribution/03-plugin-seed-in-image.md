@@ -56,7 +56,7 @@ agentic_tools_plugin_seed_dir: /opt/claude-seed
 
 Default `false`, consistent with every other capability flag in
 `group_vars/all.yml`, and enabled explicitly by
-`docker/desktop/agent-desktop.dockerfile`.
+`docker/desktop/agent-desktop.Dockerfile`.
 
 The role must remain independently runnable: guard the tasks on the Claude Code
 binary being present rather than on a `register:` from an earlier role.

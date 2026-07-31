@@ -147,7 +147,7 @@ jobs:
         uses: ./.github/actions/docker/build-push-action
         with:
           context: .
-          file: docker/desktop/agent-desktop.dockerfile
+          file: docker/desktop/agent-desktop.Dockerfile
           image: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.DESKTOP_IMAGE_NAME }}
           arch: ${{ matrix.arch }}
           registry: ${{ env.REGISTRY }}
