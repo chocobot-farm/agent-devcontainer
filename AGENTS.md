@@ -12,7 +12,7 @@ NEVER use GitHub API or GitHub MCP tools to update branch refs or push branch co
 3. **Escalate to a container when the host lacks the toolchain — never give up after a local failure.** If `uv` or `bun` is missing, or a command needs the provisioned image, escalate in this order: (a) Docker daemon available → use the [microvm-sandbox](/.claude/skills/microvm-sandbox/SKILL.md) skill to run the command through `devcontainer exec`; (b) no Docker daemon → use the [remote-codespace-session](/.claude/skills/remote-codespace-session/SKILL.md) skill to run it on a GitHub Codespace over SSH. Only report a blocker if both escalation paths are unavailable (e.g. no `gh` auth).
 4. **For yes/no and multiple-choice questions, prefer the assistant's structured-question tool** over free-text (VS Code Copilot: `vscode/askQuestions`; Claude Code: `AskUserQuestion`).
 5. **Validate the agent catalog after editing it**: `uv run validate_agent_files --recommend .claude`. A Codex trampoline's `name`/`description` must match its canonical agent exactly.
-6. **Ansible changes** must pass `uv run ansible-lint ansible/` and `uv run ansible-playbook --syntax-check -i ansible/inventories/localhost.yml ansible/playbooks/setup-dev.yml`. The real gate is a local image build — see the README.
+6. **Ansible changes** must pass `(cd ansible && uv run ansible-lint .)` and `(cd ansible && uv run ansible-playbook --syntax-check playbooks/setup-dev.yml)`. The real gate is a local image build — see the README.
 
 ### When in Doubt
 

@@ -20,3 +20,7 @@ elif [[ ! -e "$claude_json_target" ]]; then
     echo '{}' >"$claude_json_target"
 fi
 ln -sf "$claude_json_target" /root/.claude.json
+
+# Sync the project environment into the container's .venv directory so that
+# extension settings are valid when the container is rebuilt. This is a no-op if the environment is already up to date.
+"$workspace/scripts/uv-sync.sh"
