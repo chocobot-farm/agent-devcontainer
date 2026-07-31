@@ -96,6 +96,21 @@ def test_missing_trampoline_fails(tmp_path: Path, capsys) -> None:
     assert 'Missing Codex trampoline' in captured.out
 
 
+def test_codex_plugin_agents_do_not_need_trampolines(tmp_path: Path, capsys) -> None:
+    """A Codex-packaged catalog exposes its canonical agents directly."""
+    plugin_agents = tmp_path / 'plugin' / 'agents'
+    plugin_agents.mkdir(parents=True)
+    (tmp_path / 'plugin' / '.codex-plugin').mkdir()
+    (tmp_path / 'plugin' / '.codex-plugin' / 'plugin.json').write_text('{}\n')
+    _write_agent(plugin_agents, 'demo', 'Demo Agent', 'A packaged agent.')
+
+    exit_code = main([str(plugin_agents), '--kind', 'agents'])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0, captured.out
+    assert 'Missing Codex trampoline' not in captured.out
+
+
 def test_orphan_trampoline_fails(tmp_path: Path, capsys) -> None:
     """A trampoline without a canonical counterpart is an error."""
     claude_agents, codex_agents = _make_catalog(tmp_path)
@@ -152,9 +167,9 @@ def test_single_agent_file_does_not_report_unselected_trampolines_as_orphans(
     assert 'Orphan Codex trampoline' not in captured.out
 
 
-def test_repo_catalog_trampolines_are_in_sync() -> None:
-    """The real repo's four agent/trampoline pairs validate without drift."""
+def test_repo_plugin_agents_are_discoverable_by_codex() -> None:
+    """The real repo's packaged agents validate without duplicate trampolines."""
     repo_root = Path(__file__).resolve().parents[3]
-    exit_code = main([str(repo_root / '.claude'), '--kind', 'agents', '--ci'])
+    exit_code = main([str(repo_root / 'plugin'), '--kind', 'agents', '--ci'])
 
     assert exit_code == 0

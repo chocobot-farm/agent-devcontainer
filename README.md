@@ -156,7 +156,7 @@ uv run ansible-playbook --syntax-check playbooks/setup-dev.yml
 
 ## The agent catalog
 
-The catalog ships as the `agentdev` Claude Code plugin in [`plugin/`](plugin/) —
+The catalog ships as the `agentdev` Claude Code and Codex plugin in [`plugin/`](plugin/) —
 four agents (Principal Engineer plus the TDD Red/Green/Refactor trio) and 21
 skills covering git, pull requests, review, CI log extraction, formatting, and
 container/Codespace escalation. **[plugin/README.md](plugin/README.md) documents
@@ -167,19 +167,20 @@ section is about developing it here.
 
 `plugin/` is canonical. Everything else is derived:
 
-| Path                              | Role                                                          |
-| --------------------------------- | ------------------------------------------------------------- |
-| `plugin/`                         | Canonical agents, skills, hooks, and `bin/` scripts.          |
-| `.claude-plugin/marketplace.json` | Publishes the plugin so other repositories can consume it.    |
-| `.codex/skills`                   | Symlink to `plugin/skills`.                                   |
-| `.codex/agents/*.md`              | Trampolines that delegate to `plugin/agents/*.agent.md`.      |
-| `.claude/settings.json`           | This repository enabling its own plugin from the marketplace. |
+| Path                               | Role                                                          |
+| ---------------------------------- | ------------------------------------------------------------- |
+| `plugin/`                          | Canonical agents, skills, hooks, and `bin/` scripts.          |
+| `plugin/.claude-plugin/`           | Packages the catalog for Claude Code.                         |
+| `plugin/.codex-plugin/`            | Packages the same catalog for Codex.                          |
+| `.claude-plugin/marketplace.json`  | Publishes the plugin so other repositories can consume it.    |
+| `.agents/plugins/marketplace.json` | Publishes the repo-local Codex marketplace entry.             |
+| `.claude/settings.json`            | This repository enabling its own plugin from the marketplace. |
 
 ### Editing rules
 
 - **Edit files under `plugin/`, never under `.codex/`.**
-- When you add, rename, or re-describe an agent, update its `.codex/agents/`
-  trampoline so `name` and `description` match exactly.
+- Codex consumes agents and skills directly from the canonical plugin tree; do
+  not recreate `.codex/agents/` trampolines or a `.codex/skills` symlink.
 - Use the [create-agent](plugin/skills/create-agent/SKILL.md) and
   [create-skill](plugin/skills/create-skill/SKILL.md) skills — they encode the
   frontmatter, discovery-description, and validation rules.
@@ -190,8 +191,7 @@ section is about developing it here.
 - A script in `plugin/bin/` must not assume it sits inside the repository it
   operates on. Resolve the target repository from the working directory (see
   [`plugin/bin/__utils.sh`](plugin/bin/__utils.sh)).
-- Bump `version` in both `plugin/.claude-plugin/plugin.json` and the marketplace
-  entry together.
+- Bump `version` in both plugin manifests and the marketplace entry together.
 
 [AGENTS.md](AGENTS.md) has the repository conventions agents follow.
 
@@ -221,9 +221,12 @@ docker/
 ansible/         inventories + setup-dev.yml + 18 roles
 scripts/         devcontainer lifecycle hooks and repository plumbing
 plugin/          the agentdev plugin: agents, skills, hooks, bin/  (canonical)
+  .claude-plugin/  Claude Code package manifest
+  .codex-plugin/   Codex package manifest
 .claude-plugin/  marketplace manifest publishing the plugin
+.agents/plugins/ repo-local Codex marketplace and canonical-plugin symlink
 .claude/         this repository's own settings.json
-.codex/          trampolines + skills symlink
+.codex/          repository-specific Codex setup
 py_packages/     validate_agent_files — the agent-catalog validator
 .github/         composite docker actions + CI, reformat, and validation workflows
 ```

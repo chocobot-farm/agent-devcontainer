@@ -1,0 +1,20 @@
+{
+  "name": "chocobot-farm",
+  "interface": {
+    "displayName": "Chocobot Farm"
+  },
+  "plugins": [
+    {
+      "name": "agentdev",
+      "source": {
+        "source": "local",
+        "path": "./plugins/agentdev"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

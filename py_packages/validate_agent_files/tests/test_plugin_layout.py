@@ -80,6 +80,24 @@ def test_disagreeing_manifest_versions_fail(tmp_path: Path, capsys) -> None:
     assert '1.1.0' in captured.out
 
 
+def test_disagreeing_codex_manifest_version_fails(tmp_path: Path, capsys) -> None:
+    """Claude and Codex package manifests must describe the same release."""
+    plugin_root = _write_plugin(tmp_path, plugin_version='1.0.0', marketplace_version='1.0.0')
+    (plugin_root / '.codex-plugin').mkdir()
+    (plugin_root / '.codex-plugin' / 'plugin.json').write_text(
+        json.dumps({'name': 'agentdev', 'version': '1.1.0'}) + '\n'
+    )
+    _write_skill(plugin_root, 'demo', 'Runs a demo.')
+
+    exit_code = main([str(plugin_root), '--kind', 'skills'])
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert '.codex-plugin/plugin.json' in captured.out
+    assert "version '1.1.0'" in captured.out
+    assert "version '1.0.0'" in captured.out
+
+
 def test_unparsable_plugin_manifest_fails(tmp_path: Path, capsys) -> None:
     """A plugin.json that does not parse is an error, not a crash."""
     plugin_root = _write_plugin(tmp_path, plugin_version='1.0.0', marketplace_version='1.0.0')

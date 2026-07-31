@@ -4,11 +4,11 @@
 Cross-catalog validation for Codex agent trampolines.
 
 Canonical agents live in an ``agents/`` directory of the catalog — ``plugin/agents``
-for the ``agentdev`` plugin, or ``.claude/agents`` for a plain project catalog. Each
-canonical agent must have
-a matching Codex trampoline at ``.codex/agents/<stem>.md`` whose ``name`` and
-``description`` frontmatter fields are identical to the canonical file's. Only
-convention keeps these in sync, so this validator makes drift fail validation.
+for a packaged plugin, or ``.claude/agents`` for a plain project catalog. Codex reads
+agents directly from a directory with a ``.codex-plugin/plugin.json`` manifest.
+Unpackaged catalogs instead need a matching trampoline at
+``.codex/agents/<stem>.md`` whose ``name`` and ``description`` frontmatter fields are
+identical to the canonical file's.
 """
 
 from __future__ import annotations
@@ -36,6 +36,11 @@ def _codex_agents_dir(canonical_agents_dir: Path) -> Path:
     """Return the sibling ``.codex/agents`` directory for a canonical agents dir."""
     repo_root = canonical_agents_dir.parent.parent
     return repo_root / '.codex' / 'agents'
+
+
+def _is_codex_plugin(canonical_agents_dir: Path) -> bool:
+    """Return whether Codex can discover the canonical agents in place."""
+    return (canonical_agents_dir.parent / '.codex-plugin' / 'plugin.json').is_file()
 
 
 def _trampoline_path(agent_file: str) -> Path | None:
@@ -66,6 +71,8 @@ def validate_trampolines(
     for agent_file in agent_files:
         canonical_dir = _canonical_agents_dir(agent_file)
         if canonical_dir is None:
+            continue
+        if _is_codex_plugin(canonical_dir):
             continue
         if codex_dir is None:
             codex_dir = _codex_agents_dir(canonical_dir)

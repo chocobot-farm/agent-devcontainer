@@ -11,7 +11,7 @@ NEVER use GitHub API or GitHub MCP tools to update branch refs or push branch co
 2. **Scope test runs narrowly** while iterating: `uv run pytest <path>::<test_name>`, `bun test <path>`. Run the full suite only when asked.
 3. **Escalate to a container when the host lacks the toolchain — never give up after a local failure.** If `uv` or `bun` is missing, or a command needs the provisioned image, escalate in this order: (a) Docker daemon available → use the `/agentdev:microvm-sandbox` skill to run the command through `devcontainer exec`; (b) no Docker daemon → use the `/agentdev:remote-codespace-session` skill to run it on a GitHub Codespace over SSH. Only report a blocker if both escalation paths are unavailable (e.g. no `gh` auth).
 4. **For yes/no and multiple-choice questions, prefer the assistant's structured-question tool** over free-text (VS Code Copilot: `vscode/askQuestions`; Claude Code: `AskUserQuestion`).
-5. **Validate the agent catalog after editing it**: `uv run validate_agent_files --recommend plugin`. A Codex trampoline's `name`/`description` must match its canonical agent exactly.
+5. **Validate the agent catalog after editing it**: `uv run validate_agent_files --recommend plugin`.
 6. **Ansible changes** must pass `(cd ansible && uv run ansible-lint .)` and `(cd ansible && uv run ansible-playbook --syntax-check playbooks/setup-dev.yml)`. The real gate is a local image build — see the README.
 
 ### When in Doubt
@@ -53,10 +53,10 @@ Consult the **[Principal Engineer](/plugin/agents/principal-engineer.agent.md)**
 ## Catalog Locations
 
 - **Claude** (canonical source of truth): the `agentdev` plugin — `plugin/agents/`, `plugin/skills/`, `plugin/hooks/`, `plugin/bin/`. Skills are namespaced: `/agentdev:<skill-name>`
-- **Codex**: `.codex/agents/` (trampolines to `plugin/agents/`), `.codex/skills` (symlink to `plugin/skills`)
+- **Codex**: the same `plugin/` tree, packaged by `plugin/.codex-plugin/plugin.json`; Codex discovers `plugin/agents/` and `plugin/skills/` directly
 - **This repository's own config**: `.claude/settings.json` only; it enables the plugin from the marketplace declared in `.claude-plugin/marketplace.json`. `settings.json` is strict JSON — no comments, no trailing commas
 
-Update `plugin/` sources; the symlink picks up changes automatically. Never write a repository-relative catalog path inside the plugin — use `${CLAUDE_SKILL_DIR}/...` for a path within a skill and a namespaced invocation for a sibling skill. When adding or renaming an agent, or editing its description, also update its `.codex/agents/` trampoline to match (CI enforces this via `validate_agent_files`).
+Update `plugin/` sources directly. Never write a repository-relative catalog path inside the plugin — use `${CLAUDE_SKILL_DIR}/...` for a path within a skill and a namespaced invocation for a sibling skill. Keep the Claude and Codex plugin manifest versions aligned when releasing the shared catalog.
 
 **Edit `AGENTS.md`; `CLAUDE.md` only includes it (`@AGENTS.md`), so changes there cover all agents.**
 

@@ -1,0 +1,28 @@
+{
+  "name": "agentdev",
+  "version": "1.0.0",
+  "description": "General-purpose agent catalog: git, pull requests, review, CI, formatting, container and Codespace escalation.",
+  "author": {
+    "name": "chocobot-farm",
+    "url": "https://github.com/chocobot-farm"
+  },
+  "homepage": "https://github.com/chocobot-farm/agent-devcontainer",
+  "repository": "https://github.com/chocobot-farm/agent-devcontainer",
+  "license": "MIT",
+  "keywords": ["agents", "development", "git", "pull-requests", "code-review"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agent Dev",
+    "shortDescription": "Shared agents and development workflows",
+    "longDescription": "Agents, skills, and helper scripts for git, pull requests, review, CI triage, formatting, and container or Codespace escalation.",
+    "developerName": "chocobot-farm",
+    "category": "Developer Tools",
+    "capabilities": ["Agents", "Skills"],
+    "websiteURL": "https://github.com/chocobot-farm/agent-devcontainer",
+    "defaultPrompt": [
+      "Review my changes and identify the highest-risk issues.",
+      "Prepare this branch for a pull request.",
+      "Run the appropriate formatter and lint checks."
+    ]
+  }
+}

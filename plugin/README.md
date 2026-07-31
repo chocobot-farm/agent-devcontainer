@@ -1,6 +1,6 @@
-# `agentdev` — a shared agent catalog for Claude Code
+# `agentdev` — a shared agent catalog for Claude Code and Codex
 
-A Claude Code plugin with the agents, skills, hooks, and helper scripts for
+A Claude Code and Codex plugin with the agents, skills, hooks, and helper scripts for
 everyday development work: git and pull requests, code review, CI log triage,
 formatting and linting, and escalating a command to a container or Codespace when
 the host lacks the toolchain.
@@ -8,7 +8,7 @@ the host lacks the toolchain.
 It is published from [chocobot-farm/agent-devcontainer](https://github.com/chocobot-farm/agent-devcontainer),
 so projects consume it by version instead of copying files around.
 
-## Installing
+## Installing in Claude Code
 
 Add to your repository's `.claude/settings.json` — strict JSON, so no comments
 and no trailing commas (unlike `devcontainer.json`):
@@ -28,6 +28,10 @@ and no trailing commas (unlike `devcontainer.json`):
 ```
 
 Restart Claude Code (or run `/plugin`) and the catalog is available.
+
+The same `plugin/` directory is packaged for Codex by
+`.codex-plugin/plugin.json`; its agents and skills remain the same canonical
+files. The session-start hook is Claude Code-only.
 
 ## Using it
 
