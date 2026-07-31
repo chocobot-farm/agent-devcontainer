@@ -31,7 +31,10 @@ Restart Claude Code (or run `/plugin`) and the catalog is available.
 
 The same `plugin/` directory is packaged for Codex by
 `.codex-plugin/plugin.json`; its agents and skills remain the same canonical
-files. The session-start hook is Claude Code-only.
+files. This repository's devcontainer registers the local marketplace and
+installs the plugin automatically during `postCreateCommand`; start a new Codex
+session after creating or rebuilding the container. The session-start hook is
+Claude Code-only.
 
 ## Using it
 

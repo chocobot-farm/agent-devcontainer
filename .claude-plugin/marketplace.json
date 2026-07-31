@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "agentdev",
-      "source": "./plugin",
+      "source": ".agents/plugins/agentdev",
       "description": "General-purpose agent catalog: git, pull requests, review, CI, formatting, container and Codespace escalation.",
       "version": "1.0.0"
     }
