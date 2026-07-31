@@ -1,6 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
+  "rebaseWhen": "auto",
   "dockerfile": {
     "managerFilePatterns": ["/(^|/)docker/desktop/agent-desktop\\.Dockerfile$/"]
   },
@@ -19,13 +20,23 @@
   ],
   "packageRules": [
     {
+      "description": "Automatically merge GitHub Actions dependency updates after Renovate observes green CI.",
+      "matchManagers": ["github-actions"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
       "description": "agent-desktop and ubuntu-ansible are built from one pipeline; bump their digest pins together so a split update can never pair a mismatched image and base.",
       "matchDatasources": ["docker"],
       "matchPackageNames": [
         "ghcr.io/chocobot-farm/agent-desktop",
         "ghcr.io/chocobot-farm/ubuntu-ansible"
       ],
-      "groupName": "agent-desktop base images"
+      "groupName": "agent-desktop base images",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
     },
     {
       "description": "Super-Linter and the pre-commit/local tools it pins (Prettier, clang-format, Ansible Lint, Hadolint, Ruff, ShellCheck, Gitleaks, Actionlint, Zizmor) must stay in sync with the pinned Super-Linter image. Update them manually with the sync-super-linter-tool-versions skill instead.",
