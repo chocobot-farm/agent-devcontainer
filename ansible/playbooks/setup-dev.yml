@@ -1,0 +1,30 @@
+---
+# Main playbook: provision a general-purpose development container.
+#
+# Capability roles at the end are opt-in; docker/desktop/agent-desktop.dockerfile
+# turns all four on when building the published image.
+- name: Setup development environment
+  hosts: all
+  become: true
+  gather_facts: true
+
+  roles:
+    - { role: extra_facts, tags: ["extra_facts", "always"] }
+    - { role: basic_prereqs, tags: ["basic_prereqs"] }
+    - { role: install_docker, tags: ["install_docker"], when: install_docker | default(false) | bool }
+    - { role: locale_setup, tags: ["locale_setup"] }
+    - { role: utc_timezone, tags: ["utc_timezone"] }
+    - { role: dev_user_setup, tags: ["setup_user"], when: setup_user | default(false) | bool }
+    - { role: fish_setup, tags: ["fish_setup"] }
+    - { role: bash_setup, tags: ["bash_setup"] }
+    - { role: cmake_kitware, tags: ["cmake"] }
+    - { role: dev_tools, tags: ["dev_tools"] }
+    - { role: github_cli, tags: ["github_cli"] }
+    # bun_setup must precede nodejs and agentic_tools: both install global
+    # packages through `bun add --global`.
+    - { role: bun_setup, tags: ["bun_setup", "nodejs", "agentic_tools"] }
+    - { role: nodejs, tags: ["nodejs"] }
+    - { role: uv_setup, tags: ["uv_setup"] }
+    - { role: agentic_tools, tags: ["agentic_tools"], when: install_agentic_tools | default(false) | bool }
+    - { role: xpra_setup, tags: ["xpra_setup"], when: install_xpra | default(false) | bool }
+    - { role: devcontainer_firewall, tags: ["devcontainer_firewall"], when: install_devcontainer_firewall | default(false) | bool }

@@ -1,0 +1,64 @@
+---
+# Development tools installation
+- name: Add Git Core PPA
+  ansible.builtin.apt_repository:
+    repo: ppa:git-core/ppa
+    state: present
+    filename: git-core-ppa
+
+- name: Install development tools
+  ansible.builtin.apt:
+    name:
+      - bash-completion
+      - build-essential
+      - cmake
+      - dirmngr
+      - git
+      - git-lfs
+      - gnupg2
+      - jq
+      - ninja-build
+      - pkg-config
+      - pre-commit
+      - python3-argcomplete
+      - python3-pip
+      - python3-setuptools
+      - python3-venv
+      - python3-toml # for configuring .codex
+      - shellcheck
+      - ffmpeg # for rendering animations and screen captures
+      - btop # for monitoring resource usage in development
+    state: present
+    install_recommends: false
+    update_cache: true
+
+- name: Ensure zizmor supports the current architecture
+  ansible.builtin.assert:
+    that: system_arch in dev_tools_zizmor_archives
+    fail_msg: "zizmor is not available for architecture {{ system_arch }}"
+
+- name: Create temporary directory for zizmor
+  ansible.builtin.tempfile:
+    state: directory
+  register: dev_tools_zizmor_temp_dir
+
+- name: Download zizmor
+  ansible.builtin.get_url:
+    url: >-
+      {{ 'https://github.com/zizmorcore/zizmor/releases/download/'
+      ~ dev_tools_zizmor_version ~ '/zizmor-'
+      ~ dev_tools_zizmor_archives[system_arch].target ~ '.tar.gz' }}
+    dest: "{{ dev_tools_zizmor_temp_dir.path }}/zizmor.tar.gz"
+    checksum: "sha256:{{ dev_tools_zizmor_archives[system_arch].checksum }}"
+    mode: "0644"
+
+- name: Install zizmor
+  ansible.builtin.unarchive:
+    src: "{{ dev_tools_zizmor_temp_dir.path }}/zizmor.tar.gz"
+    dest: "{{ dev_tools_zizmor_install_path | dirname }}"
+    remote_src: true
+
+- name: Clean up temporary zizmor files
+  ansible.builtin.file:
+    path: "{{ dev_tools_zizmor_temp_dir.path }}"
+    state: absent

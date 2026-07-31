@@ -1,0 +1,26 @@
+---
+# Bash setup tasks
+- name: Ensure ~/.local/bin is on PATH in .bashrc
+  ansible.builtin.lineinfile:
+    path: "{{ user_home }}/.bashrc"
+    line: 'export PATH="$HOME/.local/bin:$PATH"'
+    state: present
+    create: true
+    owner: "{{ dev_user_setup_uid }}"
+    group: "{{ dev_user_setup_gid }}"
+    mode: "0644"
+
+- name: Enable a larger, de-duplicated shell history
+  ansible.builtin.blockinfile:
+    path: "{{ user_home }}/.bashrc"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK (bash_setup history)"
+    block: |
+      HISTSIZE=100000
+      HISTFILESIZE=200000
+      HISTCONTROL=ignoreboth:erasedups
+      shopt -s histappend
+    state: present
+    create: true
+    owner: "{{ dev_user_setup_uid }}"
+    group: "{{ dev_user_setup_gid }}"
+    mode: "0644"

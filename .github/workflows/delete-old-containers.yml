@@ -1,0 +1,53 @@
+name: Delete Old Container Versions
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Container name'
+        required: true
+      versions_to_keep:
+        description: 'Number of versions to keep'
+        required: false
+        default: '10'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  delete-container-version:
+    runs-on: ${{ vars.AMD_ONLY == '1' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+    permissions:
+      contents: read
+      packages: write
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Delete package version
+        uses: actions/delete-package-versions@v5.0.0
+        with:
+          package-name: ${{ inputs.name }}
+          package-type: 'container'
+          min-versions-to-keep: ${{ inputs.versions_to_keep }}
+          ignore-versions: (latest|main|edge).*
+
+      - name: Delete all untagged
+        uses: actions/delete-package-versions@v5.0.0
+        with:
+          package-name: ${{ inputs.name }}
+          package-type: 'container'
+          delete-only-untagged-versions: true
+
+      - name: Log debug stats
+        if: ${{ always() }}
+        uses: ./.github/actions/log-debug-stats
+        with:
+          github-token: ${{ github.token }}

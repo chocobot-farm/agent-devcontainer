@@ -1,0 +1,13 @@
+# The agent-desktop build context is the repository root; keep it small.
+# Only ansible/ and docker/ are actually consumed by the build.
+.git
+.github
+.claude
+.codex
+.devcontainer
+.tmp
+.venv
+py_packages
+node_modules
+**/__pycache__
+**/*.pyc
