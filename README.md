@@ -80,6 +80,10 @@ This repository's own [`.github/renovate.json`](.github/renovate.json) is the
 reference implementation, including how it groups the `agent-desktop` and
 `ubuntu-ansible` digest bumps into a single pull request.
 
+#### Renovate dashboard
+
+The [Renovate dashboard is here](https://developer.mend.io/github/chocobot-farm/agent-devcontainer).
+
 ## Enabling the firewall
 
 The firewall is installed in the image but does nothing until you ask for it.
