@@ -79,14 +79,14 @@ the folder is trusted:
 ```jsonc
 {
   "extraKnownMarketplaces": {
-    "chocobot": {
+    "chocobot-farm": {
       "source": {
         "source": "github",
         "repo": "chocobot-farm/agent-devcontainer",
       },
     },
   },
-  "enabledPlugins": { "agentdev@chocobot": true },
+  "enabledPlugins": { "agentdev@chocobot-farm": true },
 }
 ```
 

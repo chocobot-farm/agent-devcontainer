@@ -37,7 +37,7 @@ plugin root, never inside `.claude-plugin/`.
 
 ```jsonc
 {
-  "name": "chocobot",
+  "name": "chocobot-farm",
   "plugins": [
     {
       "name": "agentdev",
@@ -157,14 +157,14 @@ Add to this repository's own `.claude/settings.json`:
 ```jsonc
 {
   "extraKnownMarketplaces": {
-    "chocobot": {
+    "chocobot-farm": {
       "source": {
         "source": "github",
         "repo": "chocobot-farm/agent-devcontainer",
       },
     },
   },
-  "enabledPlugins": { "agentdev@chocobot": true },
+  "enabledPlugins": { "agentdev@chocobot-farm": true },
 }
 ```
 
