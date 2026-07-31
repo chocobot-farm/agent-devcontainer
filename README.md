@@ -127,9 +127,9 @@ docker run --rm local/agent-desktop bash -lc '
 Ansible alone, without a build:
 
 ```bash
-uv run ansible-lint ansible/
-uv run ansible-playbook --syntax-check \
-  -i ansible/inventories/localhost.yml ansible/playbooks/setup-dev.yml
+cd ansible
+uv run ansible-lint .
+uv run ansible-playbook --syntax-check playbooks/setup-dev.yml
 ```
 
 ## The agent catalog

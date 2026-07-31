@@ -43,7 +43,7 @@ CLAUDE_CODE_PLUGIN_CACHE_DIR=/opt/claude-seed \
 
 ### 1. Extend the `agentic_tools` role
 
-The seed belongs in `ansible/playbooks/roles/agentic_tools`, which already owns
+The seed belongs in `ansible/roles/agentic_tools`, which already owns
 the Claude Code and Codex installs. Add to `defaults/main.yml`, prefixed per the
 repository's role-variable convention:
 
@@ -130,8 +130,8 @@ different version.
 
 ## Test plan
 
-- `uv run ansible-lint ansible/` and
-  `uv run ansible-playbook --syntax-check -i ansible/inventories/localhost.yml ansible/playbooks/setup-dev.yml`.
+- `(cd ansible && uv run ansible-lint .)` and
+  `(cd ansible && uv run ansible-playbook --syntax-check playbooks/setup-dev.yml)`.
 - Local image build per the README, then:
 
   ```bash

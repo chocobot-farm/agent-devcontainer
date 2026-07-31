@@ -16,8 +16,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=bind,readonly,target=/provision \
     apt-get update \
-    && ansible-playbook /provision/ansible/playbooks/setup-dev.yml \
-      -i /provision/ansible/inventories/localhost.yml \
+    && cd /provision/ansible \
+    && ansible-playbook playbooks/setup-dev.yml \
       -vvv \
       -e "workspace_folder=$WORKSPACE_FOLDER \
            install_xpra=true \
