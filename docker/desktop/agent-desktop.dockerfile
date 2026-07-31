@@ -12,6 +12,9 @@ ARG WORKSPACE_FOLDER=/workspaces/project
 # The build context is the repository root, bind-mounted read-only rather than
 # COPY'd so none of the provisioning sources end up in the final layer. Omitting
 # `source` on the bind mount takes the whole context.
+# `cd` (not WORKDIR) into /provision/ansible: that path only exists for the
+# duration of this RUN's bind mount, so WORKDIR would break later build steps.
+# hadolint ignore=DL3003
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=bind,readonly,target=/provision \
