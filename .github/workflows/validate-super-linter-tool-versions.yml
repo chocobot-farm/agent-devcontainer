@@ -1,4 +1,4 @@
-name: Validate Super-Linter tool versions
+name: Validate super-linter tool versions
 
 on:
   pull_request:
@@ -76,7 +76,7 @@ jobs:
           github-token: ${{ github.token }}
 
   finished:
-    name: Tool Versions Validation finished
+    name: Tool versions validation finished
     needs: [paths-filter, validate]
     runs-on: ubuntu-latest
     permissions:
