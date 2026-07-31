@@ -172,11 +172,11 @@ churning.
 ### F8 — Nothing rebuilds a consumer when the base image moves (priority: high, resolved)
 
 Carried forward unchanged from the Dr.QP spike's F7. A consumer pinned to
-`agent-desktop` went stale silently. Resolved by spec
-[`01`](01-base-image-version-pinning.md): both GHCR images are now pinned by
-tag-plus-digest, and `.github/renovate.json` bumps them as a single grouped pull
-request. Spec `02` still needs to add a `customManager` there for the plugin
-`version` pin it introduces; that section does not exist yet.
+`agent-desktop` went stale silently. Resolved by spec `01`: both GHCR images
+are now pinned by tag-plus-digest, and `.github/renovate.json` bumps them as a
+single grouped pull request. Spec `02` still needs to add a `customManager`
+there for the plugin `version` pin it introduces; that section does not exist
+yet.
 
 ### F9 — Codex does not understand Claude plugins (priority: medium)
 
