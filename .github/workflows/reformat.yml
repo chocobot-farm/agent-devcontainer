@@ -92,23 +92,30 @@ jobs:
         with:
           event-name: ${{ inputs.caller_event_name }}
           extra-filter: |
+            - .clang-format
+            - .github/actions/log-debug-stats/**
             - .github/super-linter-*.env
             - .github/workflows/reformat.yml
+            - .github/workflows/reformat.yml
+            - .github/workflows/validate-super-linter-tool-versions.yml
+            - .pre-commit-config.yaml
+            - '**/*.bash'
+            - '**/*.Dockerfile'
+            - '**/*.json'
+            - '**/*.markdown'
+            - '**/*.md'
+            - '**/*.sh'
+            - '**/*.yaml'
+            - '**/*.yml'
+            - '**/*.zsh'
+            - '**/Dockerfile.*'
+            - '**/Dockerfile'
             - ansible/**
+            - plugin/bin/super-linter-defaults.sh
+            - plugin/bin/super-linter-local.sh
             - py_packages/**/*.py
             - scripts/**/*.py
-            - .clang-format
-            - '**/*.md'
-            - '**/*.markdown'
-            - '**/*.yml'
-            - '**/*.yaml'
-            - '**/*.json'
-            - '**/*.sh'
-            - '**/*.bash'
-            - '**/*.zsh'
-            - '**/Dockerfile'
-            - '**/Dockerfile.*'
-            - '**/*.Dockerfile'
+            - scripts/validate-super-linter-tool-versions.sh
 
       - name: Override pass for draft AI PRs
         id: override
