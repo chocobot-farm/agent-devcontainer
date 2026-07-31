@@ -207,9 +207,6 @@ jobs:
           ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: false
           ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: true
 
-      - name: Validate pre-commit and local tool versions
-        run: scripts/validate-super-linter-tool-versions.sh
-
       - name: Create Super-Linter patch
         id: patch
         run: |
@@ -255,6 +252,9 @@ jobs:
         with:
           name: super-linter-logs
           path: super-linter.log
+
+      - name: Validate pre-commit and local tool versions
+        run: scripts/validate-super-linter-tool-versions.sh
 
       - name: Log debug stats
         if: ${{ always() }}
