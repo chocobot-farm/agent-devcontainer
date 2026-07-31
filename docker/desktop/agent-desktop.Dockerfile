@@ -1,4 +1,4 @@
-ARG FROM_IMAGE=ghcr.io/chocobot-farm/ubuntu-ansible:edge@sha256:b55019808530fd80fcd636d515fce4a0833e8b9f96303d781ca7f734fc389150
+ARG FROM_IMAGE=ghcr.io/chocobot-farm/ubuntu-ansible:edge@sha256:568b27461654440054d770b3f9c6e34377cb5f5373acd074fb7e67bf903fb049
 
 FROM $FROM_IMAGE
 
