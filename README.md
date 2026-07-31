@@ -108,7 +108,7 @@ Manage it directly with `/start-xpra.sh --background`, `--stop`, or
 
 ## Provisioning knobs
 
-`docker/desktop/agent-desktop.dockerfile` enables all four capability roles. To
+`docker/desktop/agent-desktop.Dockerfile` enables all four capability roles. To
 build a leaner image, flip them off — they default to `false` in
 `ansible/playbooks/group_vars/all.yml`:
 
@@ -131,7 +131,7 @@ and `docker/bin/gh`.
 docker build -t local/ubuntu-ansible docker/ansible
 
 docker buildx build \
-  -f docker/desktop/agent-desktop.dockerfile \
+  -f docker/desktop/agent-desktop.Dockerfile \
   --build-arg FROM_IMAGE=local/ubuntu-ansible \
   -t local/agent-desktop .
 ```

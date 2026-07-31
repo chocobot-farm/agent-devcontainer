@@ -108,6 +108,7 @@ jobs:
             - '**/*.zsh'
             - '**/Dockerfile'
             - '**/Dockerfile.*'
+            - '**/*.Dockerfile'
 
       - name: Override pass for draft AI PRs
         id: override
