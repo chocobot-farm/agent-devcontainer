@@ -36,7 +36,7 @@ jobs:
         id: filter
         with:
           extra-filter: |
-            - plugin/**
+            - .agents/plugins/agentdev/**
             - .claude-plugin/**
             - .codex/agents/**
             - .github/workflows/validate-agent-files.yml

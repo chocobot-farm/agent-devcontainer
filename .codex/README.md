@@ -1,9 +1,9 @@
 # `.codex/` — Codex repository configuration
 
-The shared agent catalog lives entirely in [`plugin/`](../plugin/) and is
+The shared agent catalog lives entirely in [`.agents/plugins/agentdev/`](../.agents/plugins/agentdev/) and is
 packaged for Codex by
-[`plugin/.codex-plugin/plugin.json`](../plugin/.codex-plugin/plugin.json).
-Codex discovers the canonical `plugin/agents/` and `plugin/skills/` files
+[`.agents/plugins/agentdev/.codex-plugin/plugin.json`](../.agents/plugins/agentdev/.codex-plugin/plugin.json).
+Codex discovers the canonical `.agents/plugins/agentdev/agents/` and `.agents/plugins/agentdev/skills/` files
 directly, so this directory no longer contains generated trampolines or a
 skills symlink.
 

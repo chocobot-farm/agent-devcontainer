@@ -160,42 +160,42 @@ uv run ansible-playbook --syntax-check playbooks/setup-dev.yml
 
 ## The agent catalog
 
-The catalog ships as the `agentdev` Claude Code and Codex plugin in [`plugin/`](plugin/) —
+The catalog ships as the `agentdev` Claude Code and Codex plugin in [`.agents/plugins/agentdev/`](.agents/plugins/agentdev/) —
 four agents (Principal Engineer plus the TDD Red/Green/Refactor trio) and 21
 skills covering git, pull requests, review, CI log extraction, formatting, and
-container/Codespace escalation. **[plugin/README.md](plugin/README.md) documents
+container/Codespace escalation. **[`.agents/plugins/agentdev/README.md`](.agents/plugins/agentdev/README.md) documents
 what it contains and how to enable it in another repository**; the rest of this
 section is about developing it here.
 
 ### Source of truth
 
-`plugin/` is canonical. Everything else is derived:
+`.agents/plugins/agentdev/` is canonical. Everything else is derived:
 
-| Path                               | Role                                                          |
-| ---------------------------------- | ------------------------------------------------------------- |
-| `plugin/`                          | Canonical agents, skills, hooks, and `bin/` scripts.          |
-| `plugin/.claude-plugin/`           | Packages the catalog for Claude Code.                         |
-| `plugin/.codex-plugin/`            | Packages the same catalog for Codex.                          |
-| `.claude-plugin/marketplace.json`  | Publishes the plugin so other repositories can consume it.    |
-| `.agents/plugins/marketplace.json` | Publishes the repo-local Codex marketplace entry.             |
-| `plugins/agentdev`                 | Resolves that entry to the canonical `plugin/` tree.          |
-| `.claude/settings.json`            | This repository enabling its own plugin from the marketplace. |
+| Path                                       | Role                                                                   |
+| ------------------------------------------ | ---------------------------------------------------------------------- |
+| `.agents/plugins/agentdev/`                | Canonical agents, skills, hooks, and `bin/` scripts.                   |
+| `.agents/plugins/agentdev/.claude-plugin/` | Packages the catalog for Claude Code.                                  |
+| `.agents/plugins/agentdev/.codex-plugin/`  | Packages the same catalog for Codex.                                   |
+| `.claude-plugin/marketplace.json`          | Publishes the plugin so other repositories can consume it.             |
+| `.agents/plugins/marketplace.json`         | Publishes the repo-local Codex marketplace entry.                      |
+| `plugins/agentdev`                         | Resolves that entry to the canonical `.agents/plugins/agentdev/` tree. |
+| `.claude/settings.json`                    | This repository enabling its own plugin from the marketplace.          |
 
 ### Editing rules
 
-- **Edit files under `plugin/`, never under `.codex/`.**
+- **Edit files under `.agents/plugins/agentdev/`, never under `.codex/`.**
 - Codex consumes agents and skills directly from the canonical plugin tree; do
   not recreate `.codex/agents/` trampolines or a `.codex/skills` symlink.
-- Use the [create-agent](plugin/skills/create-agent/SKILL.md) and
-  [create-skill](plugin/skills/create-skill/SKILL.md) skills — they encode the
+- Use the [create-agent](.agents/plugins/agentdev/skills/create-agent/SKILL.md) and
+  [create-skill](.agents/plugins/agentdev/skills/create-skill/SKILL.md) skills — they encode the
   frontmatter, discovery-description, and validation rules.
 - **Never write a repository-relative catalog path** such as
   `.claude/skills/<name>/...`: inside a plugin it resolves nowhere. Use
   `${CLAUDE_SKILL_DIR}/...` for a path within the same skill, and a namespaced
   invocation for a sibling skill.
-- A script in `plugin/bin/` must not assume it sits inside the repository it
+- A script in `.agents/plugins/agentdev/bin/` must not assume it sits inside the repository it
   operates on. Resolve the target repository from the working directory (see
-  [`plugin/bin/__utils.sh`](plugin/bin/__utils.sh)).
+  [`.agents/plugins/agentdev/bin/__utils.sh`](.agents/plugins/agentdev/bin/__utils.sh)).
 - Bump `version` in both plugin manifests and the marketplace entry together.
 
 [AGENTS.md](AGENTS.md) has the repository conventions agents follow.
@@ -225,7 +225,7 @@ docker/
   bin/gh         transparent gh auth wrapper baked onto PATH
 ansible/         inventories + setup-dev.yml + 18 roles
 scripts/         devcontainer lifecycle hooks and repository plumbing
-plugin/          the agentdev plugin: agents, skills, hooks, bin/  (canonical)
+.agents/plugins/agentdev/  the agentdev plugin: agents, skills, hooks, bin/  (canonical)
   .claude-plugin/  Claude Code package manifest
   .codex-plugin/   Codex package manifest
 .claude-plugin/  marketplace manifest publishing the plugin

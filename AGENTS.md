@@ -16,7 +16,7 @@ NEVER use GitHub API or GitHub MCP tools to update branch refs or push branch co
 
 ### When in Doubt
 
-Consult the **[Principal Engineer](/plugin/agents/principal-engineer.agent.md)** agent for architecture, design decisions, and implementation strategies.
+Consult the **[Principal Engineer](/.agents/plugins/agentdev/agents/principal-engineer.agent.md)** agent for architecture, design decisions, and implementation strategies.
 
 ## Coding Conventions
 
@@ -52,11 +52,11 @@ Consult the **[Principal Engineer](/plugin/agents/principal-engineer.agent.md)**
 
 ## Catalog Locations
 
-- **Claude** (canonical source of truth): the `agentdev` plugin — `plugin/agents/`, `plugin/skills/`, `plugin/hooks/`, `plugin/bin/`. Skills are namespaced: `/agentdev:<skill-name>`
-- **Codex**: the same `plugin/` tree, packaged by `plugin/.codex-plugin/plugin.json`; Codex discovers `plugin/agents/` and `plugin/skills/` directly
+- **Claude** (canonical source of truth): the `agentdev` plugin — `.agents/plugins/agentdev/agents/`, `.agents/plugins/agentdev/skills/`, `.agents/plugins/agentdev/hooks/`, `.agents/plugins/agentdev/bin/`. Skills are namespaced: `/agentdev:<skill-name>`
+- **Codex**: the same `.agents/plugins/agentdev/` tree, packaged by `.agents/plugins/agentdev/.codex-plugin/plugin.json`; Codex discovers `.agents/plugins/agentdev/agents/` and `.agents/plugins/agentdev/skills/` directly
 - **This repository's own config**: `.claude/settings.json` only; it enables the plugin from the marketplace declared in `.claude-plugin/marketplace.json`. `settings.json` is strict JSON — no comments, no trailing commas
 
-Update `plugin/` sources directly. Never write a repository-relative catalog path inside the plugin — use `${CLAUDE_SKILL_DIR}/...` for a path within a skill and a namespaced invocation for a sibling skill. Keep the Claude and Codex plugin manifest versions aligned when releasing the shared catalog.
+Update `.agents/plugins/agentdev/` sources directly. Never write a repository-relative catalog path inside the plugin — use `${CLAUDE_SKILL_DIR}/...` for a path within a skill and a namespaced invocation for a sibling skill. Keep the Claude and Codex plugin manifest versions aligned when releasing the shared catalog.
 
 **Edit `AGENTS.md`; `CLAUDE.md` only includes it (`@AGENTS.md`), so changes there cover all agents.**
 

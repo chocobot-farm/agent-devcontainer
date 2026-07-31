@@ -38,7 +38,7 @@ runs:
           - ansible/**
           - docker/**
           - scripts/**
-          - plugin/bin/**
+          - .agents/plugins/agentdev/bin/**
         YAML
           if [ -n "$EXTRA" ]; then
             printf '%s\n' "$EXTRA"

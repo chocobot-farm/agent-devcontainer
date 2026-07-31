@@ -13,7 +13,7 @@ pip install -e .
 ```bash
 validate_agent_files                     # Validate skills, agents, and prompts under .
 validate_agent_files plugin              # Validate the agentdev plugin catalog
-validate_agent_files plugin/skills plugin/agents   # Validate multiple paths
+validate_agent_files .agents/plugins/agentdev/skills .agents/plugins/agentdev/agents
 validate_agent_files --kind skills       # Validate only skill files
 validate_agent_files --kind agents       # Validate only agent files
 validate_agent_files --kind prompts      # Validate only prompt files

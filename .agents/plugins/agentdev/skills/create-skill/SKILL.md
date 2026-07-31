@@ -11,7 +11,7 @@ the repository.
 
 ## Work in the Canonical Location
 
-Create or update repository skills under `plugin/skills/<skill-name>/`, the
+Create or update repository skills under `.agents/plugins/agentdev/skills/<skill-name>/`, the
 `agentdev` plugin catalog. Codex discovers the same directory through the plugin
 manifest, so never create a separate Codex copy. Use a personal skill directory
 only when the user explicitly requests a user-wide skill.

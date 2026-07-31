@@ -29,7 +29,7 @@ and no trailing commas (unlike `devcontainer.json`):
 
 Restart Claude Code (or run `/plugin`) and the catalog is available.
 
-The same `plugin/` directory is packaged for Codex by
+The same `.agents/plugins/agentdev/` directory is packaged for Codex by
 `.codex-plugin/plugin.json`; its agents and skills remain the same canonical
 files. This repository's devcontainer registers the local marketplace and
 installs the plugin automatically during `postCreateCommand`; start a new Codex
@@ -112,6 +112,6 @@ skill needs.
 
 ## Contributing
 
-`plugin/` is the canonical source for the catalog, and this repository is where
+`.agents/plugins/agentdev/` is the canonical source for the catalog, and this repository is where
 it is developed. See the [repository README](../README.md#the-agent-catalog) for
 the editing rules, the `.codex/` mirror, and how to validate a change.

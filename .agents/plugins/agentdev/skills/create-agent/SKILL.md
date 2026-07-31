@@ -12,7 +12,7 @@ Instructions for creating effective and maintainable custom agents (subagents) t
 - Target audience: Developers creating custom agents for Claude Code
 - File format: Markdown with YAML frontmatter
 - File naming convention: lowercase with hyphens, `.agent.md` suffix (e.g., `test-specialist.agent.md`)
-- Location: `plugin/agents/` (the `agentdev` plugin catalog, canonical in this repository), a consuming project's own project-level agents directory, `~/.claude/agents/` (personal, user-wide)
+- Location: `.agents/plugins/agentdev/agents/` (the `agentdev` plugin catalog, canonical in this repository), a consuming project's own project-level agents directory, `~/.claude/agents/` (personal, user-wide)
 - Purpose: Define specialized agents with tailored expertise, tools, and instructions for specific tasks
 - Official documentation: https://code.claude.com/docs/en/sub-agents
 
@@ -139,7 +139,7 @@ Prompt: Work on issue #123 in py_packages/example_package.
 ### File Structure
 
 - [ ] Filename follows lowercase-with-hyphens convention with `.agent.md` suffix
-- [ ] File placed in `plugin/agents/`
+- [ ] File placed in `.agents/plugins/agentdev/agents/`
 - [ ] Relative links to skills (for example,
       `../skills/create-skill/SKILL.md`) and sibling agents resolve
 
@@ -157,14 +157,14 @@ Prompt: Work on issue #123 in py_packages/example_package.
 - ❌ Referencing tools that don't exist in Claude Code (tool aliases from other assistants)
 - ❌ Assuming the sub-agent can see the parent conversation — it can't; pass context explicitly
 - ❌ Creating a separate Codex copy instead of editing the canonical
-  `plugin/agents/` spec
+  `.agents/plugins/agentdev/agents/` spec
 - ❌ Vague, ambiguous instructions or conflicting guidelines
 - ❌ Using spaces or special characters in filenames
 
 ## Testing and Validation
 
 1. Create the agent file with proper frontmatter
-2. Run `uv run validate_agent_files plugin/agents --kind agents --ci` (also
+2. Run `uv run validate_agent_files .agents/plugins/agentdev/agents --kind agents --ci` (also
    enforced by pre-commit and CI)
 3. Test with representative tasks: explicit invocation ("Use the TDD Red
    agent to…") and automatic delegation
@@ -177,4 +177,4 @@ Prompt: Work on issue #123 in py_packages/example_package.
 
 - [Claude Code subagents documentation](https://code.claude.com/docs/en/sub-agents)
 - [create-skill](../create-skill/SKILL.md) — for creating skills
-- Existing agents in `plugin/agents/` — use as reference implementations
+- Existing agents in `.agents/plugins/agentdev/agents/` — use as reference implementations
