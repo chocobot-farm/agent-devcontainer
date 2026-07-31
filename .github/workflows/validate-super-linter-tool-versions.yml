@@ -76,7 +76,7 @@ jobs:
           github-token: ${{ github.token }}
 
   finished:
-    name: Validation finished
+    name: Tool Versions Validation finished
     needs: [paths-filter, validate]
     runs-on: ubuntu-latest
     permissions:
