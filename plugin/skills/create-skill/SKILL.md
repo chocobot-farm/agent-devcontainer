@@ -12,9 +12,9 @@ the repository.
 ## Work in the Canonical Location
 
 Create or update repository skills under `plugin/skills/<skill-name>/`, the
-`agentdev` plugin catalog. `.codex/skills/` is a symlink to that directory, so never
-copy a skill into either of them. Use a personal skill directory only when the
-user explicitly requests a user-wide skill.
+`agentdev` plugin catalog. Codex discovers the same directory through the plugin
+manifest, so never create a separate Codex copy. Use a personal skill directory
+only when the user explicitly requests a user-wide skill.
 
 For an existing skill, read its `SKILL.md` and every resource it directly
 references before editing. Preserve its directory and frontmatter `name` unless

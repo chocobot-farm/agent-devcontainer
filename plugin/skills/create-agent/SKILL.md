@@ -1,6 +1,6 @@
 ---
 name: create-agent
-description: Create or update repository Claude Code subagents and matching Codex trampolines. Use when adding an agent in the agentdev plugin catalog, defining its delegation scope or tools, or syncing its .codex/agents wrapper.
+description: Create or update repository subagents shared by Claude Code and Codex. Use when adding an agent in the agentdev plugin catalog or defining its delegation scope, tools, and instructions.
 ---
 
 # Create Custom Agent
@@ -16,7 +16,9 @@ Instructions for creating effective and maintainable custom agents (subagents) t
 - Purpose: Define specialized agents with tailored expertise, tools, and instructions for specific tasks
 - Official documentation: https://code.claude.com/docs/en/sub-agents
 
-Claude Code discovers every `*.md` file in a plugin's `agents/` directory; this repository uses the `.agent.md` suffix so agent specs are easy to distinguish and validate. Codex consumes the same specs through minimal trampoline files in `.codex/agents/` (see "Codex Trampolines" below).
+Claude Code and Codex discover every `*.md` file in the plugin's `agents/`
+directory; this repository uses the `.agent.md` suffix so agent specs are easy
+to distinguish and validate.
 
 ## Agent Frontmatter
 
@@ -115,25 +117,6 @@ Prompt: Work on issue #123 in py_packages/example_package.
         Return: test files created, how each test fails, open questions.
 ```
 
-## Codex Trampolines
-
-Codex discovers agents through `.codex/agents/*.md`. Each trampoline is a minimal wrapper that delegates to the canonical Claude spec:
-
-```markdown
----
-name: TDD Red
-description: <same description as the canonical agent>
----
-
-Read and follow all instructions in `plugin/agents/tdd-red.agent.md`, adapting tool names to the Codex environment.
-```
-
-The `name` and `description` must match the canonical agent's frontmatter
-**exactly** — `validate_agent_files` fails the build on any drift, and on orphan
-trampolines with no matching `plugin/agents/<stem>.agent.md`.
-
-When creating or renaming an agent, add or update the matching trampoline. Keep `name` and `description` in sync with the canonical file; everything else lives only in `plugin/agents/`.
-
 ## Agent Creation Checklist
 
 ### Frontmatter
@@ -157,7 +140,6 @@ When creating or renaming an agent, add or update the matching trampoline. Keep 
 
 - [ ] Filename follows lowercase-with-hyphens convention with `.agent.md` suffix
 - [ ] File placed in `plugin/agents/`
-- [ ] Matching Codex trampoline exists in `.codex/agents/`
 - [ ] Relative links to skills (for example,
       `../skills/create-skill/SKILL.md`) and sibling agents resolve
 
@@ -174,7 +156,8 @@ When creating or renaming an agent, add or update the matching trampoline. Keep 
 - ❌ Granting all tools to a read-only reviewer agent
 - ❌ Referencing tools that don't exist in Claude Code (tool aliases from other assistants)
 - ❌ Assuming the sub-agent can see the parent conversation — it can't; pass context explicitly
-- ❌ Editing a Codex trampoline instead of the canonical `plugin/agents/` spec
+- ❌ Creating a separate Codex copy instead of editing the canonical
+  `plugin/agents/` spec
 - ❌ Vague, ambiguous instructions or conflicting guidelines
 - ❌ Using spaces or special characters in filenames
 

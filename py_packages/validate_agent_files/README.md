@@ -25,9 +25,7 @@ validate_agent_files --ci                # CI mode (nonzero exit on errors)
 
 - `skills-ref` is a required dependency and the primary validator for skill files.
 - Local validation still checks repository-specific rules such as duplicate skill names,
-  cross-references, agent handoffs, prompt `#file:` references, and Codex trampoline sync
-  (each `plugin/agents/<stem>.agent.md` must have a `.codex/agents/<stem>.md` trampoline
-  with a matching `name` and `description`, and no orphan trampolines).
+  cross-references, agent handoffs, and prompt `#file:` references.
 - When a validated path sits inside a Claude Code plugin, the plugin manifest and its
   marketplace entry must parse and agree on `version`, and no skill body may contain a
   literal repository-relative catalog path (`.claude/skills/...`), which does not resolve
