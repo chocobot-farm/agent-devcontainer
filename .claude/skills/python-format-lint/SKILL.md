@@ -6,7 +6,7 @@ description: 'Format and lint Python in this repository with ruff — autofixes 
 # Python Format & Lint (ruff)
 
 This repository uses **ruff** for both formatting and linting, configured by
-[ruff.toml](../../../ruff.toml) (line-length 99, single quotes, isort with
+[.ruff.toml](../../../.ruff.toml) (line-length 99, single quotes, isort with
 `force-sort-within-sections`).
 
 There is exactly one ruff configuration and three places that run it:
@@ -17,7 +17,7 @@ There is exactly one ruff configuration and three places that run it:
 | Super-Linter (`FIX_PYTHON_RUFF*`)        | Formats and autofixes in CI, then re-checks and commits the patch | `reformat.yml` in CI    |
 | `scripts/python-lint-check.sh`           | Non-mutating `ruff format --check` + `ruff check`                 | Manual, fast, no Docker |
 
-**Import sorting needs no separate pass.** `I` is in `ruff.toml`'s `select`
+**Import sorting needs no separate pass.** `I` is in `.ruff.toml`'s `select`
 list, so a single `ruff check --fix` sorts imports too — that is why there is no
 standalone isort step in pre-commit, in Super-Linter, or in any script.
 
@@ -65,7 +65,7 @@ not match this repo and do not fail CI.
    autofix must be fixed in the source. Use a targeted `# noqa: <rule>` **only**
    for a formatter-required incompatibility (e.g. `E203` on a slice); never
    disable a rule for a whole file or package. For import-group disagreements,
-   adjust `lint.isort` in [ruff.toml](../../../ruff.toml) rather than sprinkling
+   adjust `lint.isort` in [.ruff.toml](../../../.ruff.toml) rather than sprinkling
    `noqa`.
 
 4. **Confirm clean.** Re-run step 1 until it exits zero with no output.
@@ -76,12 +76,12 @@ not match this repo and do not fail CI.
 | --------------------------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------- |
 | `flake8` locally flags `E501` at 79 chars but CI is green | You ran stock `flake8`, not ruff                | Use `scripts/python-lint-check.sh`; the repo limit is 99              |
 | CI committed a formatting change you did not expect       | Super-Linter's autofix pass runs `ruff --fix`   | Run pre-commit locally before pushing so the fix lands in your commit |
-| Formatter keeps fighting your import order                | isort settings live in `ruff.toml`              | Adjust `lint.isort` there; do not add a separate isort pass           |
+| Formatter keeps fighting your import order                | isort settings live in `.ruff.toml`             | Adjust `lint.isort` there; do not add a separate isort pass           |
 | `ruff: command not found`                                 | The uv environment is not synced                | Run `scripts/uv-sync.sh` (or `uv sync`); the script activates `.venv` |
 | Super-Linter reports ruff findings the local check misses | Version skew between `.venv` ruff and the image | Run `scripts/validate-super-linter-tool-versions.sh`                  |
 
 ## References
 
 - Python coding conventions: [AGENTS.md](../../../AGENTS.md) (Python section)
-- ruff configuration: [ruff.toml](../../../ruff.toml)
+- ruff configuration: [.ruff.toml](../../../.ruff.toml)
 - Super-Linter flag generation: [super-linter-env.sh](../../../scripts/super-linter-env.sh)
