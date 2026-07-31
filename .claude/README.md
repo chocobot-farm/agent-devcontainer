@@ -9,6 +9,10 @@ remains in this directory is the configuration a project keeps for itself.
 | --------------- | ------------------------------------------------------------------------- |
 | `settings.json` | Permissions, additional directories, known marketplaces, enabled plugins. |
 
+`settings.json` must be strict JSON: no comments and no trailing commas. Claude
+Code rejects the file outright if it does not parse, which silently drops every
+permission and the plugin registration with it.
+
 This repository consumes its own plugin, which is the only way the consumer path
 stays tested: `settings.json` registers the `chocobot-farm` marketplace and
 enables `agentdev@chocobot-farm`. Skills therefore resolve namespaced, as

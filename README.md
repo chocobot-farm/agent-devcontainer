@@ -69,10 +69,10 @@ an equivalent) at the repository with a config that includes the `docker` (or
 `docker-compose`/`dockerfile`, depending on where the pin lives) manager, for
 example:
 
-```json
+```jsonc
 // renovate.json
 {
-  "extends": ["config:recommended"]
+  "extends": ["config:recommended"],
 }
 ```
 
@@ -165,19 +165,20 @@ Red/Green/Refactor trio) and 21 skills covering git, pull requests, review, CI l
 extraction, formatting, and container/Codespace escalation.
 
 Consume it from another repository by adding one block to its
-`.claude/settings.json`:
+`.claude/settings.json`. That file is parsed as strict JSON — no comments, no
+trailing commas — unlike `devcontainer.json`:
 
-```jsonc
+```json
 {
   "extraKnownMarketplaces": {
     "chocobot-farm": {
       "source": {
         "source": "github",
-        "repo": "chocobot-farm/agent-devcontainer",
-      },
-    },
+        "repo": "chocobot-farm/agent-devcontainer"
+      }
+    }
   },
-  "enabledPlugins": { "agentdev@chocobot-farm": true },
+  "enabledPlugins": { "agentdev@chocobot-farm": true }
 }
 ```
 

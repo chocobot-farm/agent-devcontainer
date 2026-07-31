@@ -54,7 +54,7 @@ Consult the **[Principal Engineer](/plugin/agents/principal-engineer.agent.md)**
 
 - **Claude** (canonical source of truth): the `agentdev` plugin — `plugin/agents/`, `plugin/skills/`, `plugin/hooks/`, `plugin/bin/`. Skills are namespaced: `/agentdev:<skill-name>`
 - **Codex**: `.codex/agents/` (trampolines to `plugin/agents/`), `.codex/skills` (symlink to `plugin/skills`)
-- **This repository's own config**: `.claude/settings.json` only; it enables the plugin from the marketplace declared in `.claude-plugin/marketplace.json`
+- **This repository's own config**: `.claude/settings.json` only; it enables the plugin from the marketplace declared in `.claude-plugin/marketplace.json`. `settings.json` is strict JSON — no comments, no trailing commas
 
 Update `plugin/` sources; the symlink picks up changes automatically. Never write a repository-relative catalog path inside the plugin — use `${CLAUDE_SKILL_DIR}/...` for a path within a skill and a namespaced invocation for a sibling skill. When adding or renaming an agent, or editing its description, also update its `.codex/agents/` trampoline to match (CI enforces this via `validate_agent_files`).
 

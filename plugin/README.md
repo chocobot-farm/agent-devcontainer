@@ -15,19 +15,20 @@ repository root, so other projects consume it by version instead of by copy.
 
 ## Consuming it
 
-Add to the consuming repository's `.claude/settings.json`:
+Add to the consuming repository's `.claude/settings.json` (strict JSON: no
+comments, no trailing commas):
 
-```jsonc
+```json
 {
   "extraKnownMarketplaces": {
     "chocobot-farm": {
       "source": {
         "source": "github",
-        "repo": "chocobot-farm/agent-devcontainer",
-      },
-    },
+        "repo": "chocobot-farm/agent-devcontainer"
+      }
+    }
   },
-  "enabledPlugins": { "agentdev@chocobot-farm": true },
+  "enabledPlugins": { "agentdev@chocobot-farm": true }
 }
 ```
 

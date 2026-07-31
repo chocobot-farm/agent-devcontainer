@@ -75,19 +75,20 @@ travels with the catalog rather than being copied per repository.
 
 `extraKnownMarketplaces` plus `enabledPlugins` in a repository's
 `.claude/settings.json` registers the marketplace and enables the plugin when
-the folder is trusted:
+the folder is trusted. The file must be strict JSON — no comments, no trailing
+commas:
 
-```jsonc
+```json
 {
   "extraKnownMarketplaces": {
     "chocobot-farm": {
       "source": {
         "source": "github",
-        "repo": "chocobot-farm/agent-devcontainer",
-      },
-    },
+        "repo": "chocobot-farm/agent-devcontainer"
+      }
+    }
   },
-  "enabledPlugins": { "agentdev@chocobot-farm": true },
+  "enabledPlugins": { "agentdev@chocobot-farm": true }
 }
 ```
 
