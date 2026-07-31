@@ -178,6 +178,7 @@ section is about developing it here.
 | `plugin/.codex-plugin/`            | Packages the same catalog for Codex.                          |
 | `.claude-plugin/marketplace.json`  | Publishes the plugin so other repositories can consume it.    |
 | `.agents/plugins/marketplace.json` | Publishes the repo-local Codex marketplace entry.             |
+| `plugins/agentdev`                 | Resolves that entry to the canonical `plugin/` tree.          |
 | `.claude/settings.json`            | This repository enabling its own plugin from the marketplace. |
 
 ### Editing rules
@@ -228,7 +229,8 @@ plugin/          the agentdev plugin: agents, skills, hooks, bin/  (canonical)
   .claude-plugin/  Claude Code package manifest
   .codex-plugin/   Codex package manifest
 .claude-plugin/  marketplace manifest publishing the plugin
-.agents/plugins/ repo-local Codex marketplace and canonical-plugin symlink
+.agents/plugins/ repo-local Codex marketplace
+plugins/         marketplace links to canonical plugin sources
 .claude/         this repository's own settings.json
 .codex/          repository-specific Codex setup
 py_packages/     validate_agent_files — the agent-catalog validator
