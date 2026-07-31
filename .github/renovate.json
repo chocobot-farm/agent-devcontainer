@@ -4,6 +4,19 @@
   "dockerfile": {
     "managerFilePatterns": ["/(^|/)docker/desktop/agent-desktop\\.Dockerfile$/"]
   },
+  "customManagers": [
+    {
+      "description": "A consuming repository pins the agentdev catalog by version in enabledPlugins; bump it when a new marketplace release is tagged.",
+      "customType": "regex",
+      "managerFilePatterns": ["/(^|/)\\.claude/settings(\\.local)?\\.json$/"],
+      "matchStrings": [
+        "\"(?<depName>[a-z0-9-]+)@chocobot-farm\"\\s*:\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "chocobot-farm/agent-devcontainer",
+      "versioningTemplate": "semver"
+    }
+  ],
   "packageRules": [
     {
       "description": "agent-desktop and ubuntu-ansible are built from one pipeline; bump their digest pins together so a split update can never pair a mismatched image and base.",

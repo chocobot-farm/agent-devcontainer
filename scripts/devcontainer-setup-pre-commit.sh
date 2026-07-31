@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -xeuo pipefail
 
-script_dir=$(dirname "$0")
-source "$script_dir/__utils.sh"
+root_dir="${DEV_WORKSPACE_FOLDER:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
 cd "$root_dir"
 

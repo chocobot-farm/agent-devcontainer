@@ -6,7 +6,7 @@ script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 root_dir=$(cd "$script_dir/.." && pwd)
 pre_commit_config="$root_dir/.pre-commit-config.yaml"
 zizmor_defaults="$root_dir/ansible/roles/dev_tools/defaults/main.yml"
-. "$script_dir/super-linter-defaults.sh"
+. "$root_dir/plugin/bin/super-linter-defaults.sh"
 
 usage()
 {

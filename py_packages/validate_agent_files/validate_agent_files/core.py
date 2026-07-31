@@ -19,7 +19,9 @@ from .loaders import (
 )
 from .types import ValidationIssue, ValidationLevel, ValidationResult
 from .validators.agents import build_known_agent_targets, validate_agent_frontmatter
+from .validators.catalog_paths import validate_catalog_paths
 from .validators.cross_reference import CrossReferenceValidator
+from .validators.plugin_manifest import find_plugin_root, validate_plugin_manifests
 from .validators.prompts import (
     validate_prompt_body,
     validate_prompt_frontmatter,
@@ -90,6 +92,11 @@ class ValidationEngine:
             )
         )
 
+        # Only plugin-hosted skills are affected: outside a plugin the literal
+        # path still resolves, so flagging it would be a false positive.
+        if find_plugin_root(skill_path) is not None:
+            result.issues.extend(validate_catalog_paths(body, line_offset=body_start_line - 1))
+
         return result
 
 
@@ -105,7 +112,7 @@ class CustomizationsValidationEngine:
 
     def validate_paths(self, paths: List[str], kind: str) -> List[ValidationResult]:
         """Validate customization paths as one shared catalog."""
-        results: List[ValidationResult] = []
+        results: List[ValidationResult] = self._validate_plugin_manifests(paths)
 
         if kind in {'all', 'skills'}:
             skill_files = self._unique_files(
@@ -126,6 +133,14 @@ class CustomizationsValidationEngine:
             results.extend(self._validate_prompt_files(prompt_files))
 
         return results
+
+    @staticmethod
+    def _validate_plugin_manifests(paths: List[str]) -> List[ValidationResult]:
+        """Validate the manifests of every plugin the given paths belong to."""
+        plugin_roots = dict.fromkeys(
+            plugin_root for path in paths if (plugin_root := find_plugin_root(path)) is not None
+        )
+        return [validate_plugin_manifests(plugin_root) for plugin_root in plugin_roots]
 
     @staticmethod
     def _unique_files(file_paths: Iterable[str]) -> List[str]:
