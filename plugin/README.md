@@ -1,22 +1,17 @@
-# `agentdev` — the shared agent catalog, as a Claude Code plugin
+# `agentdev` — a shared agent catalog for Claude Code
 
-This directory is the **single source of truth** for the agent catalog. It is a
-Claude Code plugin, published by
-[`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json) at the
-repository root, so other projects consume it by version instead of by copy.
+A Claude Code plugin with the agents, skills, hooks, and helper scripts for
+everyday development work: git and pull requests, code review, CI log triage,
+formatting and linting, and escalating a command to a container or Codespace when
+the host lacks the toolchain.
 
-| Path                         | Purpose                                                          |
-| ---------------------------- | ---------------------------------------------------------------- |
-| `.claude-plugin/plugin.json` | The plugin manifest: name and version.                           |
-| `agents/`                    | Agent specs, one `*.agent.md` per agent. Canonical.              |
-| `skills/`                    | Skills, one `<name>/SKILL.md` per skill (+ optional `scripts/`). |
-| `hooks/hooks.json`           | Claude Code lifecycle hooks, plus the scripts they run.          |
-| `bin/`                       | General-purpose scripts; on `PATH` while the plugin is enabled.  |
+It is published from [chocobot-farm/agent-devcontainer](https://github.com/chocobot-farm/agent-devcontainer),
+so projects consume it by version instead of copying files around.
 
-## Consuming it
+## Installing
 
-Add to the consuming repository's `.claude/settings.json` (strict JSON: no
-comments, no trailing commas):
+Add to your repository's `.claude/settings.json` — strict JSON, so no comments
+and no trailing commas (unlike `devcontainer.json`):
 
 ```json
 {
@@ -32,36 +27,84 @@ comments, no trailing commas):
 }
 ```
 
-Skills are namespaced by the plugin name: `/agentdev:open-pr`,
-`/agentdev:pr-merge`, and so on. There is no opt-out — namespacing is what keeps
-plugins from colliding.
+Restart Claude Code (or run `/plugin`) and the catalog is available.
 
-## Editing rules
+## Using it
 
-- **Edit files here, never in `.codex/`.** `.codex/skills` is a symlink to
-  `plugin/skills`, and `.codex/agents/*.md` are thin trampolines that delegate to
-  the canonical `plugin/agents/*.agent.md`.
-- When you add, rename, or re-describe an agent, update its `.codex/agents/`
-  trampoline so `name` and `description` match exactly. CI enforces this through
-  `validate_agent_files`.
-- Use the [create-agent](skills/create-agent/SKILL.md) and
-  [create-skill](skills/create-skill/SKILL.md) skills — they encode the
-  frontmatter, discovery-description, and validation rules.
-- **Never write a repository-relative catalog path** such as
-  `.claude/skills/<name>/...`: inside a plugin it resolves nowhere. Use
-  `${CLAUDE_SKILL_DIR}/...` for a path within the same skill, and a namespaced
-  invocation for a sibling skill. `validate_agent_files` fails on the literal.
-- A script in `bin/` must not assume it sits inside the repository it operates
-  on. Resolve the target repository from the working directory (see
-  [`bin/__utils.sh`](bin/__utils.sh)).
-- Bump `version` in both `plugin.json` and the marketplace entry together;
-  `validate_agent_files` fails when they disagree.
+Skills are namespaced by the plugin name — `/agentdev:open-pr`,
+`/agentdev:pr-merge`, and so on. There is no opt-out; namespacing is what keeps
+plugins from colliding. Claude also invokes them on its own when a request
+matches a skill's description, so most of the time you just ask for the work.
 
-## Iterating and validating
+Agents are addressed by name (`principal-engineer`, `tdd-red`, `tdd-green`,
+`tdd-refactor`).
 
-```bash
-claude --plugin-dir ./plugin          # override the installed copy for a session
-claude plugin validate ./plugin
-uv run validate_agent_files --recommend plugin
-uv run pytest py_packages/validate_agent_files/tests
-```
+Scripts in `bin/` are on `PATH` while the plugin is enabled, so you can run e.g.
+`super-linter-local.sh` or `python-lint-check.sh` directly in a terminal.
+
+### Agents
+
+| Agent                | Use it for                                               |
+| -------------------- | -------------------------------------------------------- |
+| `principal-engineer` | Architecture, design decisions, implementation strategy. |
+| `tdd-red`            | Write the failing test first.                            |
+| `tdd-green`          | Make the failing test pass with the smallest change.     |
+| `tdd-refactor`       | Clean up once the test is green.                         |
+
+### Skills
+
+#### Pull requests and git
+
+| Skill                               | What it does                                                   |
+| ----------------------------------- | -------------------------------------------------------------- |
+| `/agentdev:git-commit`              | Conventional commit messages from the staged changes.          |
+| `/agentdev:git-merge-resolve`       | Merge a ref and resolve conflicts, escalating when unsure.     |
+| `/agentdev:update-branch`           | Update the current feature branch from its remote base.        |
+| `/agentdev:open-pr`                 | Open a PR from conversation context, with branch sync.         |
+| `/agentdev:generate-pr-description` | Write a PR description from the change analysis.               |
+| `/agentdev:pr-review`               | Full automated review, published as one GitHub review.         |
+| `/agentdev:pr-feedback-resolution`  | Work through review threads, CI failures, and CodeQL findings. |
+| `/agentdev:pr-merge`                | Merge a PR, preferring auto-merge with squash.                 |
+| `/agentdev:pr-merge-chain`          | Merge a linear chain of stacked PRs in dependency order.       |
+
+#### Review, CI, and formatting
+
+| Skill                                       | What it does                                                |
+| ------------------------------------------- | ----------------------------------------------------------- |
+| `/agentdev:code-review-standards`           | The review standards the other review skills apply.         |
+| `/agentdev:extract-github-actions-logs`     | Pull failing job logs out of a workflow run.                |
+| `/agentdev:get-codeql-data`                 | Fetch CodeQL code-scanning alerts.                          |
+| `/agentdev:local-reformat`                  | Run the full reformat workflow locally via Super-Linter.    |
+| `/agentdev:python-format-lint`              | Format and lint Python with this repo's ruff configuration. |
+| `/agentdev:sync-super-linter-tool-versions` | Realign local tools with the pinned Super-Linter image.     |
+
+#### Specs and escalation
+
+| Skill                                | What it does                                                 |
+| ------------------------------------ | ------------------------------------------------------------ |
+| `/agentdev:refine-issue`             | Turn an issue into an implementation-ready spec.             |
+| `/agentdev:implement-agent-specs`    | Implement numbered specs one at a time, in dependency order. |
+| `/agentdev:microvm-sandbox`          | Run a command through the project devcontainer.              |
+| `/agentdev:remote-codespace-session` | Use a GitHub Codespace as a remote build and test machine.   |
+| `/agentdev:create-agent`             | Add or update an agent in this catalog.                      |
+| `/agentdev:create-skill`             | Add or update a skill in this catalog.                       |
+
+### Hooks
+
+A `SessionStart` hook brings up the project devcontainer, but **only** in the
+Claude Code web environment (`CLAUDE_CODE_REMOTE=true`). It is a no-op locally.
+
+## What it expects
+
+Most skills shell out to tools rather than reimplementing them. Depending on
+which ones you use, you will need `git`, an authenticated `gh` CLI, Docker (for
+`microvm-sandbox` and Super-Linter), and `uv` for the Python skills. The
+[devcontainer image](../README.md) in this repository ships all of them
+preinstalled, but the plugin works in any environment that has the tools a given
+skill needs.
+
+## Contributing
+
+`plugin/` is the canonical source for the catalog, and this repository is where
+it is developed. See the [repository README](../README.md#the-agent-catalog) for
+the editing rules, the `.codex/` mirror, and how to validate a change.

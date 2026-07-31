@@ -156,36 +156,53 @@ uv run ansible-playbook --syntax-check playbooks/setup-dev.yml
 
 ## The agent catalog
 
-The catalog ships as the `agentdev` Claude Code plugin in [`plugin/`](plugin/),
-published by the marketplace manifest in
-[`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json). `plugin/` is
-the canonical source; `.codex/skills` is a symlink to it and `.codex/agents/*.md`
-are generated trampolines. Four agents (Principal Engineer plus the TDD
-Red/Green/Refactor trio) and 21 skills covering git, pull requests, review, CI log
-extraction, formatting, and container/Codespace escalation.
+The catalog ships as the `agentdev` Claude Code plugin in [`plugin/`](plugin/) —
+four agents (Principal Engineer plus the TDD Red/Green/Refactor trio) and 21
+skills covering git, pull requests, review, CI log extraction, formatting, and
+container/Codespace escalation. **[plugin/README.md](plugin/README.md) documents
+what it contains and how to enable it in another repository**; the rest of this
+section is about developing it here.
 
-Consume it from another repository by adding one block to its
-`.claude/settings.json`. That file is parsed as strict JSON — no comments, no
-trailing commas — unlike `devcontainer.json`:
+### Source of truth
 
-```json
-{
-  "extraKnownMarketplaces": {
-    "chocobot-farm": {
-      "source": {
-        "source": "github",
-        "repo": "chocobot-farm/agent-devcontainer"
-      }
-    }
-  },
-  "enabledPlugins": { "agentdev@chocobot-farm": true }
-}
+`plugin/` is canonical. Everything else is derived:
+
+| Path                              | Role                                                          |
+| --------------------------------- | ------------------------------------------------------------- |
+| `plugin/`                         | Canonical agents, skills, hooks, and `bin/` scripts.          |
+| `.claude-plugin/marketplace.json` | Publishes the plugin so other repositories can consume it.    |
+| `.codex/skills`                   | Symlink to `plugin/skills`.                                   |
+| `.codex/agents/*.md`              | Trampolines that delegate to `plugin/agents/*.agent.md`.      |
+| `.claude/settings.json`           | This repository enabling its own plugin from the marketplace. |
+
+### Editing rules
+
+- **Edit files under `plugin/`, never under `.codex/`.**
+- When you add, rename, or re-describe an agent, update its `.codex/agents/`
+  trampoline so `name` and `description` match exactly.
+- Use the [create-agent](plugin/skills/create-agent/SKILL.md) and
+  [create-skill](plugin/skills/create-skill/SKILL.md) skills — they encode the
+  frontmatter, discovery-description, and validation rules.
+- **Never write a repository-relative catalog path** such as
+  `.claude/skills/<name>/...`: inside a plugin it resolves nowhere. Use
+  `${CLAUDE_SKILL_DIR}/...` for a path within the same skill, and a namespaced
+  invocation for a sibling skill.
+- A script in `plugin/bin/` must not assume it sits inside the repository it
+  operates on. Resolve the target repository from the working directory (see
+  [`plugin/bin/__utils.sh`](plugin/bin/__utils.sh)).
+- Bump `version` in both `plugin/.claude-plugin/plugin.json` and the marketplace
+  entry together.
+
+[AGENTS.md](AGENTS.md) has the repository conventions agents follow.
+
+### Iterating and validating
+
+```bash
+claude --plugin-dir ./plugin   # override the installed copy for a session
+claude plugin validate ./plugin
 ```
 
-Skills are then namespaced: `/agentdev:open-pr`, `/agentdev:pr-merge`, and so on.
-
-See [plugin/README.md](plugin/README.md) for the editing rules and
-[AGENTS.md](AGENTS.md) for the repository conventions agents follow.
+CI enforces the last two commands; run them before pushing a catalog change:
 
 ```bash
 uv sync --all-groups
