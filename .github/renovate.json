@@ -1,6 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
+  "rebaseWhen": "behind-base-branch",
   "dockerfile": {
     "managerFilePatterns": ["/(^|/)docker/desktop/agent-desktop\\.Dockerfile$/"]
   },
