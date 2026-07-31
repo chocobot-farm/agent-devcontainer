@@ -82,7 +82,7 @@ jobs:
       skip_super_linter: ${{ steps.skip-tags.outputs.skip_super_linter }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
@@ -193,7 +193,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0 # Required for git diff to work properly
           persist-credentials: false
@@ -288,7 +288,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0 # Required for git diff to work properly
           token: ${{ secrets.REPO_PAT }} # Use PAT to allow CI reruns on pushed commits
@@ -417,7 +417,7 @@ jobs:
       run_downstream: ${{ steps.compute.outputs.run_downstream }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
