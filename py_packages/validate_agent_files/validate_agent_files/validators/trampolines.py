@@ -3,7 +3,9 @@
 """
 Cross-catalog validation for Codex agent trampolines.
 
-Canonical agents live in ``.claude/agents/<stem>.agent.md``. Each one must have
+Canonical agents live in an ``agents/`` directory of the catalog — ``plugin/agents``
+for the ``agentdev`` plugin, or ``.claude/agents`` for a plain project catalog. Each
+canonical agent must have
 a matching Codex trampoline at ``.codex/agents/<stem>.md`` whose ``name`` and
 ``description`` frontmatter fields are identical to the canonical file's. Only
 convention keeps these in sync, so this validator makes drift fail validation.
@@ -19,17 +21,19 @@ import yaml
 from ..loaders import safe_load_frontmatter
 from ..types import ValidationIssue, ValidationLevel, ValidationResult
 
+CATALOG_ROOT_NAMES = {'.claude', 'plugin'}
+
 
 def _canonical_agents_dir(agent_file: str) -> Path | None:
-    """Return the ``.claude/agents`` directory if ``agent_file`` lives in one."""
+    """Return the canonical agents directory if ``agent_file`` lives in one."""
     parent = Path(agent_file).parent
-    if parent.name == 'agents' and parent.parent.name == '.claude':
+    if parent.name == 'agents' and parent.parent.name in CATALOG_ROOT_NAMES:
         return parent
     return None
 
 
 def _codex_agents_dir(canonical_agents_dir: Path) -> Path:
-    """Return the sibling ``.codex/agents`` directory for a ``.claude/agents`` dir."""
+    """Return the sibling ``.codex/agents`` directory for a canonical agents dir."""
     repo_root = canonical_agents_dir.parent.parent
     return repo_root / '.codex' / 'agents'
 
@@ -52,7 +56,7 @@ def validate_trampolines(
 
     Returns a mapping of canonical agent path to trampoline issues, plus a list
     of standalone results for orphan trampolines (Codex files without a
-    canonical counterpart). Files outside a ``.claude/agents`` directory are
+    canonical counterpart). Files outside a canonical agents directory are
     ignored so ad-hoc agent files (e.g. in tests) need no trampoline.
     """
     per_file_issues: Dict[str, List[ValidationIssue]] = {}
@@ -147,7 +151,7 @@ def _find_orphan_trampolines(
                         level=ValidationLevel.ERROR,
                         message=(
                             f'Orphan Codex trampoline {trampoline} has no canonical '
-                            f'.claude/agents/{trampoline.stem}.agent.md'
+                            f'agents/{trampoline.stem}.agent.md'
                         ),
                         section='trampoline',
                     )

@@ -36,8 +36,9 @@ jobs:
         id: filter
         with:
           extra-filter: |
-            - .claude/agents/**
-            - .claude/skills/**
+            - plugin/**
+            - .claude-plugin/**
+            - .codex/agents/**
             - .github/workflows/validate-agent-files.yml
             - .github/actions/log-debug-stats/**
             - py_packages/**/*.py
@@ -69,7 +70,7 @@ jobs:
         run: pytest py_packages/validate_agent_files/tests
 
       - name: Validate Agent Files
-        run: validate_agent_files --recommend .claude
+        run: validate_agent_files --recommend plugin
 
       - name: Log debug stats
         if: ${{ always() }}

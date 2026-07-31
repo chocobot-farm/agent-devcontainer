@@ -53,8 +53,9 @@ the `workspace_folder` baked in at build time.
 
 ### Option 2 — copy the template
 
-Copy `.devcontainer/`, `scripts/`, and optionally `.claude/` + `.codex/` into your
-repo. The compose file already wires up the shared agent-auth volumes, the MCP
+Copy `.devcontainer/` and `scripts/` into your repo, and enable the `agentdev`
+plugin (see [The agent catalog](#the-agent-catalog)) instead of copying the
+catalog. The compose file already wires up the shared agent-auth volumes, the MCP
 gateway sidecar, and worktree-safe mounts. Adjust `workspaceFolder` and the
 `agentdev-*` volume names if you want per-project isolation.
 
@@ -155,17 +156,39 @@ uv run ansible-playbook --syntax-check playbooks/setup-dev.yml
 
 ## The agent catalog
 
-`.claude/` is the canonical source; `.codex/skills` is a symlink to it and
-`.codex/agents/*.md` are generated trampolines. Four agents (Principal Engineer
-plus the TDD Red/Green/Refactor trio) and 21 skills covering git, pull requests,
-review, CI log extraction, formatting, and container/Codespace escalation.
+The catalog ships as the `agentdev` Claude Code plugin in [`plugin/`](plugin/),
+published by the marketplace manifest in
+[`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json). `plugin/` is
+the canonical source; `.codex/skills` is a symlink to it and `.codex/agents/*.md`
+are generated trampolines. Four agents (Principal Engineer plus the TDD
+Red/Green/Refactor trio) and 21 skills covering git, pull requests, review, CI log
+extraction, formatting, and container/Codespace escalation.
 
-See [.claude/README.md](.claude/README.md) for the editing rules and
+Consume it from another repository by adding one block to its
+`.claude/settings.json`:
+
+```jsonc
+{
+  "extraKnownMarketplaces": {
+    "chocobot-farm": {
+      "source": {
+        "source": "github",
+        "repo": "chocobot-farm/agent-devcontainer",
+      },
+    },
+  },
+  "enabledPlugins": { "agentdev@chocobot-farm": true },
+}
+```
+
+Skills are then namespaced: `/agentdev:open-pr`, `/agentdev:pr-merge`, and so on.
+
+See [plugin/README.md](plugin/README.md) for the editing rules and
 [AGENTS.md](AGENTS.md) for the repository conventions agents follow.
 
 ```bash
 uv sync --all-groups
-uv run validate_agent_files --recommend .claude
+uv run validate_agent_files --recommend plugin
 uv run pytest py_packages
 ```
 
@@ -178,8 +201,10 @@ docker/
   desktop/       agent-desktop image, entrypoint, Xpra launcher
   bin/gh         transparent gh auth wrapper baked onto PATH
 ansible/         inventories + setup-dev.yml + 18 roles
-scripts/         devcontainer lifecycle hooks, format/lint, Super-Linter wrappers
-.claude/         agents, skills, hooks, settings  (canonical)
+scripts/         devcontainer lifecycle hooks and repository plumbing
+plugin/          the agentdev plugin: agents, skills, hooks, bin/  (canonical)
+.claude-plugin/  marketplace manifest publishing the plugin
+.claude/         this repository's own settings.json
 .codex/          trampolines + skills symlink
 py_packages/     validate_agent_files — the agent-catalog validator
 .github/         composite docker actions + CI, reformat, and validation workflows

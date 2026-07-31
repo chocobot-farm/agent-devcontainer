@@ -7,8 +7,8 @@ on:
       - .github/workflows/reformat.yml
       - .github/workflows/validate-super-linter-tool-versions.yml
       - ansible/roles/dev_tools/defaults/main.yml
-      - scripts/super-linter-defaults.sh
-      - scripts/super-linter-local.sh
+      - plugin/bin/super-linter-defaults.sh
+      - plugin/bin/super-linter-local.sh
       - scripts/validate-super-linter-tool-versions.sh
   push:
     branches:
@@ -18,8 +18,8 @@ on:
       - .github/workflows/reformat.yml
       - .github/workflows/validate-super-linter-tool-versions.yml
       - ansible/roles/dev_tools/defaults/main.yml
-      - scripts/super-linter-defaults.sh
-      - scripts/super-linter-local.sh
+      - plugin/bin/super-linter-defaults.sh
+      - plugin/bin/super-linter-local.sh
       - scripts/validate-super-linter-tool-versions.sh
   merge_group:
     types:
