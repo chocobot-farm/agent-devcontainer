@@ -1,0 +1,15 @@
+{
+  "name": "chocobot-farm",
+  "description": "The agent-devcontainer catalog: shared Claude Code agents, skills, hooks, and lint tooling.",
+  "owner": {
+    "name": "chocobot-farm"
+  },
+  "plugins": [
+    {
+      "name": "agentdev",
+      "source": "./plugin",
+      "description": "General-purpose agent catalog: git, pull requests, review, CI, formatting, container and Codespace escalation.",
+      "version": "1.0.0"
+    }
+  ]
+}

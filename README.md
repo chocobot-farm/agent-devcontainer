@@ -53,8 +53,9 @@ the `workspace_folder` baked in at build time.
 
 ### Option 2 — copy the template
 
-Copy `.devcontainer/`, `scripts/`, and optionally `.claude/` + `.codex/` into your
-repo. The compose file already wires up the shared agent-auth volumes, the MCP
+Copy `.devcontainer/` and `scripts/` into your repo, and enable the `agentdev`
+plugin (see [The agent catalog](#the-agent-catalog)) instead of copying the
+catalog. The compose file already wires up the shared agent-auth volumes, the MCP
 gateway sidecar, and worktree-safe mounts. Adjust `workspaceFolder` and the
 `agentdev-*` volume names if you want per-project isolation.
 
@@ -68,10 +69,10 @@ an equivalent) at the repository with a config that includes the `docker` (or
 `docker-compose`/`dockerfile`, depending on where the pin lives) manager, for
 example:
 
-```json
+```jsonc
 // renovate.json
 {
-  "extends": ["config:recommended"]
+  "extends": ["config:recommended"],
 }
 ```
 
@@ -155,17 +156,57 @@ uv run ansible-playbook --syntax-check playbooks/setup-dev.yml
 
 ## The agent catalog
 
-`.claude/` is the canonical source; `.codex/skills` is a symlink to it and
-`.codex/agents/*.md` are generated trampolines. Four agents (Principal Engineer
-plus the TDD Red/Green/Refactor trio) and 21 skills covering git, pull requests,
-review, CI log extraction, formatting, and container/Codespace escalation.
+The catalog ships as the `agentdev` Claude Code plugin in [`plugin/`](plugin/) —
+four agents (Principal Engineer plus the TDD Red/Green/Refactor trio) and 21
+skills covering git, pull requests, review, CI log extraction, formatting, and
+container/Codespace escalation. **[plugin/README.md](plugin/README.md) documents
+what it contains and how to enable it in another repository**; the rest of this
+section is about developing it here.
 
-See [.claude/README.md](.claude/README.md) for the editing rules and
-[AGENTS.md](AGENTS.md) for the repository conventions agents follow.
+### Source of truth
+
+`plugin/` is canonical. Everything else is derived:
+
+| Path                              | Role                                                          |
+| --------------------------------- | ------------------------------------------------------------- |
+| `plugin/`                         | Canonical agents, skills, hooks, and `bin/` scripts.          |
+| `.claude-plugin/marketplace.json` | Publishes the plugin so other repositories can consume it.    |
+| `.codex/skills`                   | Symlink to `plugin/skills`.                                   |
+| `.codex/agents/*.md`              | Trampolines that delegate to `plugin/agents/*.agent.md`.      |
+| `.claude/settings.json`           | This repository enabling its own plugin from the marketplace. |
+
+### Editing rules
+
+- **Edit files under `plugin/`, never under `.codex/`.**
+- When you add, rename, or re-describe an agent, update its `.codex/agents/`
+  trampoline so `name` and `description` match exactly.
+- Use the [create-agent](plugin/skills/create-agent/SKILL.md) and
+  [create-skill](plugin/skills/create-skill/SKILL.md) skills — they encode the
+  frontmatter, discovery-description, and validation rules.
+- **Never write a repository-relative catalog path** such as
+  `.claude/skills/<name>/...`: inside a plugin it resolves nowhere. Use
+  `${CLAUDE_SKILL_DIR}/...` for a path within the same skill, and a namespaced
+  invocation for a sibling skill.
+- A script in `plugin/bin/` must not assume it sits inside the repository it
+  operates on. Resolve the target repository from the working directory (see
+  [`plugin/bin/__utils.sh`](plugin/bin/__utils.sh)).
+- Bump `version` in both `plugin/.claude-plugin/plugin.json` and the marketplace
+  entry together.
+
+[AGENTS.md](AGENTS.md) has the repository conventions agents follow.
+
+### Iterating and validating
+
+```bash
+claude --plugin-dir ./plugin   # override the installed copy for a session
+claude plugin validate ./plugin
+```
+
+CI enforces the last two commands; run them before pushing a catalog change:
 
 ```bash
 uv sync --all-groups
-uv run validate_agent_files --recommend .claude
+uv run validate_agent_files --recommend plugin
 uv run pytest py_packages
 ```
 
@@ -178,8 +219,10 @@ docker/
   desktop/       agent-desktop image, entrypoint, Xpra launcher
   bin/gh         transparent gh auth wrapper baked onto PATH
 ansible/         inventories + setup-dev.yml + 18 roles
-scripts/         devcontainer lifecycle hooks, format/lint, Super-Linter wrappers
-.claude/         agents, skills, hooks, settings  (canonical)
+scripts/         devcontainer lifecycle hooks and repository plumbing
+plugin/          the agentdev plugin: agents, skills, hooks, bin/  (canonical)
+.claude-plugin/  marketplace manifest publishing the plugin
+.claude/         this repository's own settings.json
 .codex/          trampolines + skills symlink
 py_packages/     validate_agent_files — the agent-catalog validator
 .github/         composite docker actions + CI, reformat, and validation workflows

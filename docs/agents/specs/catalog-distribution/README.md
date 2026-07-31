@@ -10,8 +10,8 @@ which concluded that sharing the `.claude` catalog across repositories had "no
 mechanism that does not hurt". Three of the mechanisms it needed have since
 shipped.
 
-**Status:** spike complete. Spec `01` (F8) landed; `02` and `03` are written but
-not scheduled.
+**Status:** spike complete. Specs `01` (F8) and `02` (F5, F6, F9) landed; `03` is
+written but not scheduled.
 
 ## Problem
 
@@ -41,11 +41,11 @@ do not follow:
 Distribution failed as a single problem because it is three problems with
 different churn rates and different natural mechanisms.
 
-| Layer               | Contents                                                                       | Churn  | Mechanism                        |
-| ------------------- | ------------------------------------------------------------------------------ | ------ | -------------------------------- |
-| 1. Environment      | `ansible/`, `docker/`, the published image                                     | Low    | GHCR image pinned by digest      |
-| 2. Agent catalog    | `.claude/skills`, `.claude/agents`, hooks, `.mcp.json`, general `scripts/*.sh` | High   | Claude Code plugin + marketplace |
-| 3. Repo scaffolding | `.devcontainer/`, `AGENTS.md`, `.claude/settings.json`                         | Medium | Manual copy (see F7)             |
+| Layer               | Contents                                                   | Churn  | Mechanism                        |
+| ------------------- | ---------------------------------------------------------- | ------ | -------------------------------- |
+| 1. Environment      | `ansible/`, `docker/`, the published image                 | Low    | GHCR image pinned by digest      |
+| 2. Agent catalog    | `plugin/skills`, `plugin/agents`, hooks, `plugin/bin/*.sh` | High   | Claude Code plugin + marketplace |
+| 3. Repo scaffolding | `.devcontainer/`, `AGENTS.md`, `.claude/settings.json`     | Medium | Manual copy (see F7)             |
 
 ## Findings
 
@@ -75,19 +75,20 @@ travels with the catalog rather than being copied per repository.
 
 `extraKnownMarketplaces` plus `enabledPlugins` in a repository's
 `.claude/settings.json` registers the marketplace and enables the plugin when
-the folder is trusted:
+the folder is trusted. The file must be strict JSON — no comments, no trailing
+commas:
 
-```jsonc
+```json
 {
   "extraKnownMarketplaces": {
     "chocobot-farm": {
       "source": {
         "source": "github",
-        "repo": "chocobot-farm/agent-devcontainer",
-      },
-    },
+        "repo": "chocobot-farm/agent-devcontainer"
+      }
+    }
   },
-  "enabledPlugins": { "agentdev@chocobot-farm": true },
+  "enabledPlugins": { "agentdev@chocobot-farm": true }
 }
 ```
 
@@ -114,16 +115,17 @@ Consequences that make this the right fit here:
 - The seed is read-only. `/plugin marketplace update` and `/plugin marketplace remove`
   against a seeded marketplace fail by design; opting out is `/plugin disable`.
 
-### F5 — Namespacing is the one irreversible cost (priority: medium, accepted)
+### F5 — Namespacing is the one irreversible cost (priority: medium, resolved)
 
 Plugin skills are always namespaced. `/pr-merge` becomes `/agentdev:pr-merge`.
 There is no opt-out; namespacing is what prevents collisions between plugins.
 
-Mitigation is limited to choosing a short plugin name. `agentdev` is proposed.
+Mitigation is limited to choosing a short plugin name. `agentdev` was chosen, and
+spec `02` landed the rename: every skill now resolves as `/agentdev:<name>`.
 Personal and project skills of the same name continue to resolve unnamespaced,
 so a consumer that wants a short alias can still shadow one locally.
 
-### F6 — 37 hardcoded catalog paths must move to `${CLAUDE_SKILL_DIR}` (priority: high, blocks 02)
+### F6 — 37 hardcoded catalog paths must move to `${CLAUDE_SKILL_DIR}` (priority: high, resolved)
 
 Skill bodies and their scripts invoke each other by literal repository-relative
 path. Under a plugin the catalog lives in `~/.claude/plugins/cache/...`, and
@@ -146,11 +148,17 @@ every one of these breaks.
 | `skills/remote-codespace-session/scripts/codespace-sync.sh`     | 1    |
 | `skills/update-branch/SKILL.md`                                 | 1    |
 
-14 files, 37 references. Mechanical, but it is the bulk of spec `02`.
+14 files, 37 references. Mechanical, but it was the bulk of spec `02`. Resolved
+there: self-references became `${CLAUDE_SKILL_DIR}/...`, cross-references became
+namespaced skill invocations, and `validate_agent_files` now fails on any literal
+catalog path reintroduced inside the plugin.
 
 The `Bash(.claude/skills/*/scripts/*)` entry in
-[`.claude/settings.json`](../../../../.claude/settings.json) has the same
-problem and must move to per-skill `allowed-tools` using the same substitution.
+[`.claude/settings.json`](../../../../.claude/settings.json) had the same
+problem. Spec `02` replaced it with per-skill `allowed-tools` frontmatter plus
+permission rules that match the plugin cache path, because the Bash tool rejects
+a command string containing an unexpanded `${...}` and so never sees the
+substituted form.
 
 ### F7 — Scaffolding residue is four files, below the Copier threshold (priority: low)
 
@@ -174,21 +182,20 @@ churning.
 Carried forward unchanged from the Dr.QP spike's F7. A consumer pinned to
 `agent-desktop` went stale silently. Resolved by spec `01`: both GHCR images
 are now pinned by tag-plus-digest, and `.github/renovate.json` bumps them as a
-single grouped pull request. Spec `02` still needs to add a `customManager`
-there for the plugin `version` pin it introduces; that section does not exist
-yet.
+single grouped pull request. Spec `02` added the `customManager` for the plugin `version`
+pin a consumer declares in `enabledPlugins`.
 
-### F9 — Codex does not understand Claude plugins (priority: medium)
+### F9 — Codex does not understand Claude plugins (priority: medium, partly resolved)
 
 `.codex/skills` is a symlink to `../.claude/skills`, and `.codex/agents/*.md`
 are generated trampolines validated by `validate_agent_files`. Moving the
 canonical catalog into a plugin directory breaks both.
 
-The plugin layout must therefore be chosen so the symlink can be re-pointed
-within this repository, and the Ansible role that seeds the plugin should also
-place the catalog at `~/.codex/skills` for containers. `validate_agent_files`
-needs teaching about the new paths — CI enforces trampoline parity, so this is a
-hard gate, not a cleanup.
+The layout was chosen so the symlink could be re-pointed within this repository:
+`.codex/skills` now points at `../plugin/skills`, the trampolines delegate to
+`plugin/agents/*.agent.md`, and `validate_agent_files` validates the plugin
+layout. Placing the catalog at `~/.codex/skills` for containers remains open and
+belongs to spec `03`.
 
 ### F10 — Private marketplaces have a flaky background auto-update (priority: low)
 
@@ -202,13 +209,13 @@ constrains any future decision to make it private.
 
 ## Costs summary
 
-| Cost                                                      | Severity |
-| --------------------------------------------------------- | -------- |
-| Rewriting 37 catalog path references (F6)                 | High     |
-| Permanent skill namespacing (F5)                          | Medium   |
-| Teaching `validate_agent_files` the plugin layout (F9)    | Medium   |
-| Catalog changes need an image rebuild to reach seeds (F4) | Low      |
-| Four scaffolding files copied by hand (F7)                | Low      |
+| Cost                                                         | Severity |
+| ------------------------------------------------------------ | -------- |
+| Rewriting 37 catalog path references (F6, done)              | High     |
+| Permanent skill namespacing (F5)                             | Medium   |
+| Teaching `validate_agent_files` the plugin layout (F9, done) | Medium   |
+| Catalog changes need an image rebuild to reach seeds (F4)    | Low      |
+| Four scaffolding files copied by hand (F7)                   | Low      |
 
 ## Benefits summary
 
@@ -225,8 +232,8 @@ constrains any future decision to make it private.
 
 1. `01-base-image-version-pinning.md` — resolved F8. **Landed**; spec file
    removed.
-2. [`02-claude-catalog-plugin.md`](02-claude-catalog-plugin.md) — resolves F5,
-   F6, F9. The bulk of the work.
+2. `02-claude-catalog-plugin.md` — resolved F5, F6, and the in-repository half
+   of F9. **Landed**; spec file removed.
 3. [`03-plugin-seed-in-image.md`](03-plugin-seed-in-image.md) — resolves the
    original problem. Depends on `02`.
 

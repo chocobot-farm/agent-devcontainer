@@ -9,14 +9,14 @@ NEVER use GitHub API or GitHub MCP tools to update branch refs or push branch co
 0. NEVER change git config on local or global level unless explicitly instructed. NEVER switch/change remote.
 1. **Use `uv` for Python and `bun` for JavaScript.** Run project commands through `uv run`; sync with `scripts/uv-sync.sh` (or `uv sync`) after changing dependencies. Never install packages globally.
 2. **Scope test runs narrowly** while iterating: `uv run pytest <path>::<test_name>`, `bun test <path>`. Run the full suite only when asked.
-3. **Escalate to a container when the host lacks the toolchain — never give up after a local failure.** If `uv` or `bun` is missing, or a command needs the provisioned image, escalate in this order: (a) Docker daemon available → use the [microvm-sandbox](/.claude/skills/microvm-sandbox/SKILL.md) skill to run the command through `devcontainer exec`; (b) no Docker daemon → use the [remote-codespace-session](/.claude/skills/remote-codespace-session/SKILL.md) skill to run it on a GitHub Codespace over SSH. Only report a blocker if both escalation paths are unavailable (e.g. no `gh` auth).
+3. **Escalate to a container when the host lacks the toolchain — never give up after a local failure.** If `uv` or `bun` is missing, or a command needs the provisioned image, escalate in this order: (a) Docker daemon available → use the `/agentdev:microvm-sandbox` skill to run the command through `devcontainer exec`; (b) no Docker daemon → use the `/agentdev:remote-codespace-session` skill to run it on a GitHub Codespace over SSH. Only report a blocker if both escalation paths are unavailable (e.g. no `gh` auth).
 4. **For yes/no and multiple-choice questions, prefer the assistant's structured-question tool** over free-text (VS Code Copilot: `vscode/askQuestions`; Claude Code: `AskUserQuestion`).
-5. **Validate the agent catalog after editing it**: `uv run validate_agent_files --recommend .claude`. A Codex trampoline's `name`/`description` must match its canonical agent exactly.
+5. **Validate the agent catalog after editing it**: `uv run validate_agent_files --recommend plugin`. A Codex trampoline's `name`/`description` must match its canonical agent exactly.
 6. **Ansible changes** must pass `(cd ansible && uv run ansible-lint .)` and `(cd ansible && uv run ansible-playbook --syntax-check playbooks/setup-dev.yml)`. The real gate is a local image build — see the README.
 
 ### When in Doubt
 
-Consult the **[Principal Engineer](/.claude/agents/principal-engineer.agent.md)** agent for architecture, design decisions, and implementation strategies.
+Consult the **[Principal Engineer](/plugin/agents/principal-engineer.agent.md)** agent for architecture, design decisions, and implementation strategies.
 
 ## Coding Conventions
 
@@ -24,7 +24,7 @@ Consult the **[Principal Engineer](/.claude/agents/principal-engineer.agent.md)*
 
 - Follow **PEP 8**: 4 spaces per indentation level, descriptive names. The line limit is **99** (`.ruff.toml`), not 79.
 - Use type hints (PEP 484, `typing` module) and PEP 257 docstrings placed immediately after `def`/`class`
-- Formatting and autofixes are applied by **ruff**, via the pre-commit hooks locally and Super-Linter in CI (`scripts/super-linter-local.sh` reproduces the CI pass). Verify with `scripts/python-lint-check.sh` for a fast, Docker-free check. Never judge style with stock `flake8` or `black`: their defaults (79-char limit, double quotes, different isort grouping) produce false positives that do not match this repo and do not fail CI. Full workflow in the [python-format-lint](/.claude/skills/python-format-lint/) skill
+- Formatting and autofixes are applied by **ruff**, via the pre-commit hooks locally and Super-Linter in CI (`super-linter-local.sh`, from the plugin `bin/`, reproduces the CI pass). Verify with `python-lint-check.sh` for a fast, Docker-free check. Never judge style with stock `flake8` or `black`: their defaults (79-char limit, double quotes, different isort grouping) produce false positives that do not match this repo and do not fail CI. Full workflow in the `/agentdev:python-format-lint` skill
 - **Exception handling**: never write empty handlers (`except ...: pass`). Handle expected exceptions explicitly by at least one of: logging context, returning a safe fallback value, re-raising with context, or raising `SystemExit` for CLI interruption paths (`raise SystemExit(130)` for user interrupts). If an exception must be intentionally ignored, document the reason in a comment and keep the ignored scope minimal. Prefer specific exception types over broad `except Exception`
 
 ### Python Testing
@@ -52,10 +52,11 @@ Consult the **[Principal Engineer](/.claude/agents/principal-engineer.agent.md)*
 
 ## Catalog Locations
 
-- **Claude** (canonical source of truth): `.claude/agents/`, `.claude/skills/`
-- **Codex**: `.codex/agents/` (trampolines to `.claude/agents/`), `.codex/skills` (symlink to `.claude/skills`)
+- **Claude** (canonical source of truth): the `agentdev` plugin — `plugin/agents/`, `plugin/skills/`, `plugin/hooks/`, `plugin/bin/`. Skills are namespaced: `/agentdev:<skill-name>`
+- **Codex**: `.codex/agents/` (trampolines to `plugin/agents/`), `.codex/skills` (symlink to `plugin/skills`)
+- **This repository's own config**: `.claude/settings.json` only; it enables the plugin from the marketplace declared in `.claude-plugin/marketplace.json`. `settings.json` is strict JSON — no comments, no trailing commas
 
-Update `.claude` sources; the symlink picks up changes automatically. When adding or renaming an agent, or editing its description, also update its `.codex/agents/` trampoline to match (CI enforces this via `validate_agent_files`).
+Update `plugin/` sources; the symlink picks up changes automatically. Never write a repository-relative catalog path inside the plugin — use `${CLAUDE_SKILL_DIR}/...` for a path within a skill and a namespaced invocation for a sibling skill. When adding or renaming an agent, or editing its description, also update its `.codex/agents/` trampoline to match (CI enforces this via `validate_agent_files`).
 
 **Edit `AGENTS.md`; `CLAUDE.md` only includes it (`@AGENTS.md`), so changes there cover all agents.**
 

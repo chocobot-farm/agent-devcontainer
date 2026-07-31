@@ -17,7 +17,8 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(git)",
       "Bash(git *)",
-      "Bash(.claude/skills/*/scripts/*)",
+      "Bash(plugin/skills/*/scripts/*)",
+      "Bash(/root/.claude/plugins/cache/chocobot-farm/agentdev/*)",
       "Bash(gh)",
       "Bash(gh *)",
       "Bash(mkdir *)",
@@ -32,8 +33,8 @@
       "Bash(python3 -m py_compile *)",
       "Bash(python3 -c *)",
       "Bash(python3 -m pytest *)",
-      "Bash(scripts/python-lint-check.sh *)",
-      "Bash(scripts/super-linter-local.sh *)",
+      "Bash(python-lint-check.sh *)",
+      "Bash(super-linter-local.sh *)",
       "Bash(pre-commit run *)",
       "mcp__gateway__*",
       "mcp__github__*"
@@ -44,19 +45,16 @@
       "/__w"
     ]
   },
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
-          }
-        ]
+  "extraKnownMarketplaces": {
+    "chocobot-farm": {
+      "source": {
+        "source": "github",
+        "repo": "chocobot-farm/agent-devcontainer"
       }
-    ]
+    }
   },
   "enabledPlugins": {
+    "agentdev@chocobot-farm": true,
     "github@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
