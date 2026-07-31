@@ -37,7 +37,7 @@ runners and merged into a single manifest:
 ```jsonc
 // .devcontainer/devcontainer.json
 {
-  "image": "ghcr.io/chocobot-farm/agent-desktop:edge",
+  "image": "ghcr.io/chocobot-farm/agent-desktop:edge@sha256:fd10e509373a3ba461f323b4f15b053c468e59c907ef5d8f4be02966fb400a74",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:4.0.0": {},
   },
@@ -57,6 +57,27 @@ Copy `.devcontainer/`, `scripts/`, and optionally `.claude/` + `.codex/` into yo
 repo. The compose file already wires up the shared agent-auth volumes, the MCP
 gateway sidecar, and worktree-safe mounts. Adjust `workspaceFolder` and the
 `agentdev-*` volume names if you want per-project isolation.
+
+### Staying on the current image
+
+Both options pin `agent-desktop` by tag **and** digest
+(`:edge@sha256:...`) rather than a bare moving tag, so the image a consumer runs
+never changes silently under it. That only helps if something advances the pin
+when the image is rebuilt — point [Renovate](https://docs.renovatebot.com/) (or
+an equivalent) at the repository with a config that includes the `docker` (or
+`docker-compose`/`dockerfile`, depending on where the pin lives) manager, for
+example:
+
+```json
+// renovate.json
+{
+  "extends": ["config:recommended"]
+}
+```
+
+This repository's own [`.github/renovate.json`](.github/renovate.json) is the
+reference implementation, including how it groups the `agent-desktop` and
+`ubuntu-ansible` digest bumps into a single pull request.
 
 ## Enabling the firewall
 

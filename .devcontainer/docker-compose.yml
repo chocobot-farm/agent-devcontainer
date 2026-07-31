@@ -50,7 +50,7 @@ services:
       - --allow-unauthenticated
 
   devcontainer:
-    image: ghcr.io/chocobot-farm/agent-desktop:edge
+    image: ghcr.io/chocobot-farm/agent-desktop:edge@sha256:fd10e509373a3ba461f323b4f15b053c468e59c907ef5d8f4be02966fb400a74
     # Required for Docker in Docker (dind) to allow nested containers, and for
     # privileged access to the host's GPU for hardware-accelerated rendering
     # through Xpra/VirtualGL.

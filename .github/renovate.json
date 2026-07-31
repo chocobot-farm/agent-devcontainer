@@ -1,0 +1,18 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "dockerfile": {
+    "managerFilePatterns": ["/(^|/)docker/desktop/agent-desktop\\.dockerfile$/"]
+  },
+  "packageRules": [
+    {
+      "description": "agent-desktop and ubuntu-ansible are built from one pipeline; bump their digest pins together so a split update can never pair a mismatched image and base.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "ghcr.io/chocobot-farm/agent-desktop",
+        "ghcr.io/chocobot-farm/ubuntu-ansible"
+      ],
+      "groupName": "agent-desktop base images"
+    }
+  ]
+}

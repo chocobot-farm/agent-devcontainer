@@ -10,7 +10,8 @@ which concluded that sharing the `.claude` catalog across repositories had "no
 mechanism that does not hurt". Three of the mechanisms it needed have since
 shipped.
 
-**Status:** spike complete, implementation specs written, not scheduled.
+**Status:** spike complete. Spec `01` (F8) landed; `02` and `03` are written but
+not scheduled.
 
 ## Problem
 
@@ -29,7 +30,7 @@ do not follow:
 
 | Question                                       | Answer                                                                  |
 | ---------------------------------------------- | ----------------------------------------------------------------------- |
-| Distribute the environment?                    | **Already solved.** GHCR image, consumed by digest. Needs Renovate.     |
+| Distribute the environment?                    | **Solved.** GHCR image, consumed by digest, kept current by Renovate.   |
 | Distribute the `.claude` catalog?              | **Yes — convert it to a plugin.** F8's blockers no longer hold.         |
 | Bake the catalog into the image?               | **Yes — as a plugin seed,** not as loose files.                         |
 | Distribute `.github/` workflows and actions?   | **No.** Out of scope by decision; they stay repository-local.           |
@@ -168,12 +169,14 @@ more than the copying they replace.
 Revisit if consumer count grows past a handful, or if these four files start
 churning.
 
-### F8 — Nothing rebuilds a consumer when the base image moves (priority: high, inherited)
+### F8 — Nothing rebuilds a consumer when the base image moves (priority: high, resolved)
 
 Carried forward unchanged from the Dr.QP spike's F7. A consumer pinned to
-`agent-desktop` goes stale silently. Renovate on the digest pin is the fix, and
-it now covers the plugin `version` as well. This is spec `01` and it comes
-first, because every mechanism in this document rots without it.
+`agent-desktop` went stale silently. Resolved by spec
+[`01`](01-base-image-version-pinning.md): both GHCR images are now pinned by
+tag-plus-digest, and `.github/renovate.json` bumps them as a single grouped pull
+request. Spec `02` still needs to add a `customManager` there for the plugin
+`version` pin it introduces; that section does not exist yet.
 
 ### F9 — Codex does not understand Claude plugins (priority: medium)
 
@@ -220,8 +223,8 @@ constrains any future decision to make it private.
 
 ## Implementation order
 
-1. [`01-base-image-version-pinning.md`](01-base-image-version-pinning.md) —
-   resolves F8. Independent; do it first.
+1. `01-base-image-version-pinning.md` — resolved F8. **Landed**; spec file
+   removed.
 2. [`02-claude-catalog-plugin.md`](02-claude-catalog-plugin.md) — resolves F5,
    F6, F9. The bulk of the work.
 3. [`03-plugin-seed-in-image.md`](03-plugin-seed-in-image.md) — resolves the
