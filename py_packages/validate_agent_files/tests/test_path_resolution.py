@@ -18,6 +18,10 @@ def _write_plugin(root: Path, relative_path: str) -> Path:
     (plugin_root / '.claude-plugin' / 'plugin.json').write_text(
         json.dumps({'name': 'agentdev', 'version': '1.0.0'}) + '\n'
     )
+    (plugin_root / '.codex-plugin').mkdir(parents=True)
+    (plugin_root / '.codex-plugin' / 'plugin.json').write_text(
+        json.dumps({'name': 'agentdev', 'version': '1.0.0'}) + '\n'
+    )
     skill_dir = plugin_root / 'skills' / 'broken-link'
     skill_dir.mkdir(parents=True)
     (skill_dir / 'SKILL.md').write_text(
@@ -42,7 +46,13 @@ def _write_claude_marketplace(root: Path, source: object, name: str = 'agentdev'
     marketplace = root / '.claude-plugin' / 'marketplace.json'
     marketplace.parent.mkdir(parents=True, exist_ok=True)
     marketplace.write_text(
-        json.dumps({'name': 'chocobot-farm', 'plugins': [{'name': name, 'source': source}]}) + '\n'
+        json.dumps(
+            {
+                'name': 'chocobot-farm',
+                'plugins': [{'name': name, 'source': source, 'version': '1.0.0'}],
+            }
+        )
+        + '\n'
     )
     return marketplace
 
@@ -175,6 +185,32 @@ def test_unknown_path_is_an_error(tmp_path: Path) -> None:
     assert resolved == []
     assert len(failures) == 1
     assert 'does not exist' in failures[0].issues[0].message
+
+
+def test_cli_path_without_catalog_files_fails(tmp_path: Path, capsys) -> None:
+    """A path that exists but holds no catalog validates nothing, so it fails."""
+    empty = tmp_path / 'docs'
+    empty.mkdir()
+    (empty / 'README.md').write_text('Not a catalog file.\n')
+
+    exit_code = main([str(empty)])
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert 'no skills, agents, or prompts' in captured.out
+
+
+def test_cli_kind_filter_does_not_fail_a_real_catalog(tmp_path: Path, monkeypatch, capsys) -> None:
+    """A skills-only catalog asked for agents is empty by request, not broken."""
+    _write_plugin(tmp_path, '.agents/plugins/agentdev')
+    _write_claude_marketplace(tmp_path, './.agents/plugins/agentdev')
+    monkeypatch.chdir(tmp_path)
+
+    exit_code = main(['plugin', '--kind', 'agents'])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0, captured.out
+    assert 'no skills, agents, or prompts' not in captured.out
 
 
 def test_find_plugin_roots_reports_sources_and_errors(tmp_path: Path) -> None:

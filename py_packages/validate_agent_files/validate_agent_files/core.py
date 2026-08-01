@@ -12,6 +12,7 @@ import yaml
 from .loaders import (
     find_agent_files,
     find_prompt_files,
+    find_skill_files,
     load_all_skills,
     load_custom_file,
     safe_load_frontmatter_with_body_line,
@@ -113,6 +114,7 @@ class CustomizationsValidationEngine:
     def validate_paths(self, requested_paths: List[str], kind: str) -> List[ValidationResult]:
         """Validate customization paths as one shared catalog."""
         paths, results = resolve_paths(requested_paths)
+        results.extend(self._report_empty_paths(paths))
         results.extend(self._validate_plugin_manifests(paths))
 
         if kind in {'all', 'skills'}:
@@ -133,6 +135,34 @@ class CustomizationsValidationEngine:
             )
             results.extend(self._validate_prompt_files(prompt_files))
 
+        return results
+
+    @staticmethod
+    def _report_empty_paths(paths: List[str]) -> List[ValidationResult]:
+        """
+        Report every requested path that holds nothing this tool can validate.
+
+        A path that yields no files validates nothing, and a run that validates
+        nothing is indistinguishable from a clean one. Discovery ignores the
+        requested ``kind`` on purpose: asking a skills-only catalog for its
+        agents is an empty answer by request, not a broken path.
+        """
+        results = []
+        for path in paths:
+            if find_skill_files(path) or find_agent_files(path) or find_prompt_files(path):
+                continue
+            results.append(
+                ValidationResult(
+                    skill_path=path,
+                    issues=[
+                        ValidationIssue(
+                            level=ValidationLevel.ERROR,
+                            message=f'{path} contains no skills, agents, or prompts',
+                            section='paths',
+                        )
+                    ],
+                )
+            )
         return results
 
     @staticmethod
