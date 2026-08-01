@@ -12,4 +12,4 @@
 # is discovered without any manager override — keep the `compose.` prefix if renaming.
 services:
   devcontainer:
-    image: ghcr.io/chocobot-farm/agent-desktop:edge@sha256:496c5a2c1c041deaa085149b9d7aa13eaaa582dd4b2d494f9a6f8a10a2b65880
+    image: ghcr.io/chocobot-farm/agent-desktop:edge@sha256:dfd576e3ad4afb6b3b5dfae01582bd88f4542d7bab528eae36be158931fe001d
