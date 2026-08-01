@@ -1,7 +1,10 @@
 {
   "name": "Agent Devcontainer",
   "initializeCommand": ".devcontainer/devcontainer-init.sh",
-  "dockerComposeFile": ["docker-compose.yml"],
+  // compose.pins.yml overrides the devcontainer service image with the digest pin
+  // Renovate manages; see the comment at the top of that file for why it lives at the
+  // repository root instead of here.
+  "dockerComposeFile": ["docker-compose.yml", "../compose.pins.yml"],
   "service": "devcontainer",
   "features": {
     // Configures the SSH server (openssh-server is pre-installed in the image)
