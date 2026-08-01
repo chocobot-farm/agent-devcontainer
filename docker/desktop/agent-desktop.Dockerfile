@@ -1,4 +1,8 @@
-ARG FROM_IMAGE=ghcr.io/chocobot-farm/ubuntu-ansible:edge@sha256:568b27461654440054d770b3f9c6e34377cb5f5373acd074fb7e67bf903fb049
+# Tag-only by design. CI always overrides this with an explicit digest built in the same
+# run (see .github/workflows/ci.yml); pinning a digest here would make Renovate bump a file
+# under docker/**, which matches the CI image path filter and rebuilds the very image that
+# produced the digest — an endless bump/rebuild loop.
+ARG FROM_IMAGE=ghcr.io/chocobot-farm/ubuntu-ansible:edge
 
 FROM $FROM_IMAGE
 

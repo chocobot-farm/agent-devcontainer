@@ -2,9 +2,6 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "rebaseWhen": "auto",
-  "dockerfile": {
-    "managerFilePatterns": ["/(^|/)docker/desktop/agent-desktop\\.Dockerfile$/"]
-  },
   "customManagers": [
     {
       "description": "A consuming repository pins the agentdev catalog by version in enabledPlugins; bump it when a new marketplace release is tagged.",
@@ -27,13 +24,9 @@
       "platformAutomerge": true
     },
     {
-      "description": "agent-desktop and ubuntu-ansible are built from one pipeline; bump their digest pins together so a split update can never pair a mismatched image and base.",
+      "description": "agent-desktop is built by this repository's own pipeline. The pin lives in compose.pins.yml, outside the CI image path filter, so bumping it does not retrigger the build that produced the digest; review each bump by hand rather than merging it automatically.",
       "matchDatasources": ["docker"],
-      "matchPackageNames": [
-        "ghcr.io/chocobot-farm/agent-desktop",
-        "ghcr.io/chocobot-farm/ubuntu-ansible"
-      ],
-      "groupName": "agent-desktop base images",
+      "matchPackageNames": ["ghcr.io/chocobot-farm/agent-desktop"],
       "automerge": false,
       "automergeType": "pr",
       "platformAutomerge": false
