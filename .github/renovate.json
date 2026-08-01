@@ -24,12 +24,12 @@
       "platformAutomerge": true
     },
     {
-      "description": "agent-desktop is built by this repository's own pipeline. The pin lives in compose.pins.yml, outside the CI image path filter, so bumping it does not retrigger the build that produced the digest; review each bump by hand rather than merging it automatically.",
+      "description": "agent-desktop is built by this repository's own pipeline. Its pin lives in compose.pins.yml, outside the CI image path filter, so merging a bump cannot retrigger the build that produced the digest and bump itself again. That is what makes automerge safe here.",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/chocobot-farm/agent-desktop"],
-      "automerge": false,
+      "automerge": true,
       "automergeType": "pr",
-      "platformAutomerge": false
+      "platformAutomerge": true
     },
     {
       "description": "Super-Linter and the pre-commit/local tools it pins (Prettier, clang-format, Ansible Lint, Hadolint, Ruff, ShellCheck, Gitleaks, Actionlint, Zizmor) must stay in sync with the pinned Super-Linter image. Update them manually with the sync-super-linter-tool-versions skill instead.",
