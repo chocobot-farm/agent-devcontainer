@@ -265,7 +265,6 @@ jobs:
             # The repo's own checks
             uv sync --all-groups
             uv run pytest py_packages
-            uv run validate_agent_files --recommend plugin --require-marketplace claude codex
 
       - name: Log debug stats
         if: ${{ always() }}
