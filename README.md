@@ -211,7 +211,7 @@ CI enforces the last two commands; run them before pushing a catalog change:
 
 ```bash
 uv sync --all-groups
-uv run validate_agent_files --recommend plugin
+uv run validate_agent_files --recommend plugin --require-marketplace claude codex
 uv run pytest py_packages
 ```
 

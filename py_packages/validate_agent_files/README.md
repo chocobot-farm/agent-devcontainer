@@ -19,6 +19,7 @@ validate_agent_files --kind agents       # Validate only agent files
 validate_agent_files --kind prompts      # Validate only prompt files
 validate_agent_files --recommend         # Show recommendations
 validate_agent_files --ci                # CI mode (nonzero exit on errors)
+validate_agent_files --require-marketplace claude codex   # Require both ecosystems
 ```
 
 ## Notes
@@ -33,6 +34,16 @@ validate_agent_files --ci                # CI mode (nonzero exit on errors)
   directory of that name still wins over the alias.
 - A requested path that resolves to no catalog — a typo, or a location the catalog has moved
   away from — is an error, so a run that validates nothing can never be mistaken for a pass.
+  A path that exists but holds no skills, agents, or prompts is an error for the same reason.
+- `--require-marketplace <ecosystem>...` turns an ecosystem's packaging into a gate. Nothing
+  is required by default: a plugin that ships for Claude but not Codex is a normal plugin, so
+  requiring a manifest unconditionally would make the tool specific to one repository. For
+  each named ecosystem — `claude` (`.claude-plugin/marketplace.json`, `.claude-plugin/plugin.json`)
+  and `codex` (`.agents/plugins/marketplace.json`, `.codex-plugin/plugin.json`) — the
+  marketplace manifest must exist and parse, every plugin it references must be on disk, and
+  each of those plugins must carry a definition that parses, declares a `name` and `version`,
+  and names the same plugin the marketplace publishes. This repository promises both, so its
+  CI runs `--require-marketplace claude codex`.
 - Local validation still checks repository-specific rules such as duplicate skill names,
   cross-references, agent handoffs, and prompt `#file:` references.
 - When a validated path sits inside a Claude Code plugin, the plugin manifest and its

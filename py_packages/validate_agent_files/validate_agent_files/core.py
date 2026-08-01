@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional, Sequence
 
 import yaml
 
@@ -23,6 +23,7 @@ from .types import ValidationIssue, ValidationLevel, ValidationResult
 from .validators.agents import build_known_agent_targets, validate_agent_frontmatter
 from .validators.catalog_paths import validate_catalog_paths
 from .validators.cross_reference import CrossReferenceValidator
+from .validators.marketplace import validate_required_marketplaces
 from .validators.plugin_manifest import find_plugin_root, validate_plugin_manifests
 from .validators.prompts import (
     validate_prompt_body,
@@ -104,8 +105,9 @@ class ValidationEngine:
 class CustomizationsValidationEngine:
     """Orchestrates validation for skills, agents, and prompts."""
 
-    def __init__(self, show_warnings: bool = False):
+    def __init__(self, show_warnings: bool = False, require_marketplaces: Sequence[str] = ()):
         self.show_warnings = show_warnings
+        self.require_marketplaces = require_marketplaces
 
     def validate(self, path: str, kind: str) -> List[ValidationResult]:
         """Validate one customization path."""
@@ -114,6 +116,7 @@ class CustomizationsValidationEngine:
     def validate_paths(self, requested_paths: List[str], kind: str) -> List[ValidationResult]:
         """Validate customization paths as one shared catalog."""
         paths, results = resolve_paths(requested_paths)
+        results.extend(validate_required_marketplaces(self.require_marketplaces))
         results.extend(self._report_empty_paths(paths))
         results.extend(self._validate_plugin_manifests(paths))
 

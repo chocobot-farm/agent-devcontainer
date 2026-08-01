@@ -15,18 +15,40 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, List, NamedTuple, Optional, Tuple
 
 from .types import ValidationIssue, ValidationLevel, ValidationResult
 
 # Names that stand for "every plugin this repository publishes".
 PLUGIN_ALIASES = ('plugin', 'plugins')
 
+
+class Ecosystem(NamedTuple):
+    """Where one agent ecosystem keeps its marketplace and plugin manifests."""
+
+    name: str
+    marketplace: Path  # relative to the repository root
+    manifest: Path  # relative to a plugin root
+
+
+ECOSYSTEMS = {
+    ecosystem.name: ecosystem
+    for ecosystem in (
+        Ecosystem(
+            'claude',
+            Path('.claude-plugin') / 'marketplace.json',
+            Path('.claude-plugin') / 'plugin.json',
+        ),
+        Ecosystem(
+            'codex',
+            Path('.agents') / 'plugins' / 'marketplace.json',
+            Path('.codex-plugin') / 'plugin.json',
+        ),
+    )
+}
+
 # Well-known marketplace manifests, relative to the repository root.
-MARKETPLACE_LOCATIONS = (
-    Path('.claude-plugin') / 'marketplace.json',
-    Path('.agents') / 'plugins' / 'marketplace.json',
-)
+MARKETPLACE_LOCATIONS = tuple(ecosystem.marketplace for ecosystem in ECOSYSTEMS.values())
 
 
 def find_plugin_roots(search_root: Path | str) -> Tuple[List[str], List[Tuple[str, str]]]:
@@ -49,14 +71,14 @@ def find_plugin_roots(search_root: Path | str) -> Tuple[List[str], List[Tuple[st
         return [], [(str(root), f'No marketplace manifest found under {root} ({locations})')]
 
     for marketplace in marketplaces:
-        entries, error = _read_marketplace_entries(marketplace)
+        entries, error = read_marketplace_entries(marketplace)
         if error is not None:
             errors.append((str(marketplace), error))
             continue
 
         for entry in entries:
             name = entry.get('name', '<unnamed>')
-            source = _local_source(entry.get('source'))
+            source = local_source(entry.get('source'))
             if source is None:
                 continue
 
@@ -113,7 +135,7 @@ def resolve_paths(
     return resolved, failures
 
 
-def _read_marketplace_entries(marketplace: Path) -> Tuple[List[dict], Optional[str]]:
+def read_marketplace_entries(marketplace: Path) -> Tuple[List[dict], Optional[str]]:
     """Return the plugin entries of a marketplace manifest, or why it has none."""
     try:
         manifest = json.loads(marketplace.read_text(encoding='utf-8'))
@@ -130,7 +152,7 @@ def _read_marketplace_entries(marketplace: Path) -> Tuple[List[dict], Optional[s
     return [entry for entry in entries if isinstance(entry, dict)], None
 
 
-def _local_source(source: object) -> Optional[str]:
+def local_source(source: object) -> Optional[str]:
     """Return the repository-relative path of a local source, else ``None``."""
     # Object form: {"source": "local", "path": "./..."}; other kinds are remote.
     if isinstance(source, dict):
@@ -160,4 +182,13 @@ def _failure(path: str, message: str) -> ValidationResult:
     )
 
 
-__all__ = ['find_plugin_roots', 'resolve_paths', 'MARKETPLACE_LOCATIONS', 'PLUGIN_ALIASES']
+__all__ = [
+    'ECOSYSTEMS',
+    'Ecosystem',
+    'find_plugin_roots',
+    'local_source',
+    'read_marketplace_entries',
+    'resolve_paths',
+    'MARKETPLACE_LOCATIONS',
+    'PLUGIN_ALIASES',
+]

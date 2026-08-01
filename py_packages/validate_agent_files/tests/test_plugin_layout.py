@@ -118,8 +118,13 @@ def test_disagreeing_codex_manifest_version_fails(tmp_path: Path, capsys) -> Non
     assert "version '1.0.0'" in captured.out
 
 
-def test_missing_codex_manifest_fails(tmp_path: Path, capsys) -> None:
-    """A plugin Codex can no longer install must not pass catalog validation."""
+def test_missing_codex_manifest_is_allowed_by_default(tmp_path: Path, capsys) -> None:
+    """
+    Not every plugin ships for Codex, so its manifest is optional by default.
+
+    A repository that does require it opts in with ``--require-marketplace codex``;
+    see ``test_require_marketplace.py``.
+    """
     plugin_root = _write_plugin(
         tmp_path,
         plugin_version='1.0.0',
@@ -131,9 +136,7 @@ def test_missing_codex_manifest_fails(tmp_path: Path, capsys) -> None:
     exit_code = main([str(plugin_root), '--kind', 'skills'])
     captured = capsys.readouterr()
 
-    assert exit_code == 1
-    assert '.codex-plugin/plugin.json' in captured.out
-    assert 'missing' in captured.out
+    assert exit_code == 0, captured.out
 
 
 def test_unparsable_plugin_manifest_fails(tmp_path: Path, capsys) -> None:

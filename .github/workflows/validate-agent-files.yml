@@ -70,7 +70,7 @@ jobs:
         run: pytest py_packages/validate_agent_files/tests
 
       - name: Validate Agent Files
-        run: validate_agent_files --recommend plugin
+        run: validate_agent_files --recommend plugin --require-marketplace claude codex
 
       - name: Log debug stats
         if: ${{ always() }}
