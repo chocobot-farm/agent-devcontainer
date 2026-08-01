@@ -7,6 +7,10 @@ The catalog ships as the ``agentdev`` plugin: ``<plugin>/.claude-plugin/plugin.j
 declares it and ``<repo>/.claude-plugin/marketplace.json`` publishes it. Both
 record a ``version`` and nothing but convention keeps the two in step, so a
 mismatch is an error rather than a warning.
+
+``<plugin>/.codex-plugin/plugin.json`` packages the same catalog for Codex. It is
+required, not optional: were it absent, the alignment check would pass while Codex
+could no longer install the plugin at all.
 """
 
 from __future__ import annotations
@@ -58,23 +62,35 @@ def validate_plugin_manifests(plugin_root: Path) -> ValidationResult:
         return result
 
     codex_manifest_path = plugin_root / CODEX_PLUGIN_MANIFEST
-    if codex_manifest_path.is_file():
-        codex_manifest = _load_json(codex_manifest_path, result)
-        if codex_manifest is None:
-            return result
-        for field, claude_value in (('name', plugin_name), ('version', plugin_version)):
-            codex_value = codex_manifest.get(field)
-            if codex_value != claude_value:
-                result.issues.append(
-                    ValidationIssue(
-                        level=ValidationLevel.ERROR,
-                        message=(
-                            f'{codex_manifest_path} {field} {codex_value!r} does not match '
-                            f'{manifest_path} {field} {claude_value!r}'
-                        ),
-                        section='plugin-manifest',
-                    )
+    if not codex_manifest_path.is_file():
+        result.issues.append(
+            ValidationIssue(
+                level=ValidationLevel.ERROR,
+                message=(
+                    f'{codex_manifest_path} is missing, so Codex cannot install '
+                    f"plugin '{plugin_name}'"
+                ),
+                section='plugin-manifest',
+            )
+        )
+        return result
+
+    codex_manifest = _load_json(codex_manifest_path, result)
+    if codex_manifest is None:
+        return result
+    for field, claude_value in (('name', plugin_name), ('version', plugin_version)):
+        codex_value = codex_manifest.get(field)
+        if codex_value != claude_value:
+            result.issues.append(
+                ValidationIssue(
+                    level=ValidationLevel.ERROR,
+                    message=(
+                        f'{codex_manifest_path} {field} {codex_value!r} does not match '
+                        f'{manifest_path} {field} {claude_value!r}'
+                    ),
+                    section='plugin-manifest',
                 )
+            )
 
     marketplace_path = _find_marketplace(plugin_root)
     if marketplace_path is None:
