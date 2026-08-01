@@ -17,6 +17,7 @@ from .loaders import (
     safe_load_frontmatter_with_body_line,
     SkillFileLoader,
 )
+from .paths import resolve_paths
 from .types import ValidationIssue, ValidationLevel, ValidationResult
 from .validators.agents import build_known_agent_targets, validate_agent_frontmatter
 from .validators.catalog_paths import validate_catalog_paths
@@ -109,9 +110,10 @@ class CustomizationsValidationEngine:
         """Validate one customization path."""
         return self.validate_paths([path], kind)
 
-    def validate_paths(self, paths: List[str], kind: str) -> List[ValidationResult]:
+    def validate_paths(self, requested_paths: List[str], kind: str) -> List[ValidationResult]:
         """Validate customization paths as one shared catalog."""
-        results: List[ValidationResult] = self._validate_plugin_manifests(paths)
+        paths, results = resolve_paths(requested_paths)
+        results.extend(self._validate_plugin_manifests(paths))
 
         if kind in {'all', 'skills'}:
             skill_files = self._unique_files(
