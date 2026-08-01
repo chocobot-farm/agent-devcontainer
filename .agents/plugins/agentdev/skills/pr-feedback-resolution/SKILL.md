@@ -29,13 +29,21 @@ Systematic approach to resolving all PR feedback including review comments, CI f
 
 ## When to Delegate
 
-When performing code changes as part of PR feedback resolution:
+Classify the requested change by artifact before delegating:
 
-- **Delegate to Principal Engineer agent** for all code implementation. The Principal Engineer orchestrates TDD internally.
-- **Never invoke** tdd-red, tdd-green, or tdd-refactor agents directly—Principal Engineer handles these.
+| Change type                 | Examples                                                                                                                                  | Handling                                                                                                                                                                                      |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime executable behavior | Application/library/CLI code in Python, JavaScript/TypeScript, shell, or C++                                                              | Delegate feature, bug-fix, and critical-logic implementation to the Principal Engineer, which applies TDD when the behavior can be exercised by an automated test.                            |
+| Non-executable artifact     | Documentation, Markdown, configuration, manifests, CI workflows, lockfiles, templates, prompts, agent definitions, and skill instructions | Edit directly. Do not invoke the TDD agents or create behavioral tests solely for the artifact; run its existing formatter, linter, parser, schema, syntax, or repository validation instead. |
+| Mixed change                | A runtime code change plus docs, configuration, or workflow updates                                                                       | Split the work: delegate only the runtime executable behavior, and handle the non-executable artifacts directly with artifact-specific validation.                                            |
+
+- **Never invoke** tdd-red, tdd-green, or tdd-refactor agents directly—the
+  Principal Engineer handles them when the runtime-code gate above is met.
 - **Research before implementing**: use the built-in `Explore` agent when blocked on understanding requirements or locating code.
 - **Plan before implementing**: use the built-in `Plan` agent for complex multi-step remediation.
-- For small, unambiguous fixes (docs or metadata) when intent is explicit, apply changes directly.
+- Do not infer that a changed artifact needs a new test merely because the repository
+  has a test suite. Tests must exercise executable behavior, not duplicate static
+  document, configuration, or workflow contents.
 
 ## Core Workflows
 
@@ -129,8 +137,14 @@ Determine confidence level before making changes. **Only process threads that pa
 Resolve code review feedback systematically.
 
 1. **For each high-confidence comment (≥70%)**:
-   - Validate approach with principal engineer perspective
-   - Use TDD cycle: write test → implement → refactor
+   - Validate the approach against the applicable repository conventions and the
+     artifact classification above
+   - For runtime executable behavior that can be exercised by an automated unit
+     or integration test, delegate to the Principal Engineer and use the TDD
+     cycle: write test → implement → refactor
+   - For docs, configuration, workflows, metadata, and other non-executable
+     artifacts, make the smallest direct change and run the artifact's existing
+     validation; do not add a test just to create a TDD cycle
    - Link commit/change to specific review comment
    - Reply in the thread, verify the change, then resolve only that exact
      thread ID. Never resolve a thread merely because a commit exists:
@@ -270,7 +284,7 @@ Ensure all feedback is addressed before requesting re-review.
    - [ ] Resolved comments marked as resolved
    - [ ] All CI checks passing (green)
    - [ ] No unresolved CodeQL findings
-   - [ ] Patch coverage meets target (≥80%)
+   - [ ] Patch coverage meets target (≥80%) when runtime executable code changed
    - [ ] All tests passing locally and in CI
 
 2. **Post resolution summary** using the Feedback Resolution Summary template (see Pattern below)
@@ -412,8 +426,10 @@ Maintain an internal execution log documenting:
 ### Code Changes
 
 - Follow repository engineering standards
-- Use TDD cycle for all changes
-- Maintain or improve test coverage
+- Use the TDD cycle for changes to runtime executable behavior. Do not use TDD or
+  add tests for docs, configuration, workflows, manifests, metadata, prompts, or
+  other non-executable artifacts; use their native validation instead.
+- Maintain or improve test coverage when runtime executable code changed
 - No introduction of new technical debt
 - Document non-obvious decisions
 - **Safety-first**: 70% intent confidence minimum for code changes; below 70% ask for clarification
@@ -464,7 +480,7 @@ Maintain an internal execution log documenting:
 - [ ] All review comments resolved or replied
 - [ ] All CI checks passing
 - [ ] No security findings unresolved
-- [ ] Patch coverage ≥80%
+- [ ] Patch coverage ≥80% when runtime executable code changed
 - [ ] Changes follow engineering standards
 - [ ] PR ready for re-review
 - [ ] Evidence documented and linked
@@ -475,5 +491,5 @@ Maintain an internal execution log documenting:
 - [Code Review Standards](../code-review-standards/) - PR description and review practices
 - [Extract GitHub Actions Logs](../extract-github-actions-logs/) - Fetch CI job logs and download test-report artifacts
 - [Get CodeQL Data](../get-codeql-data/) - Fetch PR, branch, or repository CodeQL alerts with `gh api`
-- [Coding Conventions in AGENTS.md](../../../AGENTS.md) - project style, testing, and error-handling rules
-- [Principal Engineer](../../agents/principal-engineer.agent.md) - Primary implementation agent with TDD orchestration
+- [Coding Conventions in AGENTS.md](../../../../../AGENTS.md) - project style, testing, and error-handling rules
+- [Principal Engineer](../../agents/principal-engineer.agent.md) - Runtime executable-code implementation agent with scoped TDD orchestration
