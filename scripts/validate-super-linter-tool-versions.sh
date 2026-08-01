@@ -181,9 +181,10 @@ if ! check_configured_version "hadolint entry" hadolint "$hadolint_entry_version
   validation_failed=1
 fi
 
-super_linter_tag="v${image##*:v}"
+super_linter_tag="${image##*:}"
 workflow_super_linter_tags=$(sed -nE \
-  's/.*super-linter\/super-linter@(v[0-9.]+).*/\1/p' \
+  -e 's|.*super-linter/super-linter/slim@(v[0-9.]+).*|slim-\1|p' \
+  -e 's|.*super-linter/super-linter@(v[0-9.]+).*|\1|p' \
   "$root_dir/.github/workflows/reformat.yml")
 
 if [[ -z "$workflow_super_linter_tags" ]]; then

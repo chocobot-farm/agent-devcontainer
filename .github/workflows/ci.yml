@@ -230,13 +230,17 @@ jobs:
           username: ${{ env.REGISTRY_USERNAME }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Patch compose file to use the image built in this workflow
+      - name: Patch image pin to use the image built in this workflow
         env:
           MERGED_IMAGE: ${{ needs.merge-dev-image.outputs.image_pinned }}
         run: |
+          echo "The digest pin lives in compose.pins.yml, which devcontainer.json layers"
+          echo "over .devcontainer/docker-compose.yml; patching it here points the smoke"
+          echo "test at the image built in this workflow."
+          echo
           sed -i "s|image: ghcr.io/.*/agent-desktop:.*|image: ${MERGED_IMAGE}|g" \
-            .devcontainer/docker-compose.yml
-          grep -n 'image:' .devcontainer/docker-compose.yml
+            compose.pins.yml
+          grep -n 'image:' compose.pins.yml
 
       - name: Build and test dev container image
         uses: devcontainers/ci@v0.3.1900000450
