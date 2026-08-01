@@ -5,7 +5,7 @@ description: Generate comprehensive pull request description following /agentdev
 
 # Generate Pull Request Description
 
-Generate a comprehensive PR description by analyzing the change set and filling the repository template at [../../../.github/pull_request_template.md](../../../.github/pull_request_template.md). Use [code-review-standards](../code-review-standards/) for wording and review conventions, and use the Coding Conventions section of the repository [AGENTS.md](../../../AGENTS.md) only for shared quality expectations rather than repeating them here.
+Generate a comprehensive PR description by analyzing the change set and filling the repository template at [.github/pull_request_template.md](../../../../../.github/pull_request_template.md). Use [code-review-standards](../code-review-standards/) for wording and review conventions, and use the Coding Conventions section of the repository [AGENTS.md](../../../../../AGENTS.md) only for shared quality expectations rather than repeating them here.
 
 ## When to Use This Skill
 
@@ -74,7 +74,7 @@ Identify any required migration work such as config changes, rollout order, data
 
 ### Step 7: Generate The Description
 
-Start from [../../../.github/pull_request_template.md](../../../.github/pull_request_template.md) and follow the wording rules from [code-review-standards](../code-review-standards/). Remove sections that do not apply, and ensure the final PR description covers the same information required by the template:
+Start from [.github/pull_request_template.md](../../../../../.github/pull_request_template.md) and follow the wording rules from [code-review-standards](../code-review-standards/). Remove sections that do not apply, and ensure the final PR description covers the same information required by the template:
 
 - **Summary**: 2-3 sentences
 - **What Changed**: Group related changes instead of listing files
@@ -86,7 +86,7 @@ Start from [../../../.github/pull_request_template.md](../../../.github/pull_req
 
 ### Step 8: Review and Validate
 
-Ensure completeness, technical accuracy, valid links, and that testing matches actual work. Confirm that the final description stays in sync with [../../../.github/pull_request_template.md](../../../.github/pull_request_template.md) and does not repeat generic review or clean-code checklists from the referenced documents.
+Ensure completeness, technical accuracy, valid links, and that testing matches actual work. Confirm that the final description stays in sync with [.github/pull_request_template.md](../../../../../.github/pull_request_template.md) and does not repeat generic review or clean-code checklists from the referenced documents.
 
 ## Edge Cases
 
@@ -97,6 +97,6 @@ Ensure completeness, technical accuracy, valid links, and that testing matches a
 
 ## Related Resources
 
-- [Pull request template](../../../.github/pull_request_template.md)
+- [Pull request template](../../../../../.github/pull_request_template.md)
 - [code-review-standards](../code-review-standards/)
-- [Coding Conventions in AGENTS.md](../../../AGENTS.md)
+- [Coding Conventions in AGENTS.md](../../../../../AGENTS.md)

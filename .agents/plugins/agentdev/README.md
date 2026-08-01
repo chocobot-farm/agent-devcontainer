@@ -106,12 +106,12 @@ Claude Code web environment (`CLAUDE_CODE_REMOTE=true`). It is a no-op locally.
 Most skills shell out to tools rather than reimplementing them. Depending on
 which ones you use, you will need `git`, an authenticated `gh` CLI, Docker (for
 `microvm-sandbox` and Super-Linter), and `uv` for the Python skills. The
-[devcontainer image](../README.md) in this repository ships all of them
+[devcontainer image](../../../README.md) in this repository ships all of them
 preinstalled, but the plugin works in any environment that has the tools a given
 skill needs.
 
 ## Contributing
 
 `.agents/plugins/agentdev/` is the canonical source for the catalog, and this repository is where
-it is developed. See the [repository README](../README.md#the-agent-catalog) for
+it is developed. See the [repository README](../../../README.md#the-agent-catalog) for
 the editing rules, the `.codex/` mirror, and how to validate a change.
