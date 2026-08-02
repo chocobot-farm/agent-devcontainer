@@ -21,10 +21,12 @@ from .loaders import (
 from .paths import find_plugin_roots, resolve_paths
 from .types import ValidationIssue, ValidationLevel, ValidationResult
 from .validators.agents import build_known_agent_targets, validate_agent_frontmatter
+from .validators.bundled_markdown import validate_bundled_markdown
 from .validators.catalog_paths import validate_catalog_paths
 from .validators.cross_reference import CrossReferenceValidator
 from .validators.marketplace import validate_present_marketplaces, validate_required_marketplaces
 from .validators.plugin_manifest import (
+    find_packaged_plugin_root,
     find_plugin_root,
     PLUGIN_MANIFEST,
     validate_plugin_manifests,
@@ -87,8 +89,9 @@ class ValidationEngine:
         )
 
         # Only plugin-hosted skills are affected: outside a plugin the literal
-        # path still resolves, so flagging it would be a false positive.
-        plugin_root = find_plugin_root(skill_path)
+        # path still resolves, so flagging it would be a false positive. Either
+        # ecosystem's manifest marks a plugin, since both ship to a cache.
+        plugin_root = find_packaged_plugin_root(skill_path)
 
         xref_validator = CrossReferenceValidator(
             base_path=str(skill_dir),
@@ -140,6 +143,7 @@ class CustomizationsValidationEngine:
             results.extend(validate_present_marketplaces(skip=self.require_marketplaces))
         results.extend(self._report_empty_paths(paths))
         results.extend(self._validate_plugin_manifests(paths))
+        results.extend(self._validate_bundled_markdown(paths))
 
         if kind in {'all', 'skills'}:
             skill_files = self._unique_files(
@@ -214,6 +218,32 @@ class CustomizationsValidationEngine:
         unique_roots = dict.fromkeys(plugin_root.resolve() for plugin_root in plugin_roots)
         return [validate_plugin_manifests(plugin_root) for plugin_root in unique_roots]
 
+    def _validate_bundled_markdown(self, paths: List[str]) -> List[ValidationResult]:
+        """
+        Check the references of markdown a plugin ships outside its catalog entries.
+
+        Catalog discovery finds only ``SKILL.md``, ``*.agent.md``, and
+        ``*.prompt.md``, so a ``references/`` page or a plugin ``README.md``
+        could carry a reference out of the plugin unnoticed. Roots come from the
+        requested paths, plus the published plugins in plugin mode, and either
+        ecosystem's manifest marks one.
+        """
+        plugin_roots = [
+            plugin_root
+            for path in paths
+            if (plugin_root := find_packaged_plugin_root(path)) is not None
+        ]
+        if self.plugin_mode:
+            published, _errors = find_plugin_roots(Path.cwd())
+            plugin_roots.extend(Path(candidate) for candidate in published)
+
+        unique_roots = dict.fromkeys(plugin_root.resolve() for plugin_root in plugin_roots)
+        return [
+            result
+            for plugin_root in unique_roots
+            for result in validate_bundled_markdown(plugin_root)
+        ]
+
     @staticmethod
     def _unique_files(file_paths: Iterable[str]) -> List[str]:
         """Return discovered files once while preserving discovery order."""
@@ -282,7 +312,7 @@ class CustomizationsValidationEngine:
             return result
 
         result.issues.extend(validate_agent_frontmatter(document.frontmatter, known_targets))
-        agent_plugin_root = find_plugin_root(file_path)
+        agent_plugin_root = find_packaged_plugin_root(file_path)
         xref_validator = CrossReferenceValidator(
             base_path=str(Path(file_path).parent),
             plugin_root=None if agent_plugin_root is None else str(agent_plugin_root),
@@ -331,7 +361,7 @@ class CustomizationsValidationEngine:
         result.issues.extend(validate_prompt_frontmatter(document.frontmatter))
         result.issues.extend(validate_prompt_body(document.body))
 
-        prompt_plugin_root = find_plugin_root(file_path)
+        prompt_plugin_root = find_packaged_plugin_root(file_path)
         xref_validator = CrossReferenceValidator(
             base_path=str(Path(file_path).parent),
             plugin_root=None if prompt_plugin_root is None else str(prompt_plugin_root),

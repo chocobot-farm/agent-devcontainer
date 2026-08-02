@@ -33,7 +33,8 @@ the user asks for a rename.
    pull request template) in prose rather than by relative link: a skill runs
    from the plugin cache of whatever repository enables it, so a link that
    climbs out of the plugin root resolves against the wrong tree. The validator
-   rejects any reference that leaves the plugin.
+   rejects any reference that leaves the plugin, in `SKILL.md` and in the
+   `references/` pages and README a plugin ships alongside it.
 4. Select the appropriate degree of prescription: explain heuristics when
    judgment varies; provide a parameterized pattern when a preferred approach
    exists; bundle and invoke a tested script when correctness depends on a
