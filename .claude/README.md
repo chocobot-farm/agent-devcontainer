@@ -1,7 +1,7 @@
 # `.claude/` — this repository's own Claude Code configuration
 
 The agent catalog does not live here; it ships as the `agentdev` plugin under
-[`plugin/`](../plugin/README.md). What remains in this directory is the
+[`.agents/plugins/agentdev/`](../.agents/plugins/agentdev/README.md). What remains in this directory is the
 configuration this repository keeps for itself.
 
 | Path            | Purpose                                                                   |

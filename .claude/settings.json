@@ -17,7 +17,7 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(git)",
       "Bash(git *)",
-      "Bash(plugin/skills/*/scripts/*)",
+      "Bash(.agents/plugins/agentdev/skills/*/scripts/*)",
       "Bash(/root/.claude/plugins/cache/chocobot-farm/agentdev/*)",
       "Bash(gh)",
       "Bash(gh *)",

@@ -18,6 +18,18 @@ def test_parse_arguments_defaults_to_all_kinds() -> None:
     assert parsed.format == 'text'
 
 
+def test_parse_arguments_defaults_to_files_mode() -> None:
+    """Plugin packaging is opt-in, so the default mode validates files only."""
+    assert parse_arguments([]).mode == 'files'
+    assert parse_arguments(['--mode', 'plugin']).mode == 'plugin'
+
+
+def test_parse_arguments_rejects_an_unknown_mode() -> None:
+    """An unknown mode exits rather than silently validating files only."""
+    with pytest.raises(SystemExit):
+        parse_arguments(['--mode', 'marketplace'])
+
+
 def test_parse_arguments_supports_skills_filter() -> None:
     """The canonical parser should allow skills-only validation."""
     parsed = parse_arguments(['--kind', 'skills', '.claude/skills'])

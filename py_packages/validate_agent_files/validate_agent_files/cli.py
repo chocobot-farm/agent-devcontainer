@@ -7,6 +7,8 @@ from __future__ import annotations
 import argparse
 from typing import List, Optional
 
+from .paths import ECOSYSTEMS
+
 
 def parse_arguments(args: Optional[List[str]] = None) -> argparse.Namespace:
     """Parse command-line arguments for repository customization validation."""
@@ -23,6 +25,30 @@ def parse_arguments(args: Optional[List[str]] = None) -> argparse.Namespace:
         choices=['all', 'skills', 'agents', 'prompts'],
         default='all',
         help='Customization kind to validate (default: all)',
+    )
+    parser.add_argument(
+        '--mode',
+        choices=['files', 'plugin'],
+        default='files',
+        help=(
+            'Validation mode: "files" validates only the skills, agents, and prompts found '
+            'under the given paths; "plugin" additionally validates the plugin manifests of '
+            'every plugin published by a marketplace manifest, without requiring any of them '
+            'to exist. Implied by --require-marketplace (default: %(default)s).'
+        ),
+    )
+    parser.add_argument(
+        '--require-marketplace',
+        nargs='+',
+        choices=sorted(ECOSYSTEMS),
+        default=[],
+        metavar='ECOSYSTEM',
+        help=(
+            'Require these ecosystems to publish an installable catalog: the marketplace '
+            'manifest must exist, every plugin it references must be on disk, and each '
+            'must carry a valid definition (choices: %(choices)s). Nothing is required '
+            'by default.'
+        ),
     )
     parser.add_argument(
         '--recommend',

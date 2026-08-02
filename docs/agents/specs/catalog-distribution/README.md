@@ -41,11 +41,11 @@ do not follow:
 Distribution failed as a single problem because it is three problems with
 different churn rates and different natural mechanisms.
 
-| Layer               | Contents                                                   | Churn  | Mechanism                        |
-| ------------------- | ---------------------------------------------------------- | ------ | -------------------------------- |
-| 1. Environment      | `ansible/`, `docker/`, the published image                 | Low    | GHCR image pinned by digest      |
-| 2. Agent catalog    | `plugin/skills`, `plugin/agents`, hooks, `plugin/bin/*.sh` | High   | Claude Code plugin + marketplace |
-| 3. Repo scaffolding | `.devcontainer/`, `AGENTS.md`, `.claude/settings.json`     | Medium | Manual copy (see F7)             |
+| Layer               | Contents                                                                                                         | Churn  | Mechanism                        |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------- |
+| 1. Environment      | `ansible/`, `docker/`, the published image                                                                       | Low    | GHCR image pinned by digest      |
+| 2. Agent catalog    | `.agents/plugins/agentdev/skills`, `.agents/plugins/agentdev/agents`, hooks, `.agents/plugins/agentdev/bin/*.sh` | High   | Claude Code plugin + marketplace |
+| 3. Repo scaffolding | `.devcontainer/`, `AGENTS.md`, `.claude/settings.json`                                                           | Medium | Manual copy (see F7)             |
 
 ## Findings
 
@@ -192,8 +192,8 @@ are generated trampolines validated by `validate_agent_files`. Moving the
 canonical catalog into a plugin directory breaks both.
 
 The layout was chosen so the symlink could be re-pointed within this repository:
-`.codex/skills` now points at `../plugin/skills`, the trampolines delegate to
-`plugin/agents/*.agent.md`, and `validate_agent_files` validates the plugin
+`.codex/skills` now points at `../.agents/plugins/agentdev/skills`, the trampolines delegate to
+`.agents/plugins/agentdev/agents/*.agent.md`, and `validate_agent_files` validates the plugin
 layout. Placing the catalog at `~/.codex/skills` for containers remains open and
 belongs to spec `03`.
 

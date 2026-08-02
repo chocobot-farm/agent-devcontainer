@@ -23,7 +23,11 @@ def main(args: Optional[List[str]] = None) -> int:
     if getattr(parsed_args, 'no_warnings', False) or getattr(parsed_args, 'errors_only', False):
         show_warnings = False
 
-    engine = CustomizationsValidationEngine(show_warnings=show_warnings)
+    engine = CustomizationsValidationEngine(
+        show_warnings=show_warnings,
+        require_marketplaces=getattr(parsed_args, 'require_marketplace', []),
+        mode=getattr(parsed_args, 'mode', 'files'),
+    )
     results = engine.validate_paths(parsed_args.paths, parsed_args.kind)
 
     # Compute exit code before formatting so it can be reused for CI behavior.
