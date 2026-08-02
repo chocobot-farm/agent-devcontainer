@@ -5,11 +5,11 @@ description: 'Run every formatter and validation from the reformat GitHub Action
 
 # Run the Reformat Workflow Locally
 
-Run the local entry point that mirrors the formatter job in
-[reformat.yml](../../../../../.github/workflows/reformat.yml). Super-Linter owns every
-formatter — ruff for Python, plus Ansible, clang-format, and Prettier — so one
-command reproduces the whole CI pass. It modifies files; inspect the resulting
-diff and keep only intended changes.
+Run the local entry point that mirrors the formatter job in the repository's
+`.github/workflows/reformat.yml`. Super-Linter owns every formatter — ruff for
+Python, plus Ansible, clang-format, and Prettier — so one command reproduces the
+whole CI pass. It modifies files; inspect the resulting diff and keep only
+intended changes.
 
 ## When to Use This Skill
 
@@ -33,8 +33,8 @@ diff and keep only intended changes.
   wrapper uses the image configured in
   [super-linter-defaults.sh](../../bin/super-linter-defaults.sh) unless
   overridden.
-- The shared clang-format configuration is
-  [.clang-format](../../../../../.clang-format).
+- The shared clang-format configuration is `.clang-format` at the repository
+  root.
 
 ## Codex Managed-Sandbox Execution
 

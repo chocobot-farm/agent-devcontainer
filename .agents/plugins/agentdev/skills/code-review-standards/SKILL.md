@@ -5,7 +5,7 @@ description: Apply review standards and write pull request descriptions. Use whe
 
 # Code Review Standards
 
-Write high-quality pull request descriptions and conduct effective code reviews using established best practices. Use the Coding Conventions section of the repository [AGENTS.md](../../../../../AGENTS.md) as the source of truth for project-specific style, testing, and error-handling expectations.
+Write high-quality pull request descriptions and conduct effective code reviews using established best practices. Use the Coding Conventions section of the `AGENTS.md` at the root of the repository being reviewed as the source of truth for project-specific style, testing, and error-handling expectations.
 
 ## When to Use This Skill
 
@@ -201,6 +201,6 @@ Update PR based on code review feedback.
 
 ## References
 
-- [Coding Conventions in AGENTS.md](../../../../../AGENTS.md)
+- Coding Conventions in the reviewed repository's root `AGENTS.md`
 - [Generate pull request description](../generate-pr-description/)
 - [Create conventional commits](../git-commit/)

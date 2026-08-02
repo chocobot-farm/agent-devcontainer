@@ -1,12 +1,29 @@
 #!/usr/bin/env python3
 
-"""Validator for cross-references."""
+"""
+Validator for cross-references.
+
+Beyond checking that a reference resolves, a reference inside a plugin must also
+stay inside it. Plugin files ship to the plugin cache of whatever repository
+enables them, so a link that climbs out of the plugin root resolves against an
+unrelated tree — or, worse, against the publishing repository's own files, which
+silently supplies the wrong conventions instead of failing. Per-repository
+artifacts (``AGENTS.md``, lint configuration, a pull request template) must be
+described in prose so they are resolved at runtime, exactly as ``bin/__utils.sh``
+resolves the target repository from the working directory rather than from its
+own location.
+"""
 
 from pathlib import Path
 import re
 from typing import List, Optional, Tuple
 
 from ..types import ValidationIssue, ValidationLevel
+
+ESCAPE_REMEDIATION = (
+    'describe a per-repository file in prose so it is resolved at runtime, or '
+    'use ${CLAUDE_SKILL_DIR}/... for a path inside this skill'
+)
 
 
 class CrossReferenceValidator:
@@ -17,9 +34,15 @@ class CrossReferenceValidator:
     )
     IGNORE_END_PATTERN = re.compile(r'<!--\s*validate_skills:\s*ignore-cross-reference-end\s*-->')
 
-    def __init__(self, base_path: Optional[str] = None, show_warnings: bool = False):
+    def __init__(
+        self,
+        base_path: Optional[str] = None,
+        show_warnings: bool = False,
+        plugin_root: Optional[str] = None,
+    ):
         self.base_path = base_path
         self.show_warnings = show_warnings
+        self.plugin_root = plugin_root
 
     def validate(
         self,
@@ -66,6 +89,24 @@ class CrossReferenceValidator:
                 )
                 continue
 
+            # An escaping reference is reported on its own: it is wrong wherever
+            # the plugin lands, so whether it happens to resolve in the
+            # publishing repository says nothing useful.
+            if self._escapes_plugin(ref_path):
+                issues.append(
+                    ValidationIssue(
+                        level=ValidationLevel.ERROR,
+                        message=(
+                            f'Reference {reference} resolves outside the plugin root: '
+                            f'{ESCAPE_REMEDIATION}'
+                        ),
+                        line_number=line_number,
+                        column_number=column_number,
+                        section='cross_reference',
+                    )
+                )
+                continue
+
             if not ref_path.exists():
                 issues.append(
                     ValidationIssue(
@@ -78,6 +119,20 @@ class CrossReferenceValidator:
                 )
 
         return issues
+
+    def _escapes_plugin(self, ref_path: Path) -> bool:
+        """Report whether a resolved reference lands outside the plugin root."""
+        if self.plugin_root is None:
+            return False
+
+        try:
+            root = Path(self.plugin_root).resolve()
+        except (OSError, ValueError):
+            # An unresolvable plugin root cannot prove containment either way;
+            # leave the reference to the existence check below.
+            return False
+
+        return not ref_path.is_relative_to(root)
 
     @staticmethod
     def _resolve_reference(base: Path, reference: str) -> Path:

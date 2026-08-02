@@ -213,8 +213,12 @@ def test_cli_reports_broken_references_under_a_repository_root(
 
     exit_code = main(['.', '--kind', 'skills'])
 
+    # The fixture's reference both escapes the plugin and dangles; containment
+    # is the finding reported, because it is wrong wherever the plugin lands.
     assert exit_code == 1
-    assert 'Broken reference: ../../../AGENTS.md' in capsys.readouterr().out
+    assert 'Reference ../../../AGENTS.md resolves outside the plugin root' in (
+        capsys.readouterr().out
+    )
 
 
 def test_cli_missing_path_fails(tmp_path: Path, capsys) -> None:

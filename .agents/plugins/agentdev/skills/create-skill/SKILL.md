@@ -29,6 +29,11 @@ the user asks for a rename.
    change the skill's scope or output.
 3. Choose the narrowest useful workflow. Put general repository rules in
    `AGENTS.md`, not in a skill that would repeat them on every invocation.
+   Refer to `AGENTS.md` and other per-repository files (lint configuration, the
+   pull request template) in prose rather than by relative link: a skill runs
+   from the plugin cache of whatever repository enables it, so a link that
+   climbs out of the plugin root resolves against the wrong tree. The validator
+   rejects any reference that leaves the plugin.
 4. Select the appropriate degree of prescription: explain heuristics when
    judgment varies; provide a parameterized pattern when a preferred approach
    exists; bundle and invoke a tested script when correctness depends on a

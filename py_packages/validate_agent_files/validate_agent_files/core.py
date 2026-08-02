@@ -86,8 +86,14 @@ class ValidationEngine:
             unique_validator.validate(skill_path=skill_path, metadata=frontmatter, content=body)
         )
 
+        # Only plugin-hosted skills are affected: outside a plugin the literal
+        # path still resolves, so flagging it would be a false positive.
+        plugin_root = find_plugin_root(skill_path)
+
         xref_validator = CrossReferenceValidator(
-            base_path=str(skill_dir), show_warnings=self.show_warnings
+            base_path=str(skill_dir),
+            show_warnings=self.show_warnings,
+            plugin_root=None if plugin_root is None else str(plugin_root),
         )
         result.issues.extend(
             xref_validator.validate(
@@ -98,9 +104,7 @@ class ValidationEngine:
             )
         )
 
-        # Only plugin-hosted skills are affected: outside a plugin the literal
-        # path still resolves, so flagging it would be a false positive.
-        if find_plugin_root(skill_path) is not None:
+        if plugin_root is not None:
             result.issues.extend(validate_catalog_paths(body, line_offset=body_start_line - 1))
 
         return result
@@ -278,7 +282,11 @@ class CustomizationsValidationEngine:
             return result
 
         result.issues.extend(validate_agent_frontmatter(document.frontmatter, known_targets))
-        xref_validator = CrossReferenceValidator(base_path=str(Path(file_path).parent))
+        agent_plugin_root = find_plugin_root(file_path)
+        xref_validator = CrossReferenceValidator(
+            base_path=str(Path(file_path).parent),
+            plugin_root=None if agent_plugin_root is None else str(agent_plugin_root),
+        )
         result.issues.extend(
             xref_validator.validate(
                 skill_path=file_path,
@@ -323,7 +331,11 @@ class CustomizationsValidationEngine:
         result.issues.extend(validate_prompt_frontmatter(document.frontmatter))
         result.issues.extend(validate_prompt_body(document.body))
 
-        xref_validator = CrossReferenceValidator(base_path=str(Path(file_path).parent))
+        prompt_plugin_root = find_plugin_root(file_path)
+        xref_validator = CrossReferenceValidator(
+            base_path=str(Path(file_path).parent),
+            plugin_root=None if prompt_plugin_root is None else str(prompt_plugin_root),
+        )
         result.issues.extend(
             xref_validator.validate(
                 skill_path=file_path,

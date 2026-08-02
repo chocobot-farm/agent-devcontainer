@@ -56,7 +56,7 @@ Consult the **[Principal Engineer](/.agents/plugins/agentdev/agents/principal-en
 - **Codex**: the same `.agents/plugins/agentdev/` tree, packaged by `.agents/plugins/agentdev/.codex-plugin/plugin.json`; Codex discovers `.agents/plugins/agentdev/agents/` and `.agents/plugins/agentdev/skills/` directly
 - **This repository's own config**: `.claude/settings.json` only; it enables the plugin from the marketplace declared in `.claude-plugin/marketplace.json`. `settings.json` is strict JSON — no comments, no trailing commas
 
-Update `.agents/plugins/agentdev/` sources directly. Never write a repository-relative catalog path inside the plugin — use `${CLAUDE_SKILL_DIR}/...` for a path within a skill and a namespaced invocation for a sibling skill. Keep the Claude and Codex plugin manifest versions aligned when releasing the shared catalog.
+Update `.agents/plugins/agentdev/` sources directly. Never write a repository-relative catalog path inside the plugin — use `${CLAUDE_SKILL_DIR}/...` for a path within a skill and a namespaced invocation for a sibling skill. No link inside the plugin may resolve outside the plugin root: the catalog ships to the plugin cache of whatever repository enables it, so a `../../../../../AGENTS.md` link silently supplies this repository's conventions to a consumer instead of theirs. Describe per-repository files (`AGENTS.md`, lint configuration, the pull request template) in prose so they are resolved at runtime; the validator enforces this. Keep the Claude and Codex plugin manifest versions aligned when releasing the shared catalog.
 
 **Edit `AGENTS.md`; `CLAUDE.md` only includes it (`@AGENTS.md`), so changes there cover all agents.**
 
