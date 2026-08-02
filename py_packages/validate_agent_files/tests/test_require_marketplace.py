@@ -93,9 +93,30 @@ def test_complete_repository_satisfies_both_ecosystems(tmp_path, monkeypatch, ca
     _write_repo(tmp_path)
     monkeypatch.chdir(tmp_path)
 
-    exit_code = main(['plugin', '--require-marketplace', 'codex', 'claude'])
+    exit_code = main(['.', '--require-marketplace', 'codex', 'claude'])
 
     assert exit_code == 0, capsys.readouterr().out
+
+
+def test_requirement_checks_the_plugin_manifest_from_the_repository_root(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    """Requiring an ecosystem also cross-checks plugin.json against its entry."""
+    _write_repo(tmp_path)
+    _write_json(
+        tmp_path / CLAUDE_MARKETPLACE,
+        {
+            'name': 'chocobot-farm',
+            'plugins': [{'name': 'agentdev', 'source': PLUGIN_SOURCE, 'version': '1.1.0'}],
+        },
+    )
+    monkeypatch.chdir(tmp_path)
+
+    exit_code = main(['.', '--require-marketplace', 'claude'])
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert 'version 1.1.0 does not match' in captured.out
 
 
 def test_requirement_is_opt_in(tmp_path, monkeypatch, capsys) -> None:
@@ -103,7 +124,7 @@ def test_requirement_is_opt_in(tmp_path, monkeypatch, capsys) -> None:
     _write_repo(tmp_path, codex_marketplace=False, codex_manifest=None)
     monkeypatch.chdir(tmp_path)
 
-    exit_code = main(['plugin'])
+    exit_code = main(['.'])
 
     assert exit_code == 0, capsys.readouterr().out
 
@@ -113,7 +134,7 @@ def test_missing_codex_marketplace_fails(tmp_path, monkeypatch, capsys) -> None:
     _write_repo(tmp_path, codex_marketplace=False)
     monkeypatch.chdir(tmp_path)
 
-    exit_code = main(['plugin', '--require-marketplace', 'codex'])
+    exit_code = main(['.', '--require-marketplace', 'codex'])
     captured = capsys.readouterr()
 
     assert exit_code == 1
@@ -126,7 +147,7 @@ def test_missing_claude_marketplace_fails(tmp_path, monkeypatch, capsys) -> None
     _write_repo(tmp_path, claude_marketplace=False)
     monkeypatch.chdir(tmp_path)
 
-    exit_code = main(['plugin', '--require-marketplace', 'claude'])
+    exit_code = main(['.', '--require-marketplace', 'claude'])
     captured = capsys.readouterr()
 
     assert exit_code == 1
@@ -147,7 +168,7 @@ def test_marketplace_entry_pointing_at_missing_plugin_fails(tmp_path, monkeypatc
     )
     monkeypatch.chdir(tmp_path)
 
-    exit_code = main(['plugin', '--require-marketplace', 'codex'])
+    exit_code = main(['.', '--require-marketplace', 'codex'])
     captured = capsys.readouterr()
 
     assert exit_code == 1
@@ -159,7 +180,7 @@ def test_missing_ecosystem_manifest_fails(tmp_path, monkeypatch, capsys) -> None
     _write_repo(tmp_path, codex_manifest=None)
     monkeypatch.chdir(tmp_path)
 
-    exit_code = main(['plugin', '--require-marketplace', 'codex'])
+    exit_code = main(['.', '--require-marketplace', 'codex'])
     captured = capsys.readouterr()
 
     assert exit_code == 1
@@ -173,7 +194,7 @@ def test_unparsable_ecosystem_manifest_fails(tmp_path, monkeypatch, capsys) -> N
     (tmp_path / PLUGIN_SOURCE / '.codex-plugin' / 'plugin.json').write_text('{not json')
     monkeypatch.chdir(tmp_path)
 
-    exit_code = main(['plugin', '--require-marketplace', 'codex'])
+    exit_code = main(['.', '--require-marketplace', 'codex'])
     captured = capsys.readouterr()
 
     assert exit_code == 1
@@ -185,7 +206,7 @@ def test_ecosystem_manifest_without_required_fields_fails(tmp_path, monkeypatch,
     _write_repo(tmp_path, codex_manifest={'description': 'No name, no version.'})
     monkeypatch.chdir(tmp_path)
 
-    exit_code = main(['plugin', '--require-marketplace', 'codex'])
+    exit_code = main(['.', '--require-marketplace', 'codex'])
     captured = capsys.readouterr()
 
     assert exit_code == 1
@@ -198,7 +219,7 @@ def test_ecosystem_manifest_name_must_match_the_entry(tmp_path, monkeypatch, cap
     _write_repo(tmp_path, codex_manifest={'name': 'other', 'version': '1.0.0'})
     monkeypatch.chdir(tmp_path)
 
-    exit_code = main(['plugin', '--require-marketplace', 'codex'])
+    exit_code = main(['.', '--require-marketplace', 'codex'])
     captured = capsys.readouterr()
 
     assert exit_code == 1
@@ -212,7 +233,7 @@ def test_unparsable_required_marketplace_fails(tmp_path, monkeypatch, capsys) ->
     (tmp_path / CODEX_MARKETPLACE).write_text('{not json')
     monkeypatch.chdir(tmp_path)
 
-    exit_code = main(['plugin', '--require-marketplace', 'codex'])
+    exit_code = main(['.', '--require-marketplace', 'codex'])
     captured = capsys.readouterr()
 
     assert exit_code == 1

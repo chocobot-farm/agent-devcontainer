@@ -3,12 +3,15 @@
 """
 Resolution of the catalog paths requested on the command line.
 
-The catalog no longer sits at a fixed repository location, so callers name it
-with the ``plugin`` alias and let the marketplace manifests say where it lives:
-``.claude-plugin/marketplace.json`` and ``.agents/plugins/marketplace.json`` are
-well-known locations that already list every plugin this repository publishes.
-A requested path that resolves to nothing is an error: silently validating zero
-files is indistinguishable from a clean run and hides catalog regressions.
+Every requested path is a real path and must exist: a path that resolves to
+nothing is an error, because silently validating zero files is indistinguishable
+from a clean run and hides catalog regressions.
+
+Where the plugins themselves live is a separate question, answered by the
+marketplace manifests rather than by the command line. ``.claude-plugin/marketplace.json``
+and ``.agents/plugins/marketplace.json`` are well-known locations that already
+list every plugin a repository publishes; ``find_plugin_roots`` reads them for
+the plugin mode in :mod:`validate_agent_files.core`.
 """
 
 from __future__ import annotations
@@ -18,9 +21,6 @@ from pathlib import Path
 from typing import Iterable, List, NamedTuple, Optional, Tuple
 
 from .types import ValidationIssue, ValidationLevel, ValidationResult
-
-# Names that stand for "every plugin this repository publishes".
-PLUGIN_ALIASES = ('plugin', 'plugins')
 
 
 class Ecosystem(NamedTuple):
@@ -99,38 +99,21 @@ def find_plugin_roots(search_root: Path | str) -> Tuple[List[str], List[Tuple[st
     return plugin_roots, errors
 
 
-def resolve_paths(
-    paths: Iterable[str],
-    search_root: Optional[Path | str] = None,
-) -> Tuple[List[str], List[ValidationResult]]:
+def resolve_paths(paths: Iterable[str]) -> Tuple[List[str], List[ValidationResult]]:
     """
-    Expand catalog aliases and report every path that resolves to nothing.
+    Keep every requested path that exists and report the ones that do not.
 
-    Literal paths are resolved as given (relative ones against the working
-    directory); ``search_root`` is the repository root the marketplace manifests
-    and their plugin sources are resolved against.
+    Paths are used as given, so relative ones resolve against the working
+    directory.
     """
-    root = Path(search_root) if search_root is not None else Path.cwd()
     resolved: List[str] = []
     failures: List[ValidationResult] = []
 
     for path in paths:
         if Path(path).exists():
             resolved.append(path)
-            continue
-
-        if path not in PLUGIN_ALIASES:
+        else:
             failures.append(_failure(path, 'Path does not exist'))
-            continue
-
-        plugin_roots, errors = find_plugin_roots(root)
-        failures.extend(_failure(source, message) for source, message in errors)
-        if plugin_roots:
-            resolved.extend(plugin_roots)
-        elif not errors:
-            failures.append(
-                _failure(path, f'No plugin is published by a marketplace under {root}')
-            )
 
     return resolved, failures
 
@@ -190,5 +173,4 @@ __all__ = [
     'read_marketplace_entries',
     'resolve_paths',
     'MARKETPLACE_LOCATIONS',
-    'PLUGIN_ALIASES',
 ]

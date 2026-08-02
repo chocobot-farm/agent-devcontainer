@@ -11,6 +11,10 @@ A repository that *does* promise both says so with ``--require-marketplace claud
 codex``. For each named ecosystem this asserts the promise end to end: the
 marketplace manifest exists and parses, every plugin it references is on disk,
 and each of those plugins carries a usable definition for that ecosystem.
+
+``validate_present_marketplaces`` runs the same walk for ``--mode plugin``, where
+packaging is validated but not required: a marketplace or plugin definition that
+is simply absent is skipped, while everything present is held to the same rules.
 """
 
 from __future__ import annotations
@@ -39,15 +43,41 @@ def validate_required_marketplaces(
             known = ', '.join(sorted(ECOSYSTEMS))
             results.append(_failure(name, f'Unknown ecosystem {name!r} (known: {known})'))
             continue
-        results.extend(_validate_ecosystem(ecosystem, root))
+        results.extend(_validate_ecosystem(ecosystem, root, required=True))
 
     return results
 
 
-def _validate_ecosystem(ecosystem: Ecosystem, root: Path) -> List[ValidationResult]:
+def validate_present_marketplaces(
+    skip: Sequence[str] = (),
+    search_root: Optional[Path | str] = None,
+) -> List[ValidationResult]:
+    """
+    Validate the packaging every ecosystem already ships, requiring none of it.
+
+    Ecosystems named in ``skip`` are left to ``validate_required_marketplaces``
+    so a required ecosystem is not validated twice.
+    """
+    root = Path(search_root) if search_root is not None else Path.cwd()
+    skipped = set(skip)
+    results: List[ValidationResult] = []
+
+    for name, ecosystem in ECOSYSTEMS.items():
+        if name in skipped:
+            continue
+        results.extend(_validate_ecosystem(ecosystem, root, required=False))
+
+    return results
+
+
+def _validate_ecosystem(
+    ecosystem: Ecosystem, root: Path, *, required: bool
+) -> List[ValidationResult]:
     """Validate one ecosystem's marketplace and every plugin it publishes."""
     marketplace = root / ecosystem.marketplace
     if not marketplace.is_file():
+        if not required:
+            return []
         return [
             _failure(
                 str(marketplace),
@@ -65,7 +95,7 @@ def _validate_ecosystem(ecosystem: Ecosystem, root: Path) -> List[ValidationResu
 
     results: List[ValidationResult] = []
     for entry in entries:
-        results.extend(_validate_entry(ecosystem, root, marketplace, entry))
+        results.extend(_validate_entry(ecosystem, root, marketplace, entry, required=required))
     return results
 
 
@@ -74,6 +104,8 @@ def _validate_entry(
     root: Path,
     marketplace: Path,
     entry: dict,
+    *,
+    required: bool,
 ) -> List[ValidationResult]:
     """Validate one marketplace entry and the plugin definition it points at."""
     name = entry.get('name', '<unnamed>')
@@ -90,6 +122,9 @@ def _validate_entry(
 
     manifest_path = plugin_root / ecosystem.manifest
     if not manifest_path.is_file():
+        if not required:
+            # Shipping for one ecosystem and not another is a normal choice.
+            return []
         return [
             _failure(
                 str(manifest_path),
@@ -145,4 +180,4 @@ def _failure(path: str, message: str) -> ValidationResult:
     return ValidationResult(skill_path=path, issues=[_issue(message)])
 
 
-__all__ = ['validate_required_marketplaces']
+__all__ = ['validate_present_marketplaces', 'validate_required_marketplaces']

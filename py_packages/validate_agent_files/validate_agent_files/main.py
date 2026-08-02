@@ -26,6 +26,7 @@ def main(args: Optional[List[str]] = None) -> int:
     engine = CustomizationsValidationEngine(
         show_warnings=show_warnings,
         require_marketplaces=getattr(parsed_args, 'require_marketplace', []),
+        mode=getattr(parsed_args, 'mode', 'files'),
     )
     results = engine.validate_paths(parsed_args.paths, parsed_args.kind)
 

@@ -18,13 +18,17 @@ from .loaders import (
     safe_load_frontmatter_with_body_line,
     SkillFileLoader,
 )
-from .paths import resolve_paths
+from .paths import find_plugin_roots, resolve_paths
 from .types import ValidationIssue, ValidationLevel, ValidationResult
 from .validators.agents import build_known_agent_targets, validate_agent_frontmatter
 from .validators.catalog_paths import validate_catalog_paths
 from .validators.cross_reference import CrossReferenceValidator
-from .validators.marketplace import validate_required_marketplaces
-from .validators.plugin_manifest import find_plugin_root, validate_plugin_manifests
+from .validators.marketplace import validate_present_marketplaces, validate_required_marketplaces
+from .validators.plugin_manifest import (
+    find_plugin_root,
+    PLUGIN_MANIFEST,
+    validate_plugin_manifests,
+)
 from .validators.prompts import (
     validate_prompt_body,
     validate_prompt_frontmatter,
@@ -105,9 +109,20 @@ class ValidationEngine:
 class CustomizationsValidationEngine:
     """Orchestrates validation for skills, agents, and prompts."""
 
-    def __init__(self, show_warnings: bool = False, require_marketplaces: Sequence[str] = ()):
+    def __init__(
+        self,
+        show_warnings: bool = False,
+        require_marketplaces: Sequence[str] = (),
+        mode: str = 'files',
+    ):
         self.show_warnings = show_warnings
         self.require_marketplaces = require_marketplaces
+        self.mode = mode
+
+    @property
+    def plugin_mode(self) -> bool:
+        """Whether packaging is validated: asked for, or implied by a requirement."""
+        return self.mode == 'plugin' or bool(self.require_marketplaces)
 
     def validate(self, path: str, kind: str) -> List[ValidationResult]:
         """Validate one customization path."""
@@ -117,6 +132,8 @@ class CustomizationsValidationEngine:
         """Validate customization paths as one shared catalog."""
         paths, results = resolve_paths(requested_paths)
         results.extend(validate_required_marketplaces(self.require_marketplaces))
+        if self.plugin_mode:
+            results.extend(validate_present_marketplaces(skip=self.require_marketplaces))
         results.extend(self._report_empty_paths(paths))
         results.extend(self._validate_plugin_manifests(paths))
 
@@ -168,13 +185,30 @@ class CustomizationsValidationEngine:
             )
         return results
 
-    @staticmethod
-    def _validate_plugin_manifests(paths: List[str]) -> List[ValidationResult]:
-        """Validate the manifests of every plugin the given paths belong to."""
-        plugin_roots = dict.fromkeys(
+    def _validate_plugin_manifests(self, paths: List[str]) -> List[ValidationResult]:
+        """
+        Validate the manifests of every plugin this run covers.
+
+        A requested path inside a plugin always carries its plugin with it, so
+        those manifests are checked in every mode. Plugin mode adds the plugins
+        the marketplace manifests publish, which is how a repository root — above
+        its plugins rather than inside one — gets its packaging validated.
+        Discovery errors, and a published plugin that ships no Claude manifest at
+        all, are left to the marketplace validators, which report them once.
+        """
+        plugin_roots = [
             plugin_root for path in paths if (plugin_root := find_plugin_root(path)) is not None
-        )
-        return [validate_plugin_manifests(plugin_root) for plugin_root in plugin_roots]
+        ]
+        if self.plugin_mode:
+            published, _errors = find_plugin_roots(Path.cwd())
+            plugin_roots.extend(
+                Path(candidate)
+                for candidate in published
+                if (Path(candidate) / PLUGIN_MANIFEST).is_file()
+            )
+
+        unique_roots = dict.fromkeys(plugin_root.resolve() for plugin_root in plugin_roots)
+        return [validate_plugin_manifests(plugin_root) for plugin_root in unique_roots]
 
     @staticmethod
     def _unique_files(file_paths: Iterable[str]) -> List[str]:

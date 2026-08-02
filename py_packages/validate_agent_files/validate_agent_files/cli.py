@@ -27,6 +27,17 @@ def parse_arguments(args: Optional[List[str]] = None) -> argparse.Namespace:
         help='Customization kind to validate (default: all)',
     )
     parser.add_argument(
+        '--mode',
+        choices=['files', 'plugin'],
+        default='files',
+        help=(
+            'Validation mode: "files" validates only the skills, agents, and prompts found '
+            'under the given paths; "plugin" additionally validates the plugin manifests of '
+            'every plugin published by a marketplace manifest, without requiring any of them '
+            'to exist. Implied by --require-marketplace (default: %(default)s).'
+        ),
+    )
+    parser.add_argument(
         '--require-marketplace',
         nargs='+',
         choices=sorted(ECOSYSTEMS),
