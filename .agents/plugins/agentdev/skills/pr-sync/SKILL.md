@@ -1,5 +1,5 @@
 ---
-name: sync-pr-description
+name: pr-sync
 description: 'Refresh an existing GitHub pull request title and body so they match the current branch, then push the branch. Use when asked to sync, update, refresh, or regenerate a PR description or title for the branch in the working tree, including after new commits land on it. Stops when the branch has no pull request; creating a PR belongs to /agentdev:pr-open, and formatting, committing, and base-branch sync belong to their own skills.'
 allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*)
 ---
