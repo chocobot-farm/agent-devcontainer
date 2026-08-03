@@ -51,7 +51,6 @@ The pr-open skill is responsible for:
 
 Use these exact helper scripts instead of retyping inline shell commands:
 
-- [review-git-changes.sh](scripts/review-git-changes.sh) reviews the working tree, diff stats, patch, and commit log for the PR context.
 - [find-branch-pr.sh](scripts/find-branch-pr.sh) resolves the single pull request whose head is the current branch, and fails loudly when more than one matches.
 - [push-branch.sh](scripts/push-branch.sh) verifies upstream tracking, pushes the branch when needed, and blocks on divergence without ever rewriting history.
 
@@ -127,9 +126,9 @@ or staging workflow inline.
 
 ### 5. Branch Sync with the Base Branch
 
-**CRITICAL:** Before the final change review or PR-body generation, sync the
-current branch with its base branch (`PR_BASE` in update mode, otherwise
-`main`) using the `/agentdev:update-branch` skill.
+**CRITICAL:** Before PR-body generation, sync the current branch with its base
+branch (`PR_BASE` in update mode, otherwise `main`) using the
+`/agentdev:update-branch` skill.
 
 The AI agent **MUST** invoke and follow the `/agentdev:update-branch` skill instead of
 re-implementing merge logic inline.
@@ -144,25 +143,7 @@ Branch synchronization can introduce formatter changes. Run the required
 tracked files, invoke `git-commit` to make one focused formatting commit. Do
 not continue with formatter edits left uncommitted.
 
-### 7. Final Git Changes Review
-
-**CRITICAL:** After the branch is synchronized and clean, the AI agent
-**MUST** review the actual git changes:
-
-```bash
-${CLAUDE_SKILL_DIR}/scripts/review-git-changes.sh
-```
-
-Use `--base-ref <ref>` or `--range <range>` when the comparison base is not
-`origin/main` — in update mode pass `--base-ref origin/${PR_BASE}`.
-This script ensures the PR description accurately reflects the final code
-changes that the PR will contain.
-
-Describe the committed branch, which is what the PR will contain. Report any
-uncommitted working-tree changes that are out of PR scope instead of writing
-them into the body.
-
-### 8. Optional Issue Linking
+### 7. Optional Issue Linking
 
 Issue linking is recommended but not required.
 
@@ -190,10 +171,17 @@ Issue linking is recommended but not required.
 In update mode, preserve the existing title's issue prefix (for example `[#42]`)
 rather than re-deriving the link.
 
-### 9. PR Draft Construction
+### 8. PR Draft Construction
+
+**CRITICAL:** Run this only after the branch is synchronized and clean, so the
+description reflects the final changes the PR will contain.
 
 Generate the PR description by following the
-[pr-gen-description](../pr-gen-description/) skill.
+[pr-gen-description](../pr-gen-description/) skill. That skill performs the
+change review; do not review the diff separately here. Give it the base branch
+to compare against — `origin/${PR_BASE}` in update mode, `origin/main` in create
+mode — and expect it to report any uncommitted working-tree changes as out of PR
+scope rather than folding them into the body.
 
 Use the generated output as the PR body, and use one of these title formats:
 
@@ -204,12 +192,12 @@ Use the generated output as the PR body, and use one of these title formats:
 In update mode, keep `PR_TITLE` unchanged when it still describes the branch
 accurately — an update should not churn a good title.
 
-### 10. Proceed Without Confirmation
+### 9. Proceed Without Confirmation
 
 Do **not** pause to ask the user to approve the draft. Once the title and body
 are generated, continue directly to the branch push and PR creation or update.
-If any later operation changes the branch diff, re-run the Final Git Changes
-Review and regenerate and review the title and body first.
+If any later operation changes the branch diff, regenerate the title and body
+through `pr-gen-description` first.
 
 - Do not present the draft and wait for a "yes" before creating or updating the PR
 - Still stop and surface the issue to the user only when a blocking error
@@ -217,7 +205,7 @@ Review and regenerate and review the title and body first.
   input to resolve
 - Afterwards, report the resulting PR URL/number
 
-### 11. Push the Branch
+### 10. Push the Branch
 
 **CRITICAL:** Before creating or updating the PR, push the branch so the remote
 head ref contains every commit the body describes.
@@ -244,7 +232,7 @@ If the script exits non-zero, display its actionable error output and abort.
 Never force-push, and never update the branch ref through a GitHub API or MCP
 tool — reconcile locally with `/agentdev:update-branch` and rerun this step.
 
-### 12. Create or Update the Pull Request
+### 11. Create or Update the Pull Request
 
 In **update mode**, edit the existing PR in place with `gh`. Write the body to a
 file under `./.tmp/` (relative to the repository root; create the directory if
@@ -286,7 +274,7 @@ Use the tool with these fields:
 - Set `draft: true` if the user wants to create a draft PR
 - Set `base: <branch>` if targeting a different base branch
 
-### 13. Error Handling
+### 12. Error Handling
 
 Handle common error scenarios gracefully:
 

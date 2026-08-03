@@ -11,7 +11,7 @@ commit_range=""
 include_patch=1
 
 usage() {
-  show_help_header "Review working tree and branch changes for the pr-open skill."
+  show_help_header "Review working tree and branch changes for the pr-gen-description skill."
   cat <<'EOF'
 
 Usage:

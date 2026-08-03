@@ -1,6 +1,7 @@
 ---
 name: pr-gen-description
 description: Generate comprehensive pull request description following /agentdev:code-review-standards with change analysis, testing strategy, and migration notes. Use when creating a PR, writing PR description, preparing for code review, or documenting technical decisions.
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*)
 ---
 
 # Generate Pull Request Description
@@ -25,30 +26,40 @@ Generate a comprehensive PR description by analyzing the change set and filling 
 ## Inputs
 
 - **Base Ref** or **Commit Range**: Default to the PR merge base with
-  `origin/main`; accept an explicit range when the caller provides one.
+  `origin/main`; accept an explicit base ref or range when the caller provides
+  one. A caller updating an existing pull request passes that PR's base branch.
 - **Related Issues**: GitHub issue numbers
 - **Breaking Changes**: Yes/No
 - **Migration Steps**: If breaking
+
+## Bundled Scripts
+
+Use this helper instead of retyping inline git commands:
+
+- [review-git-changes.sh](scripts/review-git-changes.sh) prints the branch,
+  working tree status, diff stat, patch, and commit log for the change set.
 
 ## Workflow
 
 ### Step 1: Analyze Git Changes
 
 ```bash
-base_ref=origin/main
-merge_base="$(git merge-base "$base_ref" HEAD)"
-git diff --name-status "$merge_base"..HEAD
-git diff "$merge_base"..HEAD
-git log --oneline "$merge_base"..HEAD
-git diff --stat "$merge_base"..HEAD
+${CLAUDE_SKILL_DIR}/scripts/review-git-changes.sh
 ```
 
-Use the merge base rather than a raw `origin/main..HEAD` range when the branch
-and its base have diverged: PR review compares the changes introduced by the
-head branch since that common ancestor. If the caller supplies an explicit
-commit range or the PR targets a different base branch, use that scope instead.
+Pass `--base-ref <ref>` when the caller supplies a base other than
+`origin/main`, or `--range <range>` for an explicit commit range. Add
+`--stat-only` to skip the patch on a very large change set.
+
+The script compares against the merge base rather than a raw `origin/main..HEAD`
+range: when the branch and its base have diverged, PR review shows the changes
+introduced by the head branch since that common ancestor.
 
 Categorize: new, modified, deleted, renamed.
+
+Describe the committed branch, which is what the pull request will contain. The
+script also prints uncommitted working-tree changes — report those to the caller
+as out of scope instead of writing them into the description.
 
 ### Step 2: Identify Change Categories
 
