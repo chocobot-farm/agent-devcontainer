@@ -2,7 +2,7 @@
 # run (see .github/workflows/ci.yml); pinning a digest here would make Renovate bump a file
 # under docker/**, which matches the CI image path filter and rebuilds the very image that
 # produced the digest — an endless bump/rebuild loop.
-ARG FROM_IMAGE=ghcr.io/chocobot-farm/ubuntu-ansible:edge
+ARG FROM_IMAGE=ghcr.io/plume-works/ubuntu-ansible:edge
 
 FROM $FROM_IMAGE
 

@@ -62,7 +62,7 @@ def _write_repo(
     _write_json(
         root / CLAUDE_MARKETPLACE,
         {
-            'name': 'chocobot-farm',
+            'name': 'plume-works',
             'plugins': [
                 {'name': 'agentdev', 'source': PLUGIN_SOURCE, 'version': marketplace_version}
             ],
@@ -72,7 +72,7 @@ def _write_repo(
         _write_json(
             root / CODEX_MARKETPLACE,
             {
-                'name': 'chocobot-farm',
+                'name': 'plume-works',
                 'plugins': [
                     {'name': 'agentdev', 'source': {'source': 'local', 'path': PLUGIN_SOURCE}}
                 ],

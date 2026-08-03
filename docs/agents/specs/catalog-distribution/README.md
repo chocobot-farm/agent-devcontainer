@@ -81,14 +81,14 @@ commas:
 ```json
 {
   "extraKnownMarketplaces": {
-    "chocobot-farm": {
+    "plume-works": {
       "source": {
         "source": "github",
-        "repo": "chocobot-farm/agent-devcontainer"
+        "repo": "plume-works/agent-devcontainer"
       }
     }
   },
-  "enabledPlugins": { "agentdev@chocobot-farm": true }
+  "enabledPlugins": { "agentdev@plume-works": true }
 }
 ```
 
@@ -204,7 +204,7 @@ cannot authenticate to a private repository over HTTPS. It falls back to a full
 re-clone, which uses stored credentials but can time out. SSH remotes are
 unaffected.
 
-`chocobot-farm/agent-devcontainer` is public, so this does not bite today. It
+`plume-works/agent-devcontainer` is public, so this does not bite today. It
 constrains any future decision to make it private.
 
 ## Costs summary

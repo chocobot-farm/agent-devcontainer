@@ -1,7 +1,7 @@
 {
-  "name": "chocobot-farm",
+  "name": "plume-works",
   "interface": {
-    "displayName": "Chocobot Farm"
+    "displayName": "PlumeWorks"
   },
   "plugins": [
     {

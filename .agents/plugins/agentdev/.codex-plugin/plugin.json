@@ -3,11 +3,11 @@
   "version": "2.0.0",
   "description": "General-purpose agent catalog: git, pull requests, review, CI, formatting, container and Codespace escalation.",
   "author": {
-    "name": "chocobot-farm",
-    "url": "https://github.com/chocobot-farm"
+    "name": "plume-works",
+    "url": "https://github.com/plume-works"
   },
-  "homepage": "https://github.com/chocobot-farm/agent-devcontainer",
-  "repository": "https://github.com/chocobot-farm/agent-devcontainer",
+  "homepage": "https://github.com/plume-works/agent-devcontainer",
+  "repository": "https://github.com/plume-works/agent-devcontainer",
   "license": "MIT",
   "keywords": ["agents", "development", "git", "pull-requests", "code-review"],
   "skills": "./skills/",
@@ -15,10 +15,10 @@
     "displayName": "Agent Dev",
     "shortDescription": "Shared agents and development workflows",
     "longDescription": "Agents, skills, and helper scripts for git, pull requests, review, CI triage, formatting, and container or Codespace escalation.",
-    "developerName": "chocobot-farm",
+    "developerName": "plume-works",
     "category": "Developer Tools",
     "capabilities": ["Agents", "Skills"],
-    "websiteURL": "https://github.com/chocobot-farm/agent-devcontainer",
+    "websiteURL": "https://github.com/plume-works/agent-devcontainer",
     "defaultPrompt": [
       "Review my changes and identify the highest-risk issues.",
       "Prepare this branch for a pull request.",

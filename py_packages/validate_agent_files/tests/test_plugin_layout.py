@@ -39,7 +39,7 @@ def _write_plugin(
     (tmp_path / '.claude-plugin' / 'marketplace.json').write_text(
         json.dumps(
             {
-                'name': 'chocobot-farm',
+                'name': 'plume-works',
                 'plugins': [
                     {
                         'name': 'agentdev',

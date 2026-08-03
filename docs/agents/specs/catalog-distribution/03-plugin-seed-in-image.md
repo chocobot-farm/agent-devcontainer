@@ -29,9 +29,9 @@ the target, which installs directly there and skips a copy step:
 
 ```bash
 CLAUDE_CODE_PLUGIN_CACHE_DIR=/opt/claude-seed \
-  claude plugin marketplace add chocobot-farm/agent-devcontainer
+  claude plugin marketplace add plume-works/agent-devcontainer
 CLAUDE_CODE_PLUGIN_CACHE_DIR=/opt/claude-seed \
-  claude plugin install agentdev@chocobot-farm
+  claude plugin install agentdev@plume-works
 ```
 
 ## Prerequisites
@@ -49,8 +49,8 @@ repository's role-variable convention:
 
 ```yaml
 agentic_tools_seed_plugins: false
-agentic_tools_plugin_marketplace: chocobot-farm/agent-devcontainer
-agentic_tools_plugin_name: agentdev@chocobot-farm
+agentic_tools_plugin_marketplace: plume-works/agent-devcontainer
+agentic_tools_plugin_name: agentdev@plume-works
 agentic_tools_plugin_seed_dir: /opt/claude-seed
 ```
 
@@ -135,7 +135,7 @@ different version.
 - Local image build per the README, then:
 
   ```bash
-  docker run --rm ghcr.io/chocobot-farm/agent-desktop:local bash -lc '
+  docker run --rm ghcr.io/plume-works/agent-desktop:local bash -lc '
     echo "$CLAUDE_CODE_PLUGIN_SEED_DIR" &&
     ls "$CLAUDE_CODE_PLUGIN_SEED_DIR/marketplaces" &&
     claude -p "list your available skills" | grep agentdev'

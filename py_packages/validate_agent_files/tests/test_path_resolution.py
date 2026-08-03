@@ -48,7 +48,7 @@ def _write_claude_marketplace(root: Path, source: object, name: str = 'agentdev'
     marketplace.write_text(
         json.dumps(
             {
-                'name': 'chocobot-farm',
+                'name': 'plume-works',
                 'plugins': [{'name': name, 'source': source, 'version': '1.0.0'}],
             }
         )
@@ -64,7 +64,7 @@ def _write_agents_marketplace(root: Path, path: str, name: str = 'agentdev') -> 
     marketplace.write_text(
         json.dumps(
             {
-                'name': 'chocobot-farm',
+                'name': 'plume-works',
                 'plugins': [{'name': name, 'source': {'source': 'local', 'path': path}}],
             }
         )
@@ -155,7 +155,7 @@ def test_find_plugin_roots_ignores_remote_sources(tmp_path: Path) -> None:
     plugin_root = _write_plugin(tmp_path, '.agents/plugins/agentdev')
     _write_agents_marketplace(tmp_path, './.agents/plugins/agentdev')
     marketplace = json.loads((tmp_path / '.agents/plugins/marketplace.json').read_text())
-    marketplace['plugins'].append({'name': 'remote', 'source': 'chocobot-farm/other-plugin'})
+    marketplace['plugins'].append({'name': 'remote', 'source': 'plume-works/other-plugin'})
     (tmp_path / '.agents/plugins/marketplace.json').write_text(json.dumps(marketplace))
 
     plugin_roots, errors = find_plugin_roots(tmp_path)

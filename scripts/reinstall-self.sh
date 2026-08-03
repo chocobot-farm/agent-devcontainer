@@ -7,6 +7,6 @@ repo_root="$(cd "$script_dir/.." && pwd)"
 cd "$repo_root"
 claude plugin marketplace add "./." --scope project
 
-plugin_name="agentdev@chocobot-farm"
+plugin_name="agentdev@plume-works"
 claude plugin uninstall "$plugin_name" --scope project || true
 claude plugin install "$plugin_name" --scope project

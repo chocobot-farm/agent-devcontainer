@@ -27,8 +27,8 @@ copy the template in and go.
 Images are published multi-arch (`linux/amd64` + `linux/arm64`), built on native
 runners and merged into a single manifest:
 
-- `ghcr.io/chocobot-farm/agent-desktop:edge` — the development image
-- `ghcr.io/chocobot-farm/ubuntu-ansible:edge` — the Ansible base it is built from
+- `ghcr.io/plume-works/agent-desktop:edge` — the development image
+- `ghcr.io/plume-works/ubuntu-ansible:edge` — the Ansible base it is built from
 
 ## Using it in another project
 
@@ -37,7 +37,7 @@ runners and merged into a single manifest:
 ```jsonc
 // .devcontainer/devcontainer.json
 {
-  "image": "ghcr.io/chocobot-farm/agent-desktop:edge@sha256:fd10e509373a3ba461f323b4f15b053c468e59c907ef5d8f4be02966fb400a74",
+  "image": "ghcr.io/plume-works/agent-desktop:edge@sha256:fd10e509373a3ba461f323b4f15b053c468e59c907ef5d8f4be02966fb400a74",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:4.0.0": {},
   },
@@ -82,7 +82,7 @@ reference implementation, including how it groups the `agent-desktop` and
 
 #### Renovate dashboard
 
-The [Renovate dashboard is here](https://developer.mend.io/github/chocobot-farm/agent-devcontainer).
+The [Renovate dashboard is here](https://developer.mend.io/github/plume-works/agent-devcontainer).
 
 ## Enabling the firewall
 

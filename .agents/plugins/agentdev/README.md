@@ -5,7 +5,7 @@ everyday development work: git and pull requests, code review, CI log triage,
 formatting and linting, and escalating a command to a container or Codespace when
 the host lacks the toolchain.
 
-It is published from [chocobot-farm/agent-devcontainer](https://github.com/chocobot-farm/agent-devcontainer),
+It is published from [plume-works/agent-devcontainer](https://github.com/plume-works/agent-devcontainer),
 so projects consume it by version instead of copying files around.
 
 ## Installing in Claude Code
@@ -16,14 +16,14 @@ and no trailing commas (unlike `devcontainer.json`):
 ```json
 {
   "extraKnownMarketplaces": {
-    "chocobot-farm": {
+    "plume-works": {
       "source": {
         "source": "github",
-        "repo": "chocobot-farm/agent-devcontainer"
+        "repo": "plume-works/agent-devcontainer"
       }
     }
   },
-  "enabledPlugins": { "agentdev@chocobot-farm": true }
+  "enabledPlugins": { "agentdev@plume-works": true }
 }
 ```
 
@@ -108,12 +108,12 @@ Claude Code web environment (`CLAUDE_CODE_REMOTE=true`). It is a no-op locally.
 Most skills shell out to tools rather than reimplementing them. Depending on
 which ones you use, you will need `git`, an authenticated `gh` CLI, Docker (for
 `microvm-sandbox` and Super-Linter), and `uv` for the Python skills. The
-[devcontainer image](https://github.com/chocobot-farm/agent-devcontainer) ships
+[devcontainer image](https://github.com/plume-works/agent-devcontainer) ships
 all of them preinstalled, but the plugin works in any environment that has the
 tools a given skill needs.
 
 ## Contributing
 
 `.agents/plugins/agentdev/` is the canonical source for the catalog, and this repository is where
-it is developed. See the [repository README](https://github.com/chocobot-farm/agent-devcontainer#the-agent-catalog) for
+it is developed. See the [repository README](https://github.com/plume-works/agent-devcontainer#the-agent-catalog) for
 the editing rules, the `.codex/` mirror, and how to validate a change.
