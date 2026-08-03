@@ -21,8 +21,15 @@ Options:
   --state <state>    PR state filter: open (default) or all
   -h, --help         Show this help text.
 
-Output (key=value lines on success):
-  PR_FOUND, PR_NUMBER, PR_URL, PR_STATE, PR_IS_DRAFT, PR_BASE, PR_HEAD, PR_TITLE
+Output (key=value lines):
+  HEAD_BRANCH, PR_FOUND
+  On a match also: PR_NUMBER, PR_URL, PR_STATE, PR_IS_DRAFT, PR_BASE, PR_HEAD,
+  PR_TITLE
+
+HEAD_BRANCH is the pull request head to look up and to create against. It is
+the configured upstream branch name when the local branch tracks a differently
+named ref (local 'review-31' tracking 'fork/feature' resolves to 'feature'),
+and the local branch name otherwise.
 
 Exit codes:
   0  Exactly one matching pull request was found
@@ -81,6 +88,21 @@ if is_default_branch "${branch_name}"; then
   exit 5
 fi
 
+# The pull request head is the remote branch, which push-branch.sh writes to.
+# It only matches the local branch name when the branch has no upstream or the
+# upstream carries the same name.
+head_branch="${branch_name}"
+if upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name "${branch_name}@{u}" 2>/dev/null)"; then
+  head_branch="${upstream_ref#*/}"
+fi
+
+if [[ "${head_branch}" != "${branch_name}" ]] && is_default_branch "${head_branch}"; then
+  print_error "Branch ${branch_name} tracks ${upstream_ref}; a pull request head must be a feature branch."
+  exit 5
+fi
+
+printf 'HEAD_BRANCH=%s\n' "${head_branch}"
+
 if ! command -v gh >/dev/null 2>&1; then
   print_error "GitHub CLI (gh) is not installed."
   exit 2
@@ -105,12 +127,12 @@ PR_TITLE={{.title}}
 
 pr_output=""
 if ! pr_output="$(gh pr list \
-  --head "${branch_name}" \
+  --head "${head_branch}" \
   --state "${state_filter}" \
   --json number,url,state,isDraft,baseRefName,headRefName,title \
   --template "${pr_template}" \
   2>&1)"; then
-  print_error "gh pr list failed for branch ${branch_name}."
+  print_error "gh pr list failed for head branch ${head_branch}."
   printf '%s\n' "${pr_output}" >&2
   exit 2
 fi
@@ -120,12 +142,12 @@ pr_count="$(printf '%s\n' "${pr_output}" | grep -c '^PR_RECORD$' || true)"
 if [[ "${pr_count}" -eq 0 ]]; then
   printf 'PR_FOUND=false\n'
   printf 'No %s pull request found with head branch %s; the branch needs a new pull request.\n' \
-    "${state_filter}" "${branch_name}" >&2
+    "${state_filter}" "${head_branch}" >&2
   exit 3
 fi
 
 if [[ "${pr_count}" -gt 1 ]]; then
-  print_error "Found ${pr_count} pull requests with head branch '${branch_name}'; refusing to guess which one to update."
+  print_error "Found ${pr_count} pull requests with head branch '${head_branch}'; refusing to guess which one to update."
   printf '%s\n' "${pr_output}" >&2
   exit 4
 fi

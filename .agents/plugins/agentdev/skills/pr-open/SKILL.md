@@ -15,22 +15,25 @@ When the current branch already has an open pull request, this skill updates
 that pull request in place instead of creating a second one: the same title and
 body generation runs, and the result is written to the existing PR.
 
-## GitHub MCP Tools Required
+## GitHub Access
 
-This skill may use GitHub MCP tools for GitHub operations or `gh` CLI commands if available and authenticated.
+The GitHub CLI (`gh`) is the primary GitHub client for this skill, and a
+connected GitHub MCP server is a secondary fallback used only when `gh` is
+missing or unauthenticated. Every GitHub step below is written against `gh`:
 
-Required MCP tools:
+- `gh pr list` (through `find-branch-pr.sh`) - detect an existing pull request
+- `gh pr create` - create the pull request
+- `gh pr edit` - update an existing pull request's title and body
+- `gh issue list` - list recent issues when an issue number is missing
+- `gh pr view` - fetch PR details after creation
 
-- `github/create_pull_request` - create the pull request
+If `gh` is unavailable or unauthenticated, fall back to the equivalent GitHub
+MCP operations (for example a `create_pull_request` tool) only when the active
+environment documents them; do not assume particular MCP tool names. If neither
+path works, stop and report the blocker.
 
-Optional MCP tools (for validation and follow-up):
-
-- `github/list_issues` - list recent issues when issue number is missing
-- `github/pull_request_read` - fetch PR details after creation
-
-Existing-PR lookup uses the bundled `find-branch-pr.sh` script rather than
-`github/list_pull_requests`, and the branch is always pushed with local `git`
-through `push-branch.sh` — never through a GitHub API or MCP tool.
+The branch is always pushed with local `git` through `push-branch.sh` — never
+through a GitHub API or MCP tool.
 
 ## PR Description Source of Truth
 
@@ -45,7 +48,7 @@ The pr-open skill is responsible for:
 - delegating staging and commit creation to the `git-commit` skill
 - delegating branch sync with the base branch to the `update-branch` skill
 - pushing the branch to its remote head ref
-- GitHub PR creation through MCP, or PR title/body update through `gh`
+- GitHub PR creation and PR title/body update through `gh`
 
 ## Bundled Scripts
 
@@ -95,12 +98,18 @@ Exit codes decide the rest of the run:
 | `0`  | Exactly one open PR has this head branch                   | **Update mode.** Keep `PR_NUMBER`, `PR_BASE`, and `PR_TITLE`; the PR will be edited in place, never recreated. |
 | `3`  | No open PR for this branch                                 | **Create mode.** Continue and create the PR at the end. Use `main` as the base unless the user says otherwise. |
 | `4`  | Several PRs share this head branch                         | **STOP.** Show the candidates and ask which PR to update.                                                      |
-| `5`  | Current branch is `main` or `master`                       | **STOP.** A PR head must be a feature branch — see the error handling section below.                           |
+| `5`  | Branch, or the upstream it tracks, is `main` or `master`   | **STOP.** A PR head must be a feature branch — see the error handling section below.                           |
 | `2`  | Not a repo, detached HEAD, `gh` missing or unauthenticated | **STOP.** Report the blocker verbatim.                                                                         |
 
 In update mode, `PR_BASE` — not an assumed `main` — is the base branch for the
 remaining steps. Pass `--state all` only when the user explicitly asks to work
 against a closed or merged PR.
+
+The script also prints `HEAD_BRANCH` on every run. That is the pull request
+head: the configured upstream branch name when the local branch tracks a
+differently named ref, and the local branch name otherwise. Use `HEAD_BRANCH`
+— never the local branch name — as the head when creating the PR, so it matches
+the ref `push-branch.sh` writes to.
 
 ### 3. Mandatory Local Reformat
 
@@ -157,9 +166,10 @@ Issue linking is recommended but not required.
 
 2. If no issue number is found in conversation:
    - Check if there are recent issues that match this work:
-     - Use `github/list_issues` with repository `owner` and `repo`
-     - Start with `state: open`, `perPage: 10`
-     - If needed, broaden query with `state: all`
+     - Run `gh issue list --limit 10` (add `--repo <owner>/<repo>` when the
+       working directory is not the target repository)
+     - Start with the default open state
+     - If needed, broaden the query with `--state all`
 
 - Ask the user if they want to link an issue: "Would you like to link an issue to this PR?"
 
@@ -247,32 +257,35 @@ branch, labels, reviewers, and assignees untouched — an update changes text
 only. Report the PR URL, and state whether the title changed, whether the body
 changed, and whether the push moved the head ref.
 
-In **create mode**, create the PR using `github/create_pull_request`.
+In **create mode**, create the PR with `gh`, writing the body to a file under
+`./.tmp/` for the same quoting reason:
 
-Use the tool with these fields:
+```bash
+gh pr create --title "<title>" --body-file ./.tmp/pr-body.md \
+  --base "<base>" --head "<HEAD_BRANCH>"
+```
 
-- `owner` (required): repository owner
-- `repo` (required): repository name
-- `title` (required): full PR title
-- `head` (required): source branch name
-- `base` (required): target branch (usually `main`)
-- `body` (optional): PR body (include Summary, Changes, Testing, optional Related section)
-- `draft` (optional): set to `true` for draft PR
-- `maintainer_can_modify` (optional): set per repository policy
+- `--title` (required): full PR title
+- `--body-file` (required): the generated markdown from the
+  [pr-gen-description](../pr-gen-description/) skill
+- `--base` (required): target branch. If not explicitly provided by user or
+  repo policy, use `main`
+- `--head` (required): the `HEAD_BRANCH` value reported by `find-branch-pr.sh`,
+  which is the configured upstream branch name rather than the local branch
+  name whenever the two differ
+- `--draft` (optional): pass when the user wants a draft PR
+- `--repo <owner>/<repo>` (optional): pass when the working directory is not
+  the target repository
 
 **Important:**
 
-- The body should be the generated markdown from the
-  [pr-gen-description](../pr-gen-description/) skill
 - Do not duplicate or re-interpret the prompt's section requirements here
-- If `base` is not explicitly provided by user/repo policy, set `base: main`.
-- After successful creation, display the PR URL/number returned by the MCP tool
+- After successful creation, display the PR URL that `gh pr create` prints
 - Confirm: "Pull request created successfully: [URL]"
 
-**Optional parameters:**
-
-- Set `draft: true` if the user wants to create a draft PR
-- Set `base: <branch>` if targeting a different base branch
+If `gh` is unavailable or unauthenticated, fall back to the connected GitHub
+MCP server's pull-request creation operation with the same title, body, base,
+and head values.
 
 ### 12. Error Handling
 
@@ -292,11 +305,13 @@ Cannot create PR: No changes detected in the working directory.
 Please make and commit your changes first.
 ```
 
-**GitHub MCP authentication/authorization failure:**
+**GitHub authentication/authorization failure:**
 
 ```
-GitHub MCP request failed due to authentication or missing permissions.
-Please verify MCP server authentication and token scopes (typically `repo`).
+The GitHub request failed due to authentication or missing permissions.
+Run `gh auth status` and verify the token scopes (typically `repo`).
+If you are falling back to a GitHub MCP server, verify its authentication and
+token scopes instead.
 ```
 
 **Not on a feature branch** (`find-branch-pr.sh` or `push-branch.sh` exits `5`):
@@ -330,7 +345,8 @@ I don't have enough context to create a PR. Could you please provide:
 
 ```
 Failed to create pull request: [error message]
-Please check GitHub MCP connectivity, authentication, and required tool permissions.
+Please check `gh` connectivity, authentication (`gh auth status`), and token
+permissions; check the GitHub MCP server only if it was used as the fallback.
 ```
 
 **Merge conflict while syncing with `origin/main`:**
