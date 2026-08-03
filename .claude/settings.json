@@ -45,19 +45,19 @@
       "/__w"
     ]
   },
-  "extraKnownMarketplaces": {
-    "chocobot-farm": {
-      "source": {
-        "source": "github",
-        "repo": "chocobot-farm/agent-devcontainer"
-      }
-    }
-  },
   "enabledPlugins": {
-    "agentdev@chocobot-farm": true,
     "github@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
-    "ralph-loop@claude-plugins-official": true
+    "ralph-loop@claude-plugins-official": true,
+    "agentdev@chocobot-farm": true
+  },
+  "extraKnownMarketplaces": {
+    "chocobot-farm": {
+      "source": {
+        "source": "directory",
+        "path": "/workspaces/agent-devcontainer"
+      }
+    }
   }
 }
