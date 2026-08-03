@@ -33,10 +33,14 @@ and the local branch name otherwise.
 
 Exit codes:
   0  Exactly one matching pull request was found
-  2  Usage or preflight error (not a repo, gh missing or unauthenticated)
+  2  Usage or preflight error (not a repo, detached HEAD)
   3  No matching pull request exists (the branch still needs one created)
   4  Multiple matching pull requests exist
   5  Branch is a protected default branch
+  6  gh is missing or unauthenticated, so detection could not run here
+
+HEAD_BRANCH is printed before the gh checks, so it is available on exit 6 for a
+caller that falls back to a GitHub MCP server for the lookup.
 EOF
 }
 
@@ -103,14 +107,17 @@ fi
 
 printf 'HEAD_BRANCH=%s\n' "${head_branch}"
 
+# Exit 6, not 2: these two are the conditions the skill's GitHub MCP fallback
+# exists for, so the caller must be able to tell them apart from a preflight
+# error that no fallback can rescue.
 if ! command -v gh >/dev/null 2>&1; then
   print_error "GitHub CLI (gh) is not installed."
-  exit 2
+  exit 6
 fi
 
 if ! gh auth status >/dev/null 2>&1; then
   print_error "GitHub CLI is not authenticated. Run 'gh auth login' and retry."
-  exit 2
+  exit 6
 fi
 
 # A Go template keeps this dependent on `gh` alone, with no jq requirement.

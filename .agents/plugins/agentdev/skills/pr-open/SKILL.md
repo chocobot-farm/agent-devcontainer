@@ -28,9 +28,13 @@ missing or unauthenticated. Every GitHub step below is written against `gh`:
 - `gh pr view` - fetch PR details after creation
 
 If `gh` is unavailable or unauthenticated, fall back to the equivalent GitHub
-MCP operations (for example a `create_pull_request` tool) only when the active
-environment documents them; do not assume particular MCP tool names. If neither
-path works, stop and report the blocker.
+MCP operations (for example a pull-request listing tool for detection, or a
+`create_pull_request` tool for creation) only when the active environment
+documents them; do not assume particular MCP tool names. That fallback covers
+existing-PR detection too: `find-branch-pr.sh` reports those two conditions as
+exit `6` — distinct from the preflight failures no fallback can rescue — and
+prints `HEAD_BRANCH` before it checks `gh`, so the head branch to look up is
+available even then. If neither path works, stop and report the blocker.
 
 The branch is always pushed with local `git` through `push-branch.sh` — never
 through a GitHub API or MCP tool.
@@ -93,13 +97,14 @@ ${CLAUDE_SKILL_DIR}/scripts/find-branch-pr.sh
 
 Exit codes decide the rest of the run:
 
-| Exit | Meaning                                                    | Action                                                                                                         |
-| ---- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `0`  | Exactly one open PR has this head branch                   | **Update mode.** Keep `PR_NUMBER`, `PR_BASE`, and `PR_TITLE`; the PR will be edited in place, never recreated. |
-| `3`  | No open PR for this branch                                 | **Create mode.** Continue and create the PR at the end. Use `main` as the base unless the user says otherwise. |
-| `4`  | Several PRs share this head branch                         | **STOP.** Show the candidates and ask which PR to update.                                                      |
-| `5`  | Branch, or the upstream it tracks, is `main` or `master`   | **STOP.** A PR head must be a feature branch — see the error handling section below.                           |
-| `2`  | Not a repo, detached HEAD, `gh` missing or unauthenticated | **STOP.** Report the blocker verbatim.                                                                         |
+| Exit | Meaning                                                  | Action                                                                                                                                                                                                                                |
+| ---- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0`  | Exactly one open PR has this head branch                 | **Update mode.** Keep `PR_NUMBER`, `PR_BASE`, and `PR_TITLE`; the PR will be edited in place, never recreated.                                                                                                                        |
+| `3`  | No open PR for this branch                               | **Create mode.** Continue and create the PR at the end. Use `main` as the base unless the user says otherwise.                                                                                                                        |
+| `4`  | Several PRs share this head branch                       | **STOP.** Show the candidates and ask which PR to update.                                                                                                                                                                             |
+| `5`  | Branch, or the upstream it tracks, is `main` or `master` | **STOP.** A PR head must be a feature branch — see the error handling section below.                                                                                                                                                  |
+| `6`  | `gh` is missing or unauthenticated                       | **Fallback.** Detect the PR through the GitHub MCP server as described under GitHub Access, using the printed `HEAD_BRANCH`; the result selects update or create mode exactly as above. **STOP** only if no such server is connected. |
+| `2`  | Not a repo, or detached HEAD                             | **STOP.** Report the blocker verbatim.                                                                                                                                                                                                |
 
 In update mode, `PR_BASE` — not an assumed `main` — is the base branch for the
 remaining steps. Pass `--state all` only when the user explicitly asks to work
