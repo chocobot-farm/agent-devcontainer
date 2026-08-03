@@ -4,11 +4,24 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Optional
 
+from mock_catalog import (
+    claude_entry,
+    CLAUDE_MANIFEST,
+    CODEX_MANIFEST,
+    plugin_manifest,
+    PLUGIN_NAME,
+    write_claude_marketplace,
+    write_json,
+    write_skill,
+)
 from validate_agent_files.main import main
+
+# This fixture publishes its plugin from directly under the repository root,
+# which is a layout the tool must accept as readily as a nested one.
+PLUGIN_SOURCE = './plugin'
 
 
 def _write_plugin(
@@ -24,60 +37,26 @@ def _write_plugin(
     ``codex_version`` defaults to ``plugin_version``; pass ``''`` to omit the
     Codex manifest entirely.
     """
-    plugin_root = tmp_path / 'plugin'
-    (plugin_root / '.claude-plugin').mkdir(parents=True)
-    (plugin_root / '.claude-plugin' / 'plugin.json').write_text(
-        json.dumps({'name': 'agentdev', 'version': plugin_version}) + '\n'
-    )
+    plugin_root = tmp_path / PLUGIN_SOURCE
+    write_json(plugin_root / CLAUDE_MANIFEST, plugin_manifest(plugin_version))
     codex_version = plugin_version if codex_version is None else codex_version
     if codex_version:
-        (plugin_root / '.codex-plugin').mkdir(parents=True)
-        (plugin_root / '.codex-plugin' / 'plugin.json').write_text(
-            json.dumps({'name': 'agentdev', 'version': codex_version}) + '\n'
-        )
-    (tmp_path / '.claude-plugin').mkdir(parents=True)
-    (tmp_path / '.claude-plugin' / 'marketplace.json').write_text(
-        json.dumps(
-            {
-                'name': 'agent-devcontainer',
-                'plugins': [
-                    {
-                        'name': 'agentdev',
-                        'source': './plugin',
-                        'description': 'Catalog.',
-                        'version': marketplace_version,
-                    }
-                ],
-            }
-        )
-        + '\n'
+        write_json(plugin_root / CODEX_MANIFEST, plugin_manifest(codex_version))
+    write_claude_marketplace(
+        tmp_path,
+        claude_entry(
+            source=PLUGIN_SOURCE,
+            version=marketplace_version,
+            description='Catalog.',
+        ),
     )
     return plugin_root
-
-
-def _write_skill(plugin_root: Path, name: str, body: str) -> None:
-    skill_dir = plugin_root / 'skills' / name
-    skill_dir.mkdir(parents=True, exist_ok=True)
-    (skill_dir / 'SKILL.md').write_text(
-        f"""---
-name: {name}
-description: A comprehensive description of what this skill does and when to use it.
----
-# Overview
-
-{body}
-
-## When to use this skill
-
-Use it when testing plugin layout validation.
-"""
-    )
 
 
 def test_agreeing_manifest_versions_pass(tmp_path: Path, capsys) -> None:
     """A plugin whose manifests agree on the version validates cleanly."""
     plugin_root = _write_plugin(tmp_path, plugin_version='1.0.0', marketplace_version='1.0.0')
-    _write_skill(plugin_root, 'demo', 'Runs a demo.')
+    write_skill(plugin_root, usage='Use it when testing plugin layout validation.')
 
     exit_code = main([str(plugin_root), '--kind', 'skills'])
     captured = capsys.readouterr()
@@ -89,13 +68,13 @@ def test_agreeing_manifest_versions_pass(tmp_path: Path, capsys) -> None:
 def test_disagreeing_manifest_versions_fail(tmp_path: Path, capsys) -> None:
     """A marketplace entry that drifts from plugin.json is an error."""
     plugin_root = _write_plugin(tmp_path, plugin_version='1.0.0', marketplace_version='1.1.0')
-    _write_skill(plugin_root, 'demo', 'Runs a demo.')
+    write_skill(plugin_root, usage='Use it when testing plugin layout validation.')
 
     exit_code = main([str(plugin_root), '--kind', 'skills'])
     captured = capsys.readouterr()
 
     assert exit_code == 1
-    assert "'agentdev' version 1.0.0" in captured.out
+    assert f"'{PLUGIN_NAME}' version 1.0.0" in captured.out
     assert '1.1.0' in captured.out
 
 
@@ -107,7 +86,7 @@ def test_disagreeing_codex_manifest_version_fails(tmp_path: Path, capsys) -> Non
         marketplace_version='1.0.0',
         codex_version='1.1.0',
     )
-    _write_skill(plugin_root, 'demo', 'Runs a demo.')
+    write_skill(plugin_root, usage='Use it when testing plugin layout validation.')
 
     exit_code = main([str(plugin_root), '--kind', 'skills'])
     captured = capsys.readouterr()
@@ -131,7 +110,7 @@ def test_missing_codex_manifest_is_allowed_by_default(tmp_path: Path, capsys) ->
         marketplace_version='1.0.0',
         codex_version='',
     )
-    _write_skill(plugin_root, 'demo', 'Runs a demo.')
+    write_skill(plugin_root, usage='Use it when testing plugin layout validation.')
 
     exit_code = main([str(plugin_root), '--kind', 'skills'])
     captured = capsys.readouterr()
@@ -142,8 +121,8 @@ def test_missing_codex_manifest_is_allowed_by_default(tmp_path: Path, capsys) ->
 def test_unparsable_plugin_manifest_fails(tmp_path: Path, capsys) -> None:
     """A plugin.json that does not parse is an error, not a crash."""
     plugin_root = _write_plugin(tmp_path, plugin_version='1.0.0', marketplace_version='1.0.0')
-    (plugin_root / '.claude-plugin' / 'plugin.json').write_text('{not json')
-    _write_skill(plugin_root, 'demo', 'Runs a demo.')
+    (plugin_root / CLAUDE_MANIFEST).write_text('{not json')
+    write_skill(plugin_root, usage='Use it when testing plugin layout validation.')
 
     exit_code = main([str(plugin_root), '--kind', 'skills'])
     captured = capsys.readouterr()
@@ -155,7 +134,7 @@ def test_unparsable_plugin_manifest_fails(tmp_path: Path, capsys) -> None:
 def test_literal_catalog_path_in_skill_body_fails(tmp_path: Path, capsys) -> None:
     """A reintroduced literal `.claude/skills/` path fails validation (F6 guard)."""
     plugin_root = _write_plugin(tmp_path, plugin_version='1.0.0', marketplace_version='1.0.0')
-    _write_skill(plugin_root, 'demo', 'Run `.claude/skills/demo/scripts/demo.sh` to start.')
+    write_skill(plugin_root, body='Run `.claude/skills/demo/scripts/demo.sh` to start.')
 
     exit_code = main([str(plugin_root), '--kind', 'skills'])
     captured = capsys.readouterr()
@@ -168,7 +147,7 @@ def test_literal_catalog_path_in_skill_body_fails(tmp_path: Path, capsys) -> Non
 def test_skill_dir_substitution_is_accepted(tmp_path: Path, capsys) -> None:
     """The `${CLAUDE_SKILL_DIR}` replacement is not flagged."""
     plugin_root = _write_plugin(tmp_path, plugin_version='1.0.0', marketplace_version='1.0.0')
-    _write_skill(plugin_root, 'demo', 'Run `${CLAUDE_SKILL_DIR}/scripts/demo.sh` to start.')
+    write_skill(plugin_root, body='Run `${CLAUDE_SKILL_DIR}/scripts/demo.sh` to start.')
 
     exit_code = main([str(plugin_root), '--kind', 'skills'])
     captured = capsys.readouterr()
@@ -179,9 +158,9 @@ def test_skill_dir_substitution_is_accepted(tmp_path: Path, capsys) -> None:
 def test_personal_catalog_path_is_not_flagged(tmp_path: Path, capsys) -> None:
     """`~/.claude/agents/` still resolves for a plugin user, so it is allowed."""
     plugin_root = _write_plugin(tmp_path, plugin_version='1.0.0', marketplace_version='1.0.0')
-    _write_skill(plugin_root, 'demo', 'Personal agents live in `~/.claude/agents/`.')
+    write_skill(plugin_root, body='Personal agents live in `~/.claude/agents/`.')
 
     exit_code = main([str(plugin_root), '--kind', 'skills'])
-    captured = capsys.readouterr()
 
+    captured = capsys.readouterr()
     assert exit_code == 0, captured.out

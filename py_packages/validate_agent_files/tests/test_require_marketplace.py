@@ -4,38 +4,23 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
+from mock_catalog import (
+    claude_entry,
+    CLAUDE_MANIFEST,
+    codex_entry,
+    CODEX_MANIFEST,
+    CODEX_MARKETPLACE,
+    plugin_manifest,
+    PLUGIN_NAME,
+    PLUGIN_SOURCE,
+    write_claude_marketplace,
+    write_codex_marketplace,
+    write_json,
+    write_skill,
+)
 from validate_agent_files.main import main
-
-CLAUDE_MARKETPLACE = Path('.claude-plugin') / 'marketplace.json'
-CODEX_MARKETPLACE = Path('.agents') / 'plugins' / 'marketplace.json'
-PLUGIN_SOURCE = './.agents/plugins/agentdev'
-
-
-def _write_skill(plugin_root: Path, name: str = 'demo') -> None:
-    skill_dir = plugin_root / 'skills' / name
-    skill_dir.mkdir(parents=True, exist_ok=True)
-    (skill_dir / 'SKILL.md').write_text(
-        f"""---
-name: {name}
-description: A comprehensive description of what this skill does and when to use it.
----
-# Overview
-
-Runs a demo.
-
-## When to use this skill
-
-Use it when testing marketplace requirements.
-"""
-    )
-
-
-def _write_json(path: Path, payload: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload) + '\n')
 
 
 def _write_repo(
@@ -50,41 +35,19 @@ def _write_repo(
     """Build a repository publishing one plugin to both ecosystems."""
     plugin_root = root / PLUGIN_SOURCE
     plugin_root.mkdir(parents=True, exist_ok=True)
-    _write_skill(plugin_root)
+    write_skill(plugin_root, usage='Use it when testing marketplace requirements.')
 
     if claude_manifest is not None:
-        payload = (
-            {'name': 'agentdev', 'version': '1.0.0'}
-            if claude_manifest == 'default'
-            else claude_manifest
-        )
-        _write_json(plugin_root / '.claude-plugin' / 'plugin.json', payload)
+        payload = plugin_manifest() if claude_manifest == 'default' else claude_manifest
+        write_json(plugin_root / CLAUDE_MANIFEST, payload)
     if codex_manifest is not None:
-        payload = (
-            {'name': 'agentdev', 'version': '1.0.0'}
-            if codex_manifest == 'default'
-            else codex_manifest
-        )
-        _write_json(plugin_root / '.codex-plugin' / 'plugin.json', payload)
+        payload = plugin_manifest() if codex_manifest == 'default' else codex_manifest
+        write_json(plugin_root / CODEX_MANIFEST, payload)
 
     if claude_marketplace:
-        _write_json(
-            root / CLAUDE_MARKETPLACE,
-            {
-                'name': 'agent-devcontainer',
-                'plugins': [{'name': 'agentdev', 'source': source, 'version': '1.0.0'}],
-            },
-        )
+        write_claude_marketplace(root, claude_entry(source=source))
     if codex_marketplace:
-        _write_json(
-            root / CODEX_MARKETPLACE,
-            {
-                'name': 'agent-devcontainer',
-                'plugins': [
-                    {'name': 'agentdev', 'source': {'source': 'local', 'path': source}},
-                ],
-            },
-        )
+        write_codex_marketplace(root, codex_entry(path=source))
     return plugin_root
 
 
@@ -103,13 +66,7 @@ def test_requirement_checks_the_plugin_manifest_from_the_repository_root(
 ) -> None:
     """Requiring an ecosystem also cross-checks plugin.json against its entry."""
     _write_repo(tmp_path)
-    _write_json(
-        tmp_path / CLAUDE_MARKETPLACE,
-        {
-            'name': 'agent-devcontainer',
-            'plugins': [{'name': 'agentdev', 'source': PLUGIN_SOURCE, 'version': '1.1.0'}],
-        },
-    )
+    write_claude_marketplace(tmp_path, claude_entry(version='1.1.0'))
     monkeypatch.chdir(tmp_path)
 
     exit_code = main(['.', '--require-marketplace', 'claude'])
@@ -157,15 +114,7 @@ def test_missing_claude_marketplace_fails(tmp_path, monkeypatch, capsys) -> None
 def test_marketplace_entry_pointing_at_missing_plugin_fails(tmp_path, monkeypatch, capsys) -> None:
     """A referenced plugin that is not on disk is an error."""
     _write_repo(tmp_path)
-    _write_json(
-        tmp_path / CODEX_MARKETPLACE,
-        {
-            'name': 'agent-devcontainer',
-            'plugins': [
-                {'name': 'gone', 'source': {'source': 'local', 'path': './.agents/plugins/gone'}}
-            ],
-        },
-    )
+    write_codex_marketplace(tmp_path, codex_entry(path='./.agents/plugins/gone', name='gone'))
     monkeypatch.chdir(tmp_path)
 
     exit_code = main(['.', '--require-marketplace', 'codex'])
@@ -191,7 +140,7 @@ def test_missing_ecosystem_manifest_fails(tmp_path, monkeypatch, capsys) -> None
 def test_unparsable_ecosystem_manifest_fails(tmp_path, monkeypatch, capsys) -> None:
     """A plugin.json that does not parse is an error, not a crash."""
     _write_repo(tmp_path)
-    (tmp_path / PLUGIN_SOURCE / '.codex-plugin' / 'plugin.json').write_text('{not json')
+    (tmp_path / PLUGIN_SOURCE / CODEX_MANIFEST).write_text('{not json')
     monkeypatch.chdir(tmp_path)
 
     exit_code = main(['.', '--require-marketplace', 'codex'])
@@ -216,7 +165,7 @@ def test_ecosystem_manifest_without_required_fields_fails(tmp_path, monkeypatch,
 
 def test_ecosystem_manifest_name_must_match_the_entry(tmp_path, monkeypatch, capsys) -> None:
     """A definition naming a different plugin than the marketplace is an error."""
-    _write_repo(tmp_path, codex_manifest={'name': 'other', 'version': '1.0.0'})
+    _write_repo(tmp_path, codex_manifest=plugin_manifest(name='other'))
     monkeypatch.chdir(tmp_path)
 
     exit_code = main(['.', '--require-marketplace', 'codex'])
@@ -224,7 +173,7 @@ def test_ecosystem_manifest_name_must_match_the_entry(tmp_path, monkeypatch, cap
 
     assert exit_code == 1
     assert "'other'" in captured.out
-    assert "'agentdev'" in captured.out
+    assert f"'{PLUGIN_NAME}'" in captured.out
 
 
 def test_unparsable_required_marketplace_fails(tmp_path, monkeypatch, capsys) -> None:

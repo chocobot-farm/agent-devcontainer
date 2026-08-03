@@ -31,6 +31,9 @@ Consult the **[Principal Engineer](/.agents/plugins/agentdev/agents/principal-en
 
 - **Always use `pytest`** — never `unittest`
 - Prefer multiple smaller, focused test files over large monolithic ones
+- **Tests must not depend on this repository's own identity.** Build fixtures from mock data — a made-up marketplace name, plugin name, org, and paths — never the real values from `marketplace.json`, `plugin.json`, or a shipped catalog directory. A rename of something this repository publishes must never require a test edit; if it does, the test was asserting identity instead of behavior
+- **Keep the mock data in one shared module per test package** (for `validate_agent_files`, `tests/mock_catalog.py`) and import the constants and builders from it, so a fixture change lands in one file. Add the module to `known-first-party` in `.ruff.toml` so import sorting groups it with the package under test
+- Values that belong to the _contract_ rather than to an identity — well-known manifest locations, CLI flags, the package's own entry points — should be imported from the code under test instead of restated as literals, so a contract change fails loudly in one place
 
 ### Shell
 

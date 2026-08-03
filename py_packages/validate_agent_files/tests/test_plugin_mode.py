@@ -4,38 +4,21 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
+from mock_catalog import (
+    claude_entry,
+    CLAUDE_MANIFEST,
+    codex_entry,
+    CODEX_MANIFEST,
+    plugin_manifest,
+    PLUGIN_SOURCE,
+    write_claude_marketplace,
+    write_codex_marketplace,
+    write_json,
+    write_skill,
+)
 from validate_agent_files.main import main
-
-CLAUDE_MARKETPLACE = Path('.claude-plugin') / 'marketplace.json'
-CODEX_MARKETPLACE = Path('.agents') / 'plugins' / 'marketplace.json'
-PLUGIN_SOURCE = './.agents/plugins/agentdev'
-
-
-def _write_json(path: Path, payload: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload) + '\n')
-
-
-def _write_skill(plugin_root: Path, name: str = 'demo') -> None:
-    skill_dir = plugin_root / 'skills' / name
-    skill_dir.mkdir(parents=True, exist_ok=True)
-    (skill_dir / 'SKILL.md').write_text(
-        f"""---
-name: {name}
-description: A comprehensive description of what this skill does and when to use it.
----
-# Overview
-
-Runs a demo.
-
-## When to use this skill
-
-Use it when testing the plugin mode.
-"""
-    )
 
 
 def _write_repo(
@@ -49,35 +32,13 @@ def _write_repo(
     """Build a repository root that sits above the plugin it publishes."""
     plugin_root = root / PLUGIN_SOURCE
     plugin_root.mkdir(parents=True, exist_ok=True)
-    _write_skill(plugin_root)
-    _write_json(
-        plugin_root / '.claude-plugin' / 'plugin.json',
-        {'name': 'agentdev', 'version': plugin_version},
-    )
+    write_skill(plugin_root, usage='Use it when testing the plugin mode.')
+    write_json(plugin_root / CLAUDE_MANIFEST, plugin_manifest(plugin_version))
     if codex_version:
-        _write_json(
-            plugin_root / '.codex-plugin' / 'plugin.json',
-            {'name': 'agentdev', 'version': codex_version},
-        )
-    _write_json(
-        root / CLAUDE_MARKETPLACE,
-        {
-            'name': 'agent-devcontainer',
-            'plugins': [
-                {'name': 'agentdev', 'source': PLUGIN_SOURCE, 'version': marketplace_version}
-            ],
-        },
-    )
+        write_json(plugin_root / CODEX_MANIFEST, plugin_manifest(codex_version))
+    write_claude_marketplace(root, claude_entry(version=marketplace_version))
     if codex_marketplace:
-        _write_json(
-            root / CODEX_MARKETPLACE,
-            {
-                'name': 'agent-devcontainer',
-                'plugins': [
-                    {'name': 'agentdev', 'source': {'source': 'local', 'path': PLUGIN_SOURCE}}
-                ],
-            },
-        )
+        write_codex_marketplace(root, codex_entry())
     return plugin_root
 
 
