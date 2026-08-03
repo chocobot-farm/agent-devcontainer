@@ -22,12 +22,12 @@ Options:
   -h, --help         Show this help text.
 
 Output (key=value lines on success):
-  PR_NUMBER, PR_URL, PR_STATE, PR_IS_DRAFT, PR_BASE, PR_HEAD, PR_TITLE
+  PR_FOUND, PR_NUMBER, PR_URL, PR_STATE, PR_IS_DRAFT, PR_BASE, PR_HEAD, PR_TITLE
 
 Exit codes:
   0  Exactly one matching pull request was found
   2  Usage or preflight error (not a repo, gh missing or unauthenticated)
-  3  No matching pull request exists
+  3  No matching pull request exists (the branch still needs one created)
   4  Multiple matching pull requests exist
   5  Branch is a protected default branch
 EOF
@@ -72,12 +72,12 @@ if [[ -z "${branch_name}" ]]; then
 fi
 
 if [[ "${branch_name}" == "HEAD" ]]; then
-  print_error "Detached HEAD: check out the pull request branch before syncing its description."
+  print_error "Detached HEAD: check out the pull request branch before looking up its pull request."
   exit 2
 fi
 
 if is_default_branch "${branch_name}"; then
-  print_error "Current branch is ${branch_name}; a pull request head must be a feature branch."
+  print_error "Branch ${branch_name} is a protected default branch; a pull request head must be a feature branch."
   exit 5
 fi
 
@@ -118,8 +118,9 @@ fi
 pr_count="$(printf '%s\n' "${pr_output}" | grep -c '^PR_RECORD$' || true)"
 
 if [[ "${pr_count}" -eq 0 ]]; then
-  print_error "No ${state_filter} pull request found with head branch '${branch_name}'."
-  printf 'Nothing to sync. Create the pull request first, for example with the pr-open skill.\n' >&2
+  printf 'PR_FOUND=false\n'
+  printf 'No %s pull request found with head branch %s; the branch needs a new pull request.\n' \
+    "${state_filter}" "${branch_name}" >&2
   exit 3
 fi
 
@@ -129,4 +130,5 @@ if [[ "${pr_count}" -gt 1 ]]; then
   exit 4
 fi
 
+printf 'PR_FOUND=true\n'
 printf '%s\n' "${pr_output}" | grep -v '^PR_RECORD$' | grep -v '^$'
