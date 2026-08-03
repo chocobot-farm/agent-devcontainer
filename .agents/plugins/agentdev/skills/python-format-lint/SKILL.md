@@ -6,7 +6,7 @@ description: 'Format and lint Python in this repository with ruff — autofixes 
 # Python Format & Lint (ruff)
 
 This repository uses **ruff** for both formatting and linting, configured by
-[.ruff.toml](../../../../../.ruff.toml) (line-length 99, single quotes, isort with
+`.ruff.toml` at the repository root (line-length 99, single quotes, isort with
 `force-sort-within-sections`).
 
 There is exactly one ruff configuration and three places that run it:
@@ -65,8 +65,7 @@ not match this repo and do not fail CI.
    autofix must be fixed in the source. Use a targeted `# noqa: <rule>` **only**
    for a formatter-required incompatibility (e.g. `E203` on a slice); never
    disable a rule for a whole file or package. For import-group disagreements,
-   adjust `lint.isort` in [.ruff.toml](../../../../../.ruff.toml) rather than sprinkling
-   `noqa`.
+   adjust `lint.isort` in `.ruff.toml` rather than sprinkling `noqa`.
 
 4. **Confirm clean.** Re-run step 1 until it exits zero with no output.
 
@@ -82,6 +81,6 @@ not match this repo and do not fail CI.
 
 ## References
 
-- Python coding conventions: [AGENTS.md](../../../../../AGENTS.md) (Python section)
-- ruff configuration: [.ruff.toml](../../../../../.ruff.toml)
+- Python coding conventions: the repository's root `AGENTS.md` (Python section)
+- ruff configuration: `.ruff.toml` at the repository root
 - Super-Linter flag generation: [super-linter-env.sh](../../bin/super-linter-env.sh)

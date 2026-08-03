@@ -15,8 +15,8 @@ maintained version table.
 
 1. Update the Super-Linter image in
    [super-linter-defaults.sh](../../bin/super-linter-defaults.sh) and
-   both `super-linter/super-linter@...` references in
-   [reformat.yml](../../../../../.github/workflows/reformat.yml).
+   both `super-linter/super-linter@...` references in the repository's
+   `.github/workflows/reformat.yml`.
 
 2. Run the validator to print the image's versions and identify every stale
    pin:
@@ -25,16 +25,16 @@ maintained version table.
    scripts/validate-super-linter-tool-versions.sh
    ```
 
-3. Update the matching values in
-   [.pre-commit-config.yaml](../../../../../.pre-commit-config.yaml): the explicit
-   Prettier `additional_dependencies` version, plus the Clang Format, Ansible
-   Lint, Hadolint, Ruff, ShellCheck, Gitleaks, and Actionlint repository
-   revisions. Preserve the `shellcheck-py` wrapper's fourth version component;
-   its first three components must match Super-Linter's ShellCheck binary.
+3. Update the matching values in the repository's `.pre-commit-config.yaml`:
+   the explicit Prettier `additional_dependencies` version, plus the Clang
+   Format, Ansible Lint, Hadolint, Ruff, ShellCheck, Gitleaks, and Actionlint
+   repository revisions. Preserve the `shellcheck-py` wrapper's fourth version
+   component; its first three components must match Super-Linter's ShellCheck
+   binary.
 
-4. Update `dev_tools_zizmor_version` in the Ansible
-   [dev-tools defaults](../../../../../ansible/roles/dev_tools/defaults/main.yml).
-   The local pre-commit hook uses the binary provisioned by that role.
+4. Update `dev_tools_zizmor_version` in the Ansible dev-tools defaults
+   (`ansible/roles/dev_tools/defaults/main.yml`). The local pre-commit hook uses
+   the binary provisioned by that role.
 
 5. Re-run the validator. It must report every tool as `OK` before considering
    the upgrade complete. Then run the affected hooks or

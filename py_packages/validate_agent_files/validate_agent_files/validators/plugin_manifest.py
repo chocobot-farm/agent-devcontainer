@@ -27,13 +27,41 @@ MARKETPLACE_MANIFEST = Path('.claude-plugin') / 'marketplace.json'
 
 
 def find_plugin_root(path: str) -> Optional[Path]:
-    """Return the plugin root at or above ``path``, if there is one."""
+    """
+    Return the Claude plugin root at or above ``path``, if there is one.
+
+    Only ``.claude-plugin/plugin.json`` counts, because the caller uses the
+    result to validate that manifest and its marketplace entry. Use
+    :func:`find_packaged_plugin_root` for checks that apply to a plugin however
+    it is packaged.
+    """
     candidate = Path(path).resolve()
     if candidate.is_file():
         candidate = candidate.parent
 
     for directory in (candidate, *candidate.parents):
         if (directory / PLUGIN_MANIFEST).is_file():
+            return directory
+    return None
+
+
+def find_packaged_plugin_root(path: str) -> Optional[Path]:
+    """
+    Return the plugin root at or above ``path`` for either supported ecosystem.
+
+    A catalog packaged only for Codex is still a plugin: its files ship to a
+    plugin cache, so rules about what may not leave the plugin apply exactly as
+    they do to a Claude package. Recognizing only the Claude manifest would
+    silently disable those checks for a Codex-only catalog.
+    """
+    candidate = Path(path).resolve()
+    if candidate.is_file():
+        candidate = candidate.parent
+
+    for directory in (candidate, *candidate.parents):
+        if (directory / PLUGIN_MANIFEST).is_file() or (
+            directory / CODEX_PLUGIN_MANIFEST
+        ).is_file():
             return directory
     return None
 
@@ -156,4 +184,8 @@ def _load_json(path: Path, result: ValidationResult) -> Optional[dict]:
     return loaded
 
 
-__all__: List[str] = ['find_plugin_root', 'validate_plugin_manifests']
+__all__: List[str] = [
+    'find_packaged_plugin_root',
+    'find_plugin_root',
+    'validate_plugin_manifests',
+]
