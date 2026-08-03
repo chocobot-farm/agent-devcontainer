@@ -8,4 +8,4 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 "$script_dir/devcontainer-firewall.sh"
 /start-xpra.sh --background
 "$script_dir/devcontainer-configure-codex.py"
-"$script_dir/reinstall-self.py"
+"$script_dir/reinstall-self.sh"
