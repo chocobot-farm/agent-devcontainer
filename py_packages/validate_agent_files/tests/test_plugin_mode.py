@@ -62,7 +62,7 @@ def _write_repo(
     _write_json(
         root / CLAUDE_MARKETPLACE,
         {
-            'name': 'plume-works',
+            'name': 'agent-devcontainer',
             'plugins': [
                 {'name': 'agentdev', 'source': PLUGIN_SOURCE, 'version': marketplace_version}
             ],
@@ -72,7 +72,7 @@ def _write_repo(
         _write_json(
             root / CODEX_MARKETPLACE,
             {
-                'name': 'plume-works',
+                'name': 'agent-devcontainer',
                 'plugins': [
                     {'name': 'agentdev', 'source': {'source': 'local', 'path': PLUGIN_SOURCE}}
                 ],

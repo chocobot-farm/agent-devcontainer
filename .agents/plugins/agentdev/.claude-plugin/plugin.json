@@ -3,7 +3,7 @@
   "version": "3.0.0",
   "description": "General-purpose agent catalog: git, pull requests, review, CI, formatting, container and Codespace escalation.",
   "author": {
-    "name": "plume-works"
+    "name": "PlumeWorks"
   },
   "homepage": "https://github.com/plume-works/agent-devcontainer",
   "license": "MIT"

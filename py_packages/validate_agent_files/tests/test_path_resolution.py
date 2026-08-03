@@ -48,7 +48,7 @@ def _write_claude_marketplace(root: Path, source: object, name: str = 'agentdev'
     marketplace.write_text(
         json.dumps(
             {
-                'name': 'plume-works',
+                'name': 'agent-devcontainer',
                 'plugins': [{'name': name, 'source': source, 'version': '1.0.0'}],
             }
         )
@@ -64,7 +64,7 @@ def _write_agents_marketplace(root: Path, path: str, name: str = 'agentdev') -> 
     marketplace.write_text(
         json.dumps(
             {
-                'name': 'plume-works',
+                'name': 'agent-devcontainer',
                 'plugins': [{'name': name, 'source': {'source': 'local', 'path': path}}],
             }
         )

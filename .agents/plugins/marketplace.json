@@ -1,7 +1,7 @@
 {
-  "name": "plume-works",
+  "name": "agent-devcontainer",
   "interface": {
-    "displayName": "PlumeWorks"
+    "displayName": "Agent DevContainer"
   },
   "plugins": [
     {

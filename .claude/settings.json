@@ -18,7 +18,7 @@
       "Bash(git)",
       "Bash(git *)",
       "Bash(.agents/plugins/agentdev/skills/*/scripts/*)",
-      "Bash(/root/.claude/plugins/cache/plume-works/agentdev/*)",
+      "Bash(/root/.claude/plugins/cache/agent-devcontainer/agentdev/*)",
       "Bash(gh)",
       "Bash(gh *)",
       "Bash(mkdir *)",
@@ -50,10 +50,10 @@
     "superpowers@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
     "ralph-loop@claude-plugins-official": true,
-    "agentdev@plume-works": true
+    "agentdev@agent-devcontainer": true
   },
   "extraKnownMarketplaces": {
-    "plume-works": {
+    "agent-devcontainer": {
       "source": {
         "source": "directory",
         "path": "/workspaces/agent-devcontainer"

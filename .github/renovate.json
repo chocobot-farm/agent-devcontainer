@@ -8,7 +8,7 @@
       "customType": "regex",
       "managerFilePatterns": ["/(^|/)\\.claude/settings(\\.local)?\\.json$/"],
       "matchStrings": [
-        "\"(?<depName>[a-z0-9-]+)@plume-works\"\\s*:\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
+        "\"(?<depName>[a-z0-9-]+)@agent-devcontainer\"\\s*:\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
       ],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "plume-works/agent-devcontainer",

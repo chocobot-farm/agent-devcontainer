@@ -29,4 +29,4 @@ ln -sf "$claude_json_target" /root/.claude.json
 # persistent ~/.codex volume are mounted. Both commands are idempotent, so a
 # rebuild also refreshes the local plugin cache from the canonical plugin tree.
 codex plugin marketplace add "$workspace"
-codex plugin add agentdev@plume-works
+codex plugin add agentdev@agent-devcontainer

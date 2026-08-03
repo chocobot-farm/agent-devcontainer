@@ -1,8 +1,9 @@
 {
-  "name": "plume-works",
+  "name": "agent-devcontainer",
   "description": "The agent-devcontainer catalog: shared Claude Code agents, skills, hooks, and lint tooling.",
   "owner": {
-    "name": "plume-works"
+    "name": "PlumeWorks",
+    "url": "https://github.com/plume-works/agent-devcontainer"
   },
   "plugins": [
     {

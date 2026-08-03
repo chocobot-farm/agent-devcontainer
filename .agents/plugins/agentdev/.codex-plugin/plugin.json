@@ -3,7 +3,7 @@
   "version": "3.0.0",
   "description": "General-purpose agent catalog: git, pull requests, review, CI, formatting, container and Codespace escalation.",
   "author": {
-    "name": "plume-works",
+    "name": "PlumeWorks",
     "url": "https://github.com/plume-works"
   },
   "homepage": "https://github.com/plume-works/agent-devcontainer",
@@ -15,7 +15,7 @@
     "displayName": "Agent Dev",
     "shortDescription": "Shared agents and development workflows",
     "longDescription": "Agents, skills, and helper scripts for git, pull requests, review, CI triage, formatting, and container or Codespace escalation.",
-    "developerName": "plume-works",
+    "developerName": "PlumeWorks",
     "category": "Developer Tools",
     "capabilities": ["Agents", "Skills"],
     "websiteURL": "https://github.com/plume-works/agent-devcontainer",

@@ -71,7 +71,7 @@ def _write_repo(
         _write_json(
             root / CLAUDE_MARKETPLACE,
             {
-                'name': 'plume-works',
+                'name': 'agent-devcontainer',
                 'plugins': [{'name': 'agentdev', 'source': source, 'version': '1.0.0'}],
             },
         )
@@ -79,7 +79,7 @@ def _write_repo(
         _write_json(
             root / CODEX_MARKETPLACE,
             {
-                'name': 'plume-works',
+                'name': 'agent-devcontainer',
                 'plugins': [
                     {'name': 'agentdev', 'source': {'source': 'local', 'path': source}},
                 ],
@@ -106,7 +106,7 @@ def test_requirement_checks_the_plugin_manifest_from_the_repository_root(
     _write_json(
         tmp_path / CLAUDE_MARKETPLACE,
         {
-            'name': 'plume-works',
+            'name': 'agent-devcontainer',
             'plugins': [{'name': 'agentdev', 'source': PLUGIN_SOURCE, 'version': '1.1.0'}],
         },
     )
@@ -160,7 +160,7 @@ def test_marketplace_entry_pointing_at_missing_plugin_fails(tmp_path, monkeypatc
     _write_json(
         tmp_path / CODEX_MARKETPLACE,
         {
-            'name': 'plume-works',
+            'name': 'agent-devcontainer',
             'plugins': [
                 {'name': 'gone', 'source': {'source': 'local', 'path': './.agents/plugins/gone'}}
             ],

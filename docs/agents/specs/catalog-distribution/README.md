@@ -81,14 +81,14 @@ commas:
 ```json
 {
   "extraKnownMarketplaces": {
-    "plume-works": {
+    "agent-devcontainer": {
       "source": {
         "source": "github",
         "repo": "plume-works/agent-devcontainer"
       }
     }
   },
-  "enabledPlugins": { "agentdev@plume-works": true }
+  "enabledPlugins": { "agentdev@agent-devcontainer": true }
 }
 ```
 
