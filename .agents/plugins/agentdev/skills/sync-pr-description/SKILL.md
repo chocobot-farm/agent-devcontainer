@@ -1,6 +1,6 @@
 ---
 name: sync-pr-description
-description: 'Refresh an existing GitHub pull request title and body so they match the current branch, then push the branch. Use when asked to sync, update, refresh, or regenerate a PR description or title for the branch in the working tree, including after new commits land on it. Stops when the branch has no pull request; creating a PR belongs to /agentdev:open-pr, and formatting, committing, and base-branch sync belong to their own skills.'
+description: 'Refresh an existing GitHub pull request title and body so they match the current branch, then push the branch. Use when asked to sync, update, refresh, or regenerate a PR description or title for the branch in the working tree, including after new commits land on it. Stops when the branch has no pull request; creating a PR belongs to /agentdev:pr-open, and formatting, committing, and base-branch sync belong to their own skills.'
 allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*)
 ---
 
@@ -11,7 +11,7 @@ find the PR for the current branch, regenerate its title and body from the
 branch's real changes, push the branch, and edit the PR in place.
 
 Sync the PR text for the branch exactly as it stands. Unlike
-[open-pr](../open-pr/SKILL.md), do **not** reformat, commit, or merge
+[pr-open](../pr-open/SKILL.md), do **not** reformat, commit, or merge
 `origin/main` first, and do not create a pull request that is missing.
 
 ## Bundled Scripts
@@ -38,7 +38,7 @@ Handle non-zero exits by stopping, not by improvising:
 
 | Exit | Meaning                                                    | Action                                                                                                                    |
 | ---- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `3`  | No open PR for this branch                                 | **STOP.** Report that there is nothing to sync and name `/agentdev:open-pr` as the way to create one. Do not create a PR. |
+| `3`  | No open PR for this branch                                 | **STOP.** Report that there is nothing to sync and name `/agentdev:pr-open` as the way to create one. Do not create a PR. |
 | `4`  | Several PRs share this head branch                         | **STOP.** Show the candidates and ask which PR to update.                                                                 |
 | `5`  | Current branch is `main` or `master`                       | **STOP.** Report that a PR head must be a feature branch.                                                                 |
 | `2`  | Not a repo, detached HEAD, `gh` missing or unauthenticated | **STOP.** Report the reported blocker verbatim.                                                                           |

@@ -1,6 +1,6 @@
 ---
 name: code-review-standards
-description: Apply review standards and write pull request descriptions. Use when asked to review code, assess a change for correctness or maintainability, or draft a PR description. Commit creation belongs to /agentdev:git-commit and PR publishing belongs to /agentdev:open-pr.
+description: Apply review standards and write pull request descriptions. Use when asked to review code, assess a change for correctness or maintainability, or draft a PR description. Commit creation belongs to /agentdev:git-commit and PR publishing belongs to /agentdev:pr-open.
 ---
 
 # Code Review Standards

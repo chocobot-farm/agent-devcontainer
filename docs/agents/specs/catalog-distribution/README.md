@@ -135,14 +135,14 @@ every one of these breaks.
 | --------------------------------------------------------------- | ---- |
 | `skills/remote-codespace-session/SKILL.md`                      | 7    |
 | `skills/extract-github-actions-logs/SKILL.md`                   | 5    |
-| `skills/open-pr/SKILL.md`                                       | 3    |
-| `skills/open-pr/scripts/review-git-changes.sh`                  | 3    |
+| `skills/pr-open/SKILL.md`                                       | 3    |
+| `skills/pr-open/scripts/review-git-changes.sh`                  | 3    |
 | `skills/remote-codespace-session/scripts/codespace-ensure.sh`   | 3    |
 | `skills/remote-codespace-session/scripts/codespace-teardown.sh` | 3    |
 | `skills/git-merge-resolve/SKILL.md`                             | 2    |
 | `skills/git-merge-resolve/scripts/git-merge-resolve.sh`         | 2    |
 | `skills/pr-review/SKILL.md`                                     | 2    |
-| `skills/open-pr/scripts/ensure-remote-branch.sh`                | 2    |
+| `skills/pr-open/scripts/ensure-remote-branch.sh`                | 2    |
 | `skills/update-branch/scripts/update-branch.sh`                 | 2    |
 | `skills/create-skill/SKILL.md`                                  | 1    |
 | `skills/remote-codespace-session/scripts/codespace-sync.sh`     | 1    |

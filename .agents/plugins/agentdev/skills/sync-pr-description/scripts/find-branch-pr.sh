@@ -119,7 +119,7 @@ pr_count="$(printf '%s\n' "${pr_output}" | grep -c '^PR_RECORD$' || true)"
 
 if [[ "${pr_count}" -eq 0 ]]; then
   print_error "No ${state_filter} pull request found with head branch '${branch_name}'."
-  printf 'Nothing to sync. Create the pull request first, for example with the open-pr skill.\n' >&2
+  printf 'Nothing to sync. Create the pull request first, for example with the pr-open skill.\n' >&2
   exit 3
 fi
 

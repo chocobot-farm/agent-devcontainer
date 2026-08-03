@@ -38,7 +38,7 @@ Claude Code-only.
 
 ## Using it
 
-Skills are namespaced by the plugin name — `/agentdev:open-pr`,
+Skills are namespaced by the plugin name — `/agentdev:pr-open`,
 `/agentdev:pr-merge`, and so on. There is no opt-out; namespacing is what keeps
 plugins from colliding. Claude also invokes them on its own when a request
 matches a skill's description, so most of the time you just ask for the work.
@@ -67,7 +67,7 @@ Scripts in `bin/` are on `PATH` while the plugin is enabled, so you can run e.g.
 | `/agentdev:git-commit`             | Conventional commit messages from the staged changes.          |
 | `/agentdev:git-merge-resolve`      | Merge a ref and resolve conflicts, escalating when unsure.     |
 | `/agentdev:update-branch`          | Update the current feature branch from its remote base.        |
-| `/agentdev:open-pr`                | Open a PR from conversation context, with branch sync.         |
+| `/agentdev:pr-open`                | Open a PR from conversation context, with branch sync.         |
 | `/agentdev:pr-gen-description`     | Write a PR description from the change analysis.               |
 | `/agentdev:pr-review`              | Full automated review, published as one GitHub review.         |
 | `/agentdev:pr-feedback-resolution` | Work through review threads, CI failures, and CodeQL findings. |

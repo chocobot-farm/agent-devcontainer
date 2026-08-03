@@ -121,7 +121,7 @@ different version.
 
 - A container from the built image, opened on an unrelated project with no
   `.claude/` configuration at all, lists the `agentdev` skills and can invoke
-  `/agentdev:open-pr`.
+  `/agentdev:pr-open`.
 - No network request is made to resolve the catalog at session start. Verified
   with `ENABLE_FIREWALL=true` and no allowlist entry for the marketplace.
 - The seeded plugin version matches the build argument and the image label.

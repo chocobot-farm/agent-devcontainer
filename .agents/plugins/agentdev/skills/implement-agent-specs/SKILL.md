@@ -97,10 +97,10 @@ its spec path and base branch, tracks the resulting PR, and reports status.
 8. Push using local Git commands only. Never use a GitHub API or MCP tool to move
    branch refs or push branch contents. Then create a pull request with the
    [`pr-gen-description`](../pr-gen-description/SKILL.md) and
-   [`open-pr`](../open-pr/SKILL.md) workflows. Tell `open-pr` that this
+   [`pr-open`](../pr-open/SKILL.md) workflows. Tell `pr-open` that this
    per-spec commit already exists; it must verify the committed scope rather
    than create a second commit. If branch synchronization or the final
-   formatter pass creates new changes, `open-pr` owns the single follow-up
+   formatter pass creates new changes, `pr-open` owns the single follow-up
    formatting commit before it publishes the PR.
 
 ## Main-Targeted Pull Requests

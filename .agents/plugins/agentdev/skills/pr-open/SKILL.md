@@ -1,5 +1,5 @@
 ---
-name: open-pr
+name: pr-open
 description: 'Create GitHub pull requests from conversation context with accurate title/body generation, branch sync, and remote verification. Use when asked to open/create/submit a PR, draft a pull request, or finalize changes after implementation. Keywords: open pr, create pr, submit pr, pull request, github pr, draft pr, ready for review.'
 allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/*)
 ---
@@ -30,7 +30,7 @@ Optional MCP tools (for validation and follow-up):
 The PR body content **MUST** be generated using the
 [pr-gen-description](../pr-gen-description/) skill.
 
-The open-pr skill is responsible for:
+The pr-open skill is responsible for:
 
 - optional issue linking in title/body when issue context exists
 - delegating mandatory formatting and validation to the `local-reformat` skill

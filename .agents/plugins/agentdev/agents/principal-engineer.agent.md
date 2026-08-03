@@ -80,7 +80,7 @@ itself require a new Red→Green→Refactor cycle.
   a parallel rubric.
 - **Creating / describing** — use
   [pr-gen-description](../skills/pr-gen-description/SKILL.md) and
-  [open-pr](../skills/open-pr/SKILL.md).
+  [pr-open](../skills/pr-open/SKILL.md).
 
 ## Technical Debt
 
