@@ -49,15 +49,6 @@
     "github@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
-    "ralph-loop@claude-plugins-official": true,
-    "agentdev@agent-devcontainer": true
-  },
-  "extraKnownMarketplaces": {
-    "agent-devcontainer": {
-      "source": {
-        "source": "directory",
-        "path": "/workspaces/agent-devcontainer"
-      }
-    }
+    "ralph-loop@claude-plugins-official": true
   }
 }

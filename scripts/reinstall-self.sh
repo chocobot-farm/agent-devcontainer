@@ -33,5 +33,5 @@ while read -r name; do
   claude plugin marketplace remove "$name" || true
 done < <(printf '%s\n' "$marketplace_name" "${stale_names[@]}" | sort -u)
 
-claude plugin marketplace add "$repo_root" --scope project
-claude plugin install "$plugin_name" --scope project
+claude plugin marketplace add "$repo_root" --scope local
+claude plugin install "$plugin_name" --scope local
