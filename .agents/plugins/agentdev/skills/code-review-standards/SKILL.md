@@ -202,5 +202,5 @@ Update PR based on code review feedback.
 ## References
 
 - Coding Conventions in the reviewed repository's root `AGENTS.md`
-- [Generate pull request description](../generate-pr-description/)
+- [Generate pull request description](../pr-gen-description/)
 - [Create conventional commits](../git-commit/)

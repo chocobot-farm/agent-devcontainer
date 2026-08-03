@@ -48,7 +48,7 @@ PR.
 
 ### 2. Generate the New Title and Body
 
-Follow [generate-pr-description](../generate-pr-description/SKILL.md) to produce
+Follow [pr-gen-description](../pr-gen-description/SKILL.md) to produce
 the body, using `PR_BASE` as the base ref rather than assuming `main`:
 
 ```bash

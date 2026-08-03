@@ -96,7 +96,7 @@ its spec path and base branch, tracks the resulting PR, and reports status.
    diff.
 8. Push using local Git commands only. Never use a GitHub API or MCP tool to move
    branch refs or push branch contents. Then create a pull request with the
-   [`generate-pr-description`](../generate-pr-description/SKILL.md) and
+   [`pr-gen-description`](../pr-gen-description/SKILL.md) and
    [`open-pr`](../open-pr/SKILL.md) workflows. Tell `open-pr` that this
    per-spec commit already exists; it must verify the committed scope rather
    than create a second commit. If branch synchronization or the final

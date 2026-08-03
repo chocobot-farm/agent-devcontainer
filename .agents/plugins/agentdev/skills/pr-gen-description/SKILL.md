@@ -1,5 +1,5 @@
 ---
-name: generate-pr-description
+name: pr-gen-description
 description: Generate comprehensive pull request description following /agentdev:code-review-standards with change analysis, testing strategy, and migration notes. Use when creating a PR, writing PR description, preparing for code review, or documenting technical decisions.
 ---
 
