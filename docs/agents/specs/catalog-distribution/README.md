@@ -142,7 +142,7 @@ every one of these breaks.
 | `skills/git-merge-resolve/SKILL.md`                             | 2    |
 | `skills/git-merge-resolve/scripts/git-merge-resolve.sh`         | 2    |
 | `skills/pr-review/SKILL.md`                                     | 2    |
-| `skills/pr-open/scripts/ensure-remote-branch.sh`                | 2    |
+| `skills/pr-open/scripts/push-branch.sh`                         | 2    |
 | `skills/update-branch/scripts/update-branch.sh`                 | 2    |
 | `skills/create-skill/SKILL.md`                                  | 1    |
 | `skills/remote-codespace-session/scripts/codespace-sync.sh`     | 1    |
