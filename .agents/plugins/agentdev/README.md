@@ -97,6 +97,7 @@ Scripts in `bin/` are on `PATH` while the plugin is enabled, so you can run e.g.
 | `/agentdev:remote-codespace-session` | Use a GitHub Codespace as a remote build and test machine.   |
 | `/agentdev:create-agent`             | Add or update an agent in this catalog.                      |
 | `/agentdev:create-skill`             | Add or update a skill in this catalog.                       |
+| `/agentdev:skill-scripts`            | Write a skill script's result and exit-code contract.        |
 
 ### Hooks
 
