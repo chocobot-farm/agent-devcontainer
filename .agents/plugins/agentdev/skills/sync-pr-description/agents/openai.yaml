@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Sync PR Description'
+  short_description: 'Resync a PR title and body with its branch'
+  default_prompt: 'Use $sync-pr-description to update this branch pull request title and description.'
