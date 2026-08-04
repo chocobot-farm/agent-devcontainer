@@ -1,7 +1,7 @@
 {
-  "name": "chocobot-farm",
+  "name": "agent-devcontainer",
   "interface": {
-    "displayName": "Chocobot Farm"
+    "displayName": "Agent DevContainer"
   },
   "plugins": [
     {

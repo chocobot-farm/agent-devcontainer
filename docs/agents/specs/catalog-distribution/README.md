@@ -81,14 +81,14 @@ commas:
 ```json
 {
   "extraKnownMarketplaces": {
-    "chocobot-farm": {
+    "agent-devcontainer": {
       "source": {
         "source": "github",
-        "repo": "chocobot-farm/agent-devcontainer"
+        "repo": "plume-works/agent-devcontainer"
       }
     }
   },
-  "enabledPlugins": { "agentdev@chocobot-farm": true }
+  "enabledPlugins": { "agentdev@agent-devcontainer": true }
 }
 ```
 
@@ -135,14 +135,14 @@ every one of these breaks.
 | --------------------------------------------------------------- | ---- |
 | `skills/remote-codespace-session/SKILL.md`                      | 7    |
 | `skills/extract-github-actions-logs/SKILL.md`                   | 5    |
-| `skills/open-pr/SKILL.md`                                       | 3    |
-| `skills/open-pr/scripts/review-git-changes.sh`                  | 3    |
+| `skills/pr-open/SKILL.md`                                       | 3    |
+| `skills/pr-open/scripts/review-git-changes.sh`                  | 3    |
 | `skills/remote-codespace-session/scripts/codespace-ensure.sh`   | 3    |
 | `skills/remote-codespace-session/scripts/codespace-teardown.sh` | 3    |
 | `skills/git-merge-resolve/SKILL.md`                             | 2    |
 | `skills/git-merge-resolve/scripts/git-merge-resolve.sh`         | 2    |
 | `skills/pr-review/SKILL.md`                                     | 2    |
-| `skills/open-pr/scripts/ensure-remote-branch.sh`                | 2    |
+| `skills/pr-open/scripts/push-branch.sh`                         | 2    |
 | `skills/update-branch/scripts/update-branch.sh`                 | 2    |
 | `skills/create-skill/SKILL.md`                                  | 1    |
 | `skills/remote-codespace-session/scripts/codespace-sync.sh`     | 1    |
@@ -204,7 +204,7 @@ cannot authenticate to a private repository over HTTPS. It falls back to a full
 re-clone, which uses stored credentials but can time out. SSH remotes are
 unaffected.
 
-`chocobot-farm/agent-devcontainer` is public, so this does not bite today. It
+`plume-works/agent-devcontainer` is public, so this does not bite today. It
 constrains any future decision to make it private.
 
 ## Costs summary

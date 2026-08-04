@@ -23,7 +23,7 @@ may change.
 
 **Permitted deltas**, enumerated before editing:
 
-1. `generate-pr-description` gains a fallback for a repository with no pull
+1. `pr-gen-description` gains a fallback for a repository with no pull
    request template. Prose cannot assume the file exists the way a working link
    could, so this behavior had to be stated rather than inherited.
 2. `create-skill` gains an authoring rule describing the new convention.

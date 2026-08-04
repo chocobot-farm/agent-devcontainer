@@ -1,15 +1,16 @@
 {
-  "name": "chocobot-farm",
+  "name": "agent-devcontainer",
   "description": "The agent-devcontainer catalog: shared Claude Code agents, skills, hooks, and lint tooling.",
   "owner": {
-    "name": "chocobot-farm"
+    "name": "PlumeWorks",
+    "url": "https://github.com/plume-works/agent-devcontainer"
   },
   "plugins": [
     {
       "name": "agentdev",
       "source": "./.agents/plugins/agentdev",
       "description": "General-purpose agent catalog: git, pull requests, review, CI, formatting, container and Codespace escalation.",
-      "version": "2.0.0"
+      "version": "3.0.0"
     }
   ]
 }

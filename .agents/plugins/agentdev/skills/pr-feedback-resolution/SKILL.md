@@ -21,7 +21,8 @@ Systematic approach to resolving all PR feedback including review comments, CI f
 ## Prerequisites
 
 - Active pull request with feedback
-- Access to `gh` or GitHub MCP for PR details
+- Access to `gh` for PR details, with GitHub MCP only as a fallback when `gh`
+  is missing or unauthenticated
 - Access to CI logs and test results via the [extract-github-actions-logs](../extract-github-actions-logs/) skill
 - Access to CodeQL security scan results via the [get-codeql-data](../get-codeql-data/) skill
 - Access to Codecov reports

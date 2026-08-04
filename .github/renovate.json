@@ -8,10 +8,10 @@
       "customType": "regex",
       "managerFilePatterns": ["/(^|/)\\.claude/settings(\\.local)?\\.json$/"],
       "matchStrings": [
-        "\"(?<depName>[a-z0-9-]+)@chocobot-farm\"\\s*:\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
+        "\"(?<depName>[a-z0-9-]+)@agent-devcontainer\"\\s*:\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
       ],
       "datasourceTemplate": "github-releases",
-      "packageNameTemplate": "chocobot-farm/agent-devcontainer",
+      "packageNameTemplate": "plume-works/agent-devcontainer",
       "versioningTemplate": "semver"
     }
   ],
@@ -26,7 +26,7 @@
     {
       "description": "agent-desktop is built by this repository's own pipeline. Its pin lives in compose.pins.yml, outside the CI image path filter, so merging a bump cannot retrigger the build that produced the digest and bump itself again. That is what makes automerge safe here.",
       "matchDatasources": ["docker"],
-      "matchPackageNames": ["ghcr.io/chocobot-farm/agent-desktop"],
+      "matchPackageNames": ["ghcr.io/plume-works/agent-desktop"],
       "automerge": true,
       "automergeType": "pr",
       "platformAutomerge": true

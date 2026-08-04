@@ -54,7 +54,9 @@ ignore = [
 force-single-line = false
 force-sort-within-sections = true # sort all imports within section no matter the style
 combine-as-imports = true
-known-first-party = ["validate_agent_files"]
+# `mock_catalog` is the shared test-fixture module, first-party like the package
+# it exercises, so it must not be sorted in with third-party imports.
+known-first-party = ["validate_agent_files", "mock_catalog"]
 known-third-party = ["pytest", "yaml"]
 case-sensitive = false
 order-by-type = false # ignore type, use alphabetical order

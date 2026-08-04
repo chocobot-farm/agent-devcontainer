@@ -11,26 +11,26 @@ branch_name=""
 remote_was_explicit=0
 
 usage() {
-  show_help_header "Ensure the current branch exists on the remote and push if needed."
+  show_help_header "Push a branch to its pull request head ref without rewriting history."
   cat <<'EOF'
 
 Usage:
-  ensure-remote-branch.sh [--remote <name>] [--branch <name>]
+  push-branch.sh [--remote <name>] [--branch <name>]
 
 Options:
-  --remote <name>    Remote to verify and push to. Default: origin
-  --branch <name>    Branch to verify. Default: current branch
+  --remote <name>    Remote to push to when no upstream is configured. Default: origin
+  --branch <name>    Branch to push. Default: current branch
   -h, --help         Show this help text.
 
+Output (key=value lines):
+  BRANCH, UPSTREAM, AHEAD, BEHIND, ACTION, RESULT
+
 Exit codes:
-  0  Success or already up to date
+  0  Pushed, or already up to date
+  2  Usage or preflight error
   3  Branch is behind or diverged from its upstream
   4  Push failed
-  5  Default branch warning
-
-Examples:
-  ${CLAUDE_SKILL_DIR}/scripts/ensure-remote-branch.sh
-  ${CLAUDE_SKILL_DIR}/scripts/ensure-remote-branch.sh --remote origin --branch feature/my-change
+  5  Branch is a protected default branch
 EOF
 }
 
@@ -65,9 +65,14 @@ if [[ -z "${branch_name}" ]]; then
   branch_name="$(current_branch)"
 fi
 
-if ! git remote get-url "${remote_name}" >/dev/null 2>&1; then
-  print_error "Remote not found: ${remote_name}"
+if [[ "${branch_name}" == "HEAD" ]]; then
+  print_error "Detached HEAD: check out the pull request branch before pushing."
   exit 2
+fi
+
+if is_default_branch "${branch_name}"; then
+  print_error "Refusing to push from ${branch_name}; a pull request head must be a feature branch."
+  exit 5
 fi
 
 if ! git show-ref --verify --quiet "refs/heads/${branch_name}"; then
@@ -75,12 +80,8 @@ if ! git show-ref --verify --quiet "refs/heads/${branch_name}"; then
   exit 2
 fi
 
-if is_default_branch "${branch_name}"; then
-  printf 'WARNING: You are on %s. Create a feature branch before opening a PR unless the user explicitly confirms otherwise.\n' "${branch_name}" >&2
-  exit 5
-fi
+printf 'BRANCH=%s\n' "${branch_name}"
 
-upstream_ref=""
 if upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name "${branch_name}@{u}" 2>/dev/null)"; then
   upstream_remote="${upstream_ref%%/*}"
   upstream_branch="${upstream_ref#*/}"
@@ -91,27 +92,28 @@ if upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name "${branch_nam
     exit 2
   fi
 
+  git fetch --quiet "${upstream_remote}" "${upstream_branch}" 2>/dev/null || true
+
   ahead_count="$(git rev-list --count "${upstream_ref}..${branch_name}")"
   behind_count="$(git rev-list --count "${branch_name}..${upstream_ref}")"
 
-  printf 'BRANCH=%s\n' "${branch_name}"
   printf 'UPSTREAM=%s\n' "${upstream_ref}"
   printf 'AHEAD=%s\n' "${ahead_count}"
   printf 'BEHIND=%s\n' "${behind_count}"
 
   if [[ "${behind_count}" -gt 0 && "${ahead_count}" -gt 0 ]]; then
-    print_error "Cannot push: your branch has diverged from remote."
-    printf 'Please resolve conflicts by merging the remote branch into your local branch:\n' >&2
+    print_error "Local branch has diverged from its upstream; the pull request head would not fast-forward."
+    printf 'Merge the upstream branch into the local branch:\n' >&2
     printf '  git pull %s %s\n' "${upstream_remote}" "${upstream_branch}" >&2
-    printf 'Then resolve any merge conflicts, commit the merge, and run:\n' >&2
-    printf '  git push\n' >&2
+    printf 'Resolve any conflicts, commit the merge, and rerun. Never force-push here.\n' >&2
     exit 3
-  elif [[ "${behind_count}" -gt 0 ]]; then
-    print_error "Cannot push: your branch is behind its upstream remote."
-    printf 'Please update your local branch from the configured upstream (a fast-forward pull is usually sufficient):\n' >&2
+  fi
+
+  if [[ "${behind_count}" -gt 0 ]]; then
+    print_error "Local branch is behind its upstream; the pull request head would not fast-forward."
+    printf 'Reconcile the branch first, then rerun:\n' >&2
     printf '  git pull --ff-only %s %s\n' "${upstream_remote}" "${upstream_branch}" >&2
-    printf 'Then run:\n' >&2
-    printf '  git push\n' >&2
+    printf 'If the branches diverged, merge the upstream branch instead. Never force-push here.\n' >&2
     exit 3
   fi
 
@@ -128,12 +130,16 @@ if upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name "${branch_nam
     exit 0
   fi
 
-  print_error "Git push failed. Please check your Git credentials."
+  print_error "Git push failed. Check Git credentials and remote permissions."
   printf '%s\n' "${push_output}" >&2
   exit 4
 fi
 
-printf 'BRANCH=%s\n' "${branch_name}"
+if ! git remote get-url "${remote_name}" >/dev/null 2>&1; then
+  print_error "Remote not found: ${remote_name}"
+  exit 2
+fi
+
 printf 'UPSTREAM=%s/%s\n' "${remote_name}" "${branch_name}"
 printf 'ACTION=push-with-upstream\n'
 
@@ -151,6 +157,6 @@ if push_output="$("${push_command[@]}" 2>&1)"; then
   exit 0
 fi
 
-print_error "Git push failed. Please check your Git credentials."
+print_error "Git push failed. Check Git credentials and remote permissions."
 printf '%s\n' "${push_output}" >&2
 exit 4

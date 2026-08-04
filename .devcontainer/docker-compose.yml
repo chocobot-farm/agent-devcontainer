@@ -53,7 +53,7 @@ services:
     # Tag-only fallback for standalone `docker compose -f .devcontainer/docker-compose.yml`
     # use. The digest pin lives in ../compose.pins.yml, which devcontainer.json layers on
     # top of this file; pass `-f compose.pins.yml` too when invoking compose directly.
-    image: ghcr.io/chocobot-farm/agent-desktop:edge
+    image: ghcr.io/plume-works/agent-desktop:edge
     # Required for Docker in Docker (dind) to allow nested containers, and for
     # privileged access to the host's GPU for hardware-accelerated rendering
     # through Xpra/VirtualGL.
