@@ -7,7 +7,7 @@ merge_script="${script_dir}/../../git-merge-resolve/scripts/git-merge-resolve.sh
 # shellcheck source=/dev/null
 source "${script_dir}/__common.sh"
 
-RESULT_CODES+=("3=ALREADY_UP_TO_DATE" "4=MERGE_CONFLICTS" "5=PROTECTED_BRANCH")
+RESULT_CODES+=("3=ALREADY_UP_TO_DATE" "4=MERGE_CONFLICTS" "5=PROTECTED_BRANCH" "6=FETCH_FAILED")
 
 remote_name="origin"
 base_branch="main"
@@ -33,6 +33,7 @@ Results (RESULT / exit code):
   ALREADY_UP_TO_DATE 3  Branch already contains the base ref
   MERGE_CONFLICTS    4  Conflicts detected — use the git-merge-resolve workflow
   PROTECTED_BRANCH   5  Current branch is the default branch
+  FETCH_FAILED       6  The configured remote could not be fetched
   PREFLIGHT_ERROR    2  Usage or preflight error (not a repo, dirty tree)
   SCRIPT_FAILURE     1  Unhandled error
 
@@ -88,7 +89,10 @@ printf 'BASE=%s/%s\n' "${remote_name}" "${base_branch}"
 
 # Fetch
 printf 'Fetching %s...\n' "${remote_name}" >&2
-git fetch "${remote_name}"
+if ! git fetch "${remote_name}"; then
+  print_error "Failed to fetch remote '${remote_name}'."
+  quit_by_code 6
+fi
 
 base_ref="${remote_name}/${base_branch}"
 

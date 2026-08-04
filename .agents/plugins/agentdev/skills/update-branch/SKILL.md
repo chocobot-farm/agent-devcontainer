@@ -64,14 +64,15 @@ the user requested different values.
 
 ## Workflow 2: Handle the Result
 
-| RESULT               | Exit | Meaning                                  | Action                                                                                                                                                          |
-| -------------------- | ---- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SUCCESS`            | `0`  | The fetch and merge completed            | Continue. The delegated [git-merge-resolve](../git-merge-resolve/SKILL.md) completion workflow still requires reformatting and targeted validation before push. |
-| `ALREADY_UP_TO_DATE` | `3`  | The branch already contains the base ref | Report that the branch is already up to date; make no changes.                                                                                                  |
-| `MERGE_CONFLICTS`    | `4`  | The merge stopped on conflicts           | Invoke and complete the [git-merge-resolve](../git-merge-resolve/SKILL.md) conflict-resolution and completion workflows, then return here.                      |
-| `PROTECTED_BRANCH`   | `5`  | The current branch is `main` or `master` | **STOP.** Switch to a feature branch only with user authorization, then retry. Do not merge into the default branch.                                            |
-| `PREFLIGHT_ERROR`    | `2`  | Bad usage, not a repo, or a dirty tree   | **STOP.** Fix the reported error before retrying. Do not discard or stash changes without user approval.                                                        |
-| `SCRIPT_FAILURE`     | `1`  | The script broke                         | **STOP.** Report the blocker verbatim; do not retry or work around it.                                                                                          |
+| RESULT               | Exit | Meaning                                    | Action                                                                                                                                                          |
+| -------------------- | ---- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SUCCESS`            | `0`  | The fetch and merge completed              | Continue. The delegated [git-merge-resolve](../git-merge-resolve/SKILL.md) completion workflow still requires reformatting and targeted validation before push. |
+| `ALREADY_UP_TO_DATE` | `3`  | The branch already contains the base ref   | Report that the branch is already up to date; make no changes.                                                                                                  |
+| `MERGE_CONFLICTS`    | `4`  | The merge stopped on conflicts             | Invoke and complete the [git-merge-resolve](../git-merge-resolve/SKILL.md) conflict-resolution and completion workflows, then return here.                      |
+| `PROTECTED_BRANCH`   | `5`  | The current branch is `main` or `master`   | **STOP.** Switch to a feature branch only with user authorization, then retry. Do not merge into the default branch.                                            |
+| `FETCH_FAILED`       | `6`  | The configured remote could not be fetched | **STOP.** Report the Git error and restore connectivity or authentication before retrying. Do not change the configured remote to work around the failure.      |
+| `PREFLIGHT_ERROR`    | `2`  | Bad usage, not a repo, or a dirty tree     | **STOP.** Fix the reported error before retrying. Do not discard or stash changes without user approval.                                                        |
+| `SCRIPT_FAILURE`     | `1`  | The script broke                           | **STOP.** Report the blocker verbatim; do not retry or work around it.                                                                                          |
 
 ## Workflow 3: Push the Updated Branch
 

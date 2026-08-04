@@ -73,7 +73,7 @@ done
 status=0
 gh codespace ssh -c "${name}" -- "${remote_cmd}" || status=$?
 
-printf 'REMOTE_EXIT_CODE=%s\n' "${status}"
+printf '\nREMOTE_EXIT_CODE=%s\n' "${status}"
 if [[ "${status}" -ne 0 ]]; then
   print_error "Remote command exited ${status} on codespace ${name}."
   quit_by_code 4
