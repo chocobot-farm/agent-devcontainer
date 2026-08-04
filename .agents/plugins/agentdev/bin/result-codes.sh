@@ -1,16 +1,8 @@
 #!/usr/bin/env bash
 
-# Canonical result-code block for skill scripts. Copy it verbatim into a
-# skill's scripts/__common.sh; it is not sourced across skill directories.
-#
-# Every terminal path calls quit_by_code, so every run ends with a
-# RESULT=<NAME> line on stdout that names the outcome without the reader
-# having to resolve a bare number against a table.
-#
-# Copy everything between the BEGIN and END markers below — this header and the
-# shebang are about the asset, not part of it.
-
-# --- BEGIN result-code block ---
+# Shared result-code helpers for agentdev skill scripts. This file is sourced
+# by scripts under skills/*/scripts; result names from 3 through 125 are added
+# by each consuming script after it loads these defaults.
 
 # Codes 0, 1, 2, 129, 130, and 143 mean the same thing in every skill script. A
 # script declares its own workflow outcomes from 3 through 125 by appending to
@@ -55,11 +47,6 @@ quit_by_code() {
 
 # A script stopped by `set -e` or a bare `exit` never reaches quit_by_code. The
 # EXIT trap keeps the RESULT line total without altering the exit status.
-#
-# The directive suppresses a false positive that only appears when this block
-# lives in the script instead of a sourced __common.sh: because the last
-# top-level command exits, ShellCheck reads the handler as dead code (SC2317 in
-# 0.9, SC2329 in 0.11). It is invoked by the EXIT trap below.
 # shellcheck disable=SC2317,SC2329
 report_unhandled_exit() {
   local code=$?
@@ -88,5 +75,3 @@ trap report_unhandled_exit EXIT
 trap 'report_signal HUP 129' HUP
 trap 'report_signal INT 130' INT
 trap 'report_signal TERM 143' TERM
-
-# --- END result-code block ---

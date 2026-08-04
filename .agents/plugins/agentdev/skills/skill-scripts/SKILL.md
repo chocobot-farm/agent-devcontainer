@@ -1,6 +1,6 @@
 ---
 name: skill-scripts
-description: "Write and document a skill's bundled scripts so their outcome is readable by both a shell caller and an agent — a shared exit-code vocabulary, a RESULT= enum line on stdout, and the quit_by_code helper in __common.sh. Use when adding or editing a script under a skill's scripts/ directory, choosing or renumbering its exit codes, deciding what it prints, or wiring a SKILL.md step to branch on a script's outcome. Keywords: exit code, RESULT, quit_by_code, __common.sh, script output contract."
+description: "Write and document a skill's bundled scripts so their outcome is readable by both a shell caller and an agent — a shared exit-code vocabulary, a RESULT= enum line on stdout, and the shared result-codes.sh helpers. Use when adding or editing a script under a skill's scripts/ directory, choosing or renumbering its exit codes, deciding what it prints, or wiring a SKILL.md step to branch on a script's outcome. Keywords: exit code, RESULT, quit_by_code, result-codes.sh, script output contract."
 ---
 
 # Skill Script Result Contract
@@ -43,7 +43,7 @@ Apply this to every script under a skill's `scripts/` directory.
 | `130` | `SIGNAL_INT`      | The process received INT (`128 + 2`). The result is emitted before the signal is re-raised.                                                                                                                                                                                                          |
 | `143` | `SIGNAL_TERM`     | The process received TERM (`128 + 15`). The result is emitted before the signal is re-raised.                                                                                                                                                                                                        |
 
-Codes `126`, `127`, and `128+N` are shell-reserved. The canonical block uses
+Codes `126`, `127`, and `128+N` are shell-reserved. The shared implementation uses
 the conventional `129`, `130`, and `143` statuses only for HUP, INT, and TERM;
 never override them with workflow meanings.
 
@@ -89,25 +89,40 @@ discriminator. Codes are for outcomes, not for variants of one outcome.
 
 ## Implementation
 
-Copy the region between the `BEGIN`/`END` markers in
-[assets/result-codes.sh](assets/result-codes.sh) verbatim into the skill's
-`scripts/__common.sh` — the file's shebang and header describe the asset and
-are not part of the block. Skills do not source across each other's directories —
-each `__common.sh` already carries its own copy of the shared helpers.
+Source [result-codes.sh](../../bin/result-codes.sh) from the plugin's shared
+`bin/` directory. Resolve the path from the consuming script's own location so
+it works from both a repository checkout and an installed plugin cache. Never
+copy or inline the helpers into a skill.
 
-A skill whose `scripts/` holds a single standalone script has no
-`__common.sh`; inline the block into the script instead, and define alongside
-it the `print_error` every converted script uses:
+A skill with a `scripts/__common.sh` loads the shared helpers there:
 
 ```bash
+skill_script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+source "${skill_script_dir}/../../../bin/result-codes.sh"
+```
+
+A skill whose `scripts/` holds a single standalone script resolves its own
+directory and sources the same file directly. Define alongside it the
+`print_error` every converted script uses:
+
+```bash
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
 print_error() {
   printf 'ERROR: %s\n' "$*" >&2
 }
+
+# shellcheck source=/dev/null
+source "${script_dir}/../../../bin/result-codes.sh"
 ```
 
-The `# shellcheck disable` the asset carries is there for exactly that layout.
+The ShellCheck directive acknowledges that the source path is resolved
+dynamically at runtime; lint the shared file separately with the other plugin
+shell scripts.
 
-In the script, declare the script-specific codes right after sourcing, then
+In a script that has `__common.sh`, source that file as usual. Declare the
+script-specific codes immediately after all shared helpers have loaded, then
 call `quit_by_code` on every terminal path:
 
 ```bash
@@ -126,7 +141,7 @@ path and after `--help`. An uncaught failure still prints
 `RESULT=SCRIPT_FAILURE` through the `EXIT` trap, so a reader never sees a run
 with no verdict.
 
-Keep the exit and signal traps from the canonical block:
+The shared implementation installs the exit and signal traps:
 
 ```bash
 trap report_unhandled_exit EXIT
@@ -135,9 +150,9 @@ trap 'report_signal INT 130' INT
 trap 'report_signal TERM 143' TERM
 ```
 
-The signal traps are not optional. Without them, Bash can enter the `EXIT` trap
-after HUP, INT, or TERM with the status of the previous successful command;
-the process then terminates with `128 + signal` while printing
+Do not override these traps in a consuming script. Without them, Bash can enter
+the `EXIT` trap after HUP, INT, or TERM with the status of the previous successful
+command; the process then terminates with `128 + signal` while printing
 `RESULT=SUCCESS`. `report_signal` emits the matching signal result, restores
 that signal's default action, and re-raises it. A shell caller observes status
 `129`, `130`, or `143`, and the operating system still records genuine signal
@@ -303,8 +318,10 @@ results too, even if it is just "STOP and report the blocker verbatim".
 
 ## Definition of Done
 
+- Every skill loads the sole result-code implementation from the plugin's
+  shared `bin/result-codes.sh`; none copies or inlines its helpers.
 - Every terminal path exits through `quit_by_code`; no bare `exit N` remains
-  outside `__common.sh`.
+  outside the shared result-code implementation.
 - Exactly one `RESULT=` line reaches stdout, last; no lowercase or ad-hoc
   `RESULT=` values survive from an earlier convention.
 - HUP, INT, and TERM emit exactly one matching `SIGNAL_*` result, re-raise the

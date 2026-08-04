@@ -13,9 +13,7 @@ def test_canonical_result_codes_preserve_terminating_signals() -> None:
     """Name terminating signals while preserving their shell exit statuses."""
     # Arrange
     repository_root = Path(__file__).resolve().parents[3]
-    result_codes = (
-        repository_root / '.agents/plugins/agentdev/skills/skill-scripts/assets/result-codes.sh'
-    )
+    result_codes = repository_root / '.agents/plugins/agentdev/bin/result-codes.sh'
     outcomes: dict[str, tuple[int, int, str]] = {}
 
     # Act
