@@ -122,6 +122,20 @@ path and after `--help`. An uncaught failure still prints
 `RESULT=SCRIPT_FAILURE` through the `EXIT` trap, so a reader never sees a run
 with no verdict.
 
+Keep both traps from the canonical block:
+
+```bash
+trap report_unhandled_exit EXIT
+trap 'exit 1' HUP INT TERM
+```
+
+The signal trap is not optional. Without it, Bash can enter the `EXIT` trap
+after HUP, INT, or TERM with the status of the previous successful command;
+the process then terminates with `128 + signal` while printing
+`RESULT=SUCCESS`. Normalize those signals to exit `1` first, so the `EXIT`
+trap emits exactly one `RESULT=SCRIPT_FAILURE` and the numeric and named
+outcomes agree.
+
 **Only a top-level path may call `quit_by_code`.** A helper that runs inside
 `$( )` cannot: its `RESULT` line is captured into the variable instead of
 reaching stdout, and the script then dies through `set -e` and re-emits a
@@ -132,13 +146,42 @@ decides:
 owner_repo="$(resolve_owner_repo)" || quit_by_code 6
 ```
 
+## Guard External Commands and Validate Their Products
+
 **Wrap every tool call whose own status could be mistaken for yours.** An
 unwrapped `gh` or `git` left to `set -e` does not just produce
 `RESULT=UNKNOWN_CODE_128` — worse, `gh` exits `4` on an auth failure, and if
 `4` is your `CREATE_FAILED` the run reports a confident, wrong outcome. Capture
 the status, decide what it means, and `quit_by_code` a code you declared.
-`UNKNOWN_CODE_<n>` in a real run is the milder version of the same defect:
-treat it as a bug report against the script, not as a table to widen.
+Keep the tool's stderr visible when it explains the failure:
+
+```bash
+if ! git fetch "${remote_name}"; then
+  print_error "Failed to fetch remote '${remote_name}'."
+  quit_by_code 6  # FETCH_FAILED
+fi
+```
+
+A successful external call validates only what it actually did. Fetching a
+reachable remote does not prove a caller-supplied branch exists. Resolve refs,
+ranges, paths, IDs, and similar inputs explicitly before passing them to a
+later command whose failure would escape through `set -e`:
+
+```bash
+base_ref="${remote_name}/${base_branch}"
+if ! git rev-parse --verify --quiet "${base_ref}^{commit}" >/dev/null; then
+  print_error "Base branch '${base_ref}' does not exist."
+  quit_by_code 2
+fi
+
+merge_base="$(git merge-base HEAD "${base_ref}")"
+```
+
+Classify the two failures separately: an invalid caller-supplied identifier is
+a preflight error, while an attempted routine operation that the caller may
+handle differently gets its own declared result such as `FETCH_FAILED`.
+`UNKNOWN_CODE_<n>` in a real run is a bug report against the script, not a
+reason to widen the table.
 
 ## Wrapping a Foreign Exit Status
 
@@ -154,6 +197,26 @@ key:
 REMOTE_EXIT_CODE=5
 RESULT=REMOTE_COMMAND_FAILED
 ```
+
+The foreign command also owns arbitrary stdout and may omit its final newline.
+When its output streams directly to the wrapper's stdout, establish a line
+boundary before printing metadata; otherwise `printf foo` becomes
+`fooREMOTE_EXIT_CODE=0`, which is not a parseable key-value line:
+
+```bash
+status=0
+run_remote_command || status=$?
+
+printf '\nREMOTE_EXIT_CODE=%s\n' "${status}"
+if [[ "${status}" -ne 0 ]]; then
+  quit_by_code 4  # REMOTE_COMMAND_FAILED
+fi
+quit_by_code 0
+```
+
+The unconditional separator may produce a blank line when the foreign output
+was already newline-terminated; preserving a parseable contract is more
+important than suppressing that harmless whitespace.
 
 Nothing is lost — the exact status is still there for a caller that needs it
 (`pytest` 1 vs 5), and `&&` chaining still short-circuits. Say so in `--help`,
@@ -233,12 +296,17 @@ just "STOP and report the blocker verbatim".
   outside `__common.sh`.
 - Exactly one `RESULT=` line reaches stdout, last; no lowercase or ad-hoc
   `RESULT=` values survive from an earlier convention.
+- HUP, INT, and TERM exit `1` and emit exactly one `RESULT=SCRIPT_FAILURE`.
 - Diagnostics and remediation advice are on stderr, not stdout.
+- Metadata printed after streamed foreign stdout starts on its own line even
+  when the foreign output is not newline-terminated.
 - No workflow outcome exits `1`.
 - Each code appears once in the script with one meaning.
 - Every caller-supplied ref, range, path, or remote is resolved during
   preflight, so a bad argument becomes `PREFLIGHT_ERROR` rather than a `git`
   or `gh` crash surfacing as `UNKNOWN_CODE_128`.
+- Every expected external-operation failure exits through a declared result
+  while preserving useful diagnostics from the failed tool.
 - Recurring situations use the same `RESULT` name as sibling skills.
 - The `--help` table and the SKILL.md table list the same names and codes as
   the script.

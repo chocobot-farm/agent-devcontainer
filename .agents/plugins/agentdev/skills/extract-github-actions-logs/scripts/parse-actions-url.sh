@@ -51,9 +51,10 @@ quit_by_code() {
   exit "$1"
 }
 
-# A script stopped by `set -e`, a signal, or a bare `exit` never reaches
-# quit_by_code. The trap keeps the RESULT line total; it does not alter the
-# exit status.
+# A script stopped by `set -e` or a bare `exit` never reaches quit_by_code. The
+# EXIT trap keeps the RESULT line total without altering the exit status.
+# HUP, INT, and TERM need explicit traps because EXIT may otherwise observe a
+# stale zero status; normalize them to 1 so the run reports SCRIPT_FAILURE.
 #
 # The directive suppresses a false positive that only appears when this block
 # lives in the script instead of a sourced __common.sh: because the last
