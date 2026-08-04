@@ -15,24 +15,33 @@ Apply this to every script under a skill's `scripts/` directory.
 
 ## The Contract
 
-1. **stdout is machine-readable `KEY=value` lines.** Human explanation,
-   diagnostics, and errors go to stderr via `print_error`.
+1. **stdout carries the script's product**: the `KEY=value` contract lines, the
+   verbatim output of a wrapped command where that output is the point (a
+   `git push` transcript, a `git log` excerpt), and any delimiters that frame
+   it (`== Commit Log ==`). Everything the script says in its own voice — progress
+   narration (`Fetching origin...`), explanations, diagnostics, remediation
+   instructions, errors — goes to stderr. When converting a script, move any
+   such line that is currently on stdout. `--help` is the exception that proves
+   it: requested help text is the run's product, so it goes to stdout, while
+   usage printed _because_ an argument was wrong is a diagnostic and goes to
+   stderr.
 2. **The last line of stdout is always `RESULT=<NAME>`**, on every path
-   including success, help, and crashes.
+   including success, help, and crashes — and it is the _only_ `RESULT=` line
+   the run emits.
 3. **The exit code matches the RESULT**, and stays a stable part of the
    script's interface.
 
 ## Reserved Codes
 
-| Code    | Name              | Meaning                                                                                                                                                                         |
-| ------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `0`     | `SUCCESS`         | The script did what it was asked.                                                                                                                                               |
-| `1`     | `SCRIPT_FAILURE`  | The script broke. **Never assign `1` a deliberate meaning** — `set -e`, a signal, and an unhandled error all produce it, so a deliberate `1` is indistinguishable from a crash. |
-| `2`     | `PREFLIGHT_ERROR` | Bad usage, or the environment cannot support the operation at all: not a repo, detached HEAD, missing required argument.                                                        |
-| `3`–`9` | script-specific   | Outcomes the caller must branch on. Number them in the order the workflow meets them.                                                                                           |
+| Code | Name              | Meaning                                                                                                                                                                                                                                                                                                               |
+| ---- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0`  | `SUCCESS`         | The script did what it was asked.                                                                                                                                                                                                                                                                                     |
+| `1`  | `SCRIPT_FAILURE`  | The script broke. **Never give `1` a workflow meaning** — `set -e`, a signal, and an unhandled error all produce it, so a deliberate `1` is indistinguishable from a crash. Deliberately reporting a breakage _as_ a breakage (`quit_by_code 1` when a delegate returns something impossible) is the one correct use. |
+| `2`  | `PREFLIGHT_ERROR` | Bad usage, or the environment cannot support the operation at all: not a repo, detached HEAD, missing required argument.                                                                                                                                                                                              |
+| `3`+ | script-specific   | Outcomes the caller must branch on. Number them in the order the workflow meets them.                                                                                                                                                                                                                                 |
 
-Stay at or below `125`. `126`, `127`, and `128+N` are shell-reserved and will
-be produced by the shell itself.
+Most scripts need only a handful; stay at or below `125` either way, since
+`126`, `127`, and `128+N` are shell-reserved and produced by the shell itself.
 
 ## Numbers Are Local, Names Are Shared
 
@@ -49,6 +58,14 @@ Name the **outcome**, not the remedy: `NO_PR_FOUND`, not `CREATE_PR_NEXT`. The
 SKILL.md table decides the remedy; the script only reports what it saw.
 Use `SCREAMING_SNAKE_CASE`, and no `RESULT_` prefix — the key already says it.
 
+Reuse a name only for the _same_ situation, never for an overlapping one. One
+script may fold several conditions into a single code because it reacts to
+them identically — `pr-open` reports a missing `gh`, an unauthenticated `gh`,
+and a failed `gh` call all as `GH_UNAVAILABLE`, since each sends it to the same
+MCP fallback. A script that must tell those apart does not reuse that name for
+a slice of it; it names its own narrower situation (`GH_CALL_FAILED`) so the
+name never claims more than the script observed.
+
 ## Give a Distinct Code to Anything the Caller Handles Differently
 
 The point of a separate code is a separate reaction. Split a code out when the
@@ -61,11 +78,30 @@ belong to the fallback code, not to `PREFLIGHT_ERROR`.
 Conversely, do not mint a code the caller reacts to identically. Two forms of
 the same dead end are one `PREFLIGHT_ERROR` with different stderr text.
 
+Nor should a code duplicate a distinction the payload already carries. When a
+run and a job URL both parse successfully and the caller branches on whether
+`JOB_ID` was printed, that is one `SUCCESS` with two shapes — the key is the
+discriminator. Codes are for outcomes, not for variants of one outcome.
+
 ## Implementation
 
-Copy [assets/result-codes.sh](assets/result-codes.sh) verbatim into the skill's
-`scripts/__common.sh`. Skills do not source across each other's directories —
+Copy the region between the `BEGIN`/`END` markers in
+[assets/result-codes.sh](assets/result-codes.sh) verbatim into the skill's
+`scripts/__common.sh` — the file's shebang and header describe the asset and
+are not part of the block. Skills do not source across each other's directories —
 each `__common.sh` already carries its own copy of the shared helpers.
+
+A skill whose `scripts/` holds a single standalone script has no
+`__common.sh`; inline the block into the script instead, and define alongside
+it the `print_error` every converted script uses:
+
+```bash
+print_error() {
+  printf 'ERROR: %s\n' "$*" >&2
+}
+```
+
+The `# shellcheck disable` the asset carries is there for exactly that layout.
 
 In the script, declare the script-specific codes right after sourcing, then
 call `quit_by_code` on every terminal path:
@@ -86,10 +122,78 @@ path and after `--help`. An uncaught failure still prints
 `RESULT=SCRIPT_FAILURE` through the `EXIT` trap, so a reader never sees a run
 with no verdict.
 
+**Only a top-level path may call `quit_by_code`.** A helper that runs inside
+`$( )` cannot: its `RESULT` line is captured into the variable instead of
+reaching stdout, and the script then dies through `set -e` and re-emits a
+_different_ verdict from the trap. Substitution helpers `return 1`; the caller
+decides:
+
+```bash
+owner_repo="$(resolve_owner_repo)" || quit_by_code 6
+```
+
+**Wrap every tool call whose own status could be mistaken for yours.** An
+unwrapped `gh` or `git` left to `set -e` does not just produce
+`RESULT=UNKNOWN_CODE_128` — worse, `gh` exits `4` on an auth failure, and if
+`4` is your `CREATE_FAILED` the run reports a confident, wrong outcome. Capture
+the status, decide what it means, and `quit_by_code` a code you declared.
+`UNKNOWN_CODE_<n>` in a real run is the milder version of the same defect:
+treat it as a bug report against the script, not as a table to widen.
+
+## Wrapping a Foreign Exit Status
+
+When a script runs someone else's command — over SSH, in a container, through a
+remote shell — that command's exit status cannot also be the script's. Sharing
+one number recreates the exact ambiguity this contract removes: a remote test
+suite exiting `3` would be indistinguishable from the wrapper's own code `3`.
+
+Report the wrapper's own outcome, and demote the foreign status to a payload
+key:
+
+```text
+REMOTE_EXIT_CODE=5
+RESULT=REMOTE_COMMAND_FAILED
+```
+
+Nothing is lost — the exact status is still there for a caller that needs it
+(`pytest` 1 vs 5), and `&&` chaining still short-circuits. Say so in `--help`,
+since it changes the script's shell-level contract.
+
+## Delegating to Another Script
+
+When a script hands the rest of its work to a sibling script, **align the two
+code tables and `exec`**. The delegate then owns the process, and its `RESULT`
+line is the run's one verdict:
+
+```bash
+exec "${merge_script}" --message "..." "${base_ref}"
+```
+
+This requires the shared situations to carry the same number _and_ the same
+name in both scripts — which is the natural outcome of the naming rule above.
+Reach for `exec` first; it removes the translation layer entirely, and because
+`exec` replaces the process it also discards the caller's `EXIT` trap, so no
+second `RESULT` line can appear.
+
+Guard the handoff, since a failed `exec` is the one case the discarded trap
+would have covered:
+
+```bash
+[[ -x "${merge_script}" ]] || { print_error "Merge helper not executable: ${merge_script}"; quit_by_code 1; }
+```
+
+Map explicitly only when the tables genuinely cannot align, and then run the
+delegate as a call, translate its status, and make sure the delegate's own
+`RESULT` line does not reach stdout — two `RESULT=` lines is worse than none,
+since a reader takes the last one. Send an unrecognized delegate status to
+`quit_by_code 1`.
+
 ## Document It Twice
 
-**In the script's `--help`**, replace the `Exit codes:` block with a paired
-table, and list `RESULT` first in the output keys:
+**In the script's `--help`**, add — or replace an existing `Exit codes:` block
+with — a paired table, and list `RESULT` first under the output heading. A
+script that emits no keys at all heads that section `Output:` and describes the
+shape of what it prints instead:
 
 ```text
 Output (key=value lines):
@@ -127,8 +231,14 @@ just "STOP and report the blocker verbatim".
 
 - Every terminal path exits through `quit_by_code`; no bare `exit N` remains
   outside `__common.sh`.
-- Nothing deliberately exits `1`.
+- Exactly one `RESULT=` line reaches stdout, last; no lowercase or ad-hoc
+  `RESULT=` values survive from an earlier convention.
+- Diagnostics and remediation advice are on stderr, not stdout.
+- No workflow outcome exits `1`.
 - Each code appears once in the script with one meaning.
+- Every caller-supplied ref, range, path, or remote is resolved during
+  preflight, so a bad argument becomes `PREFLIGHT_ERROR` rather than a `git`
+  or `gh` crash surfacing as `UNKNOWN_CODE_128`.
 - Recurring situations use the same `RESULT` name as sibling skills.
 - The `--help` table and the SKILL.md table list the same names and codes as
   the script.

@@ -6,6 +6,8 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "${script_dir}/__common.sh"
 
+RESULT_CODES+=("3=GH_CALL_FAILED")
+
 repo=""
 pr_number=""
 event=""
@@ -34,10 +36,17 @@ the Write tool first) containing an array of findings, e.g.:
 Omit --comments-file (or pass a file containing []) when there are no
 validated findings to attach.
 
-Exit codes:
-  0  Success
-  2  Bad usage / missing prerequisite
-  1  gh command failed
+Output (key=value lines):
+  RESULT
+  On success the created review object is printed before the RESULT
+  line, verbatim as the GitHub API returned it.
+
+Results (RESULT / exit code):
+  SUCCESS          0  The review was created and submitted
+  GH_CALL_FAILED   3  A gh API call failed (repo/PR lookup, or the review POST)
+  PREFLIGHT_ERROR  2  Usage error, a missing or malformed input file, or gh/jq
+                      missing or unauthenticated
+  SCRIPT_FAILURE   1  Unhandled error
 EOF
 }
 
@@ -48,8 +57,8 @@ while [[ $# -gt 0 ]]; do
     --summary-file) require_arg "--summary-file" "${2:-}"; summary_file="$2"; shift 2 ;;
     --comments-file) require_arg "--comments-file" "${2:-}"; comments_file="$2"; shift 2 ;;
     --repo) require_arg "--repo" "${2:-}"; repo="$2"; shift 2 ;;
-    -h|--help) usage; exit 0 ;;
-    *) print_error "Unknown argument: $1"; usage >&2; exit 2 ;;
+    -h|--help) usage; quit_by_code 0 ;;
+    *) print_error "Unknown argument: $1"; usage >&2; quit_by_code 2 ;;
   esac
 done
 
@@ -60,10 +69,11 @@ require_body_file "${summary_file}"
 
 case "${event}" in
   COMMENT|APPROVE) ;;
-  *) print_error "Invalid --event: ${event} (expected COMMENT or APPROVE)"; exit 2 ;;
+  *) print_error "Invalid --event: ${event} (expected COMMENT or APPROVE)"; quit_by_code 2 ;;
 esac
 
 require_gh
+require_jq
 
 if [[ -n "${comments_file}" ]]; then
   require_body_file "${comments_file}"
@@ -73,15 +83,34 @@ else
   printf '[]' >"${comments_file}"
 fi
 
-[[ -n "${repo}" ]] || repo="$(resolve_repo)"
+if [[ -z "${repo}" ]]; then
+  if ! repo="$(resolve_repo)"; then
+    print_error "gh repo view failed; could not resolve the current repository. Pass --repo <owner/name>."
+    quit_by_code 3
+  fi
+fi
 
-commit_id="$(gh pr view "${pr_number}" --repo "${repo}" --json headRefOid -q .headRefOid)"
+if ! commit_id="$(gh pr view "${pr_number}" --repo "${repo}" --json headRefOid -q .headRefOid)"; then
+  print_error "gh pr view failed for pull request ${pr_number} in ${repo}."
+  quit_by_code 3
+fi
 
-payload="$(jq -n \
+if ! payload="$(jq -n \
   --arg commit_id "${commit_id}" \
   --arg event "${event}" \
   --rawfile body "${summary_file}" \
   --slurpfile comments_arr "${comments_file}" \
-  '{commit_id: $commit_id, event: $event, body: $body, comments: $comments_arr[0]}')"
+  '{commit_id: $commit_id, event: $event, body: $body, comments: $comments_arr[0]}')"; then
+  print_error "Could not build the review payload; check that ${comments_file} holds a valid JSON array."
+  quit_by_code 2
+fi
 
-printf '%s' "${payload}" | gh api "repos/${repo}/pulls/${pr_number}/reviews" --method POST --input -
+if ! review_response="$(printf '%s' "${payload}" | gh api "repos/${repo}/pulls/${pr_number}/reviews" --method POST --input -)"; then
+  print_error "gh api review POST failed for pull request ${pr_number} in ${repo}."
+  printf 'If the error names a comment that cannot be placed inline, drop that entry from the comments file, rerun, and post it as a normal PR comment.\n' >&2
+  quit_by_code 3
+fi
+
+printf '%s\n' "${review_response}"
+
+quit_by_code 0
