@@ -7,7 +7,7 @@ NEVER use GitHub API or GitHub MCP tools to update branch refs or push branch co
 ## Best Practices for Agents
 
 0. NEVER change git config on local or global level unless explicitly instructed. NEVER switch/change remote.
-1. **Use `uv` for Python and `bun` for JavaScript.** Run project commands through `uv run`; sync with `scripts/uv-sync.sh` (or `uv sync`) after changing dependencies. Never install packages globally.
+1. **Use `uv` for Python and `bun` for JavaScript.** Run project commands through `uv run`; sync with `scripts/devcontainer-uv-sync.sh` (or `uv sync`) after changing dependencies. Never install packages globally.
 2. **Scope test runs narrowly** while iterating: `uv run pytest <path>::<test_name>`, `bun test <path>`. Run the full suite only when asked.
 3. **Escalate to a container when the host lacks the toolchain — never give up after a local failure.** If `uv` or `bun` is missing, or a command needs the provisioned image, escalate in this order: (a) Docker daemon available → use the `/agentdev:microvm-sandbox` skill to run the command through `devcontainer exec`; (b) no Docker daemon → use the `/agentdev:remote-codespace-session` skill to run it on a GitHub Codespace over SSH. Only report a blocker if both escalation paths are unavailable (e.g. no `gh` auth).
 4. **For yes/no and multiple-choice questions, prefer the assistant's structured-question tool** over free-text (VS Code Copilot: `vscode/askQuestions`; Claude Code: `AskUserQuestion`).

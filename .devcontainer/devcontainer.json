@@ -210,7 +210,7 @@
   "postCreateCommand": "./scripts/devcontainer-postCreateCommand.sh",
   "postAttachCommand": {
     "git config": "git config --global gpg.ssh.program ssh-keygen",
-    "python-venv": "./scripts/uv-sync.sh"
+    "python-venv": "./scripts/devcontainer-uv-sync.sh"
   },
   "postStartCommand": "./scripts/devcontainer-postStartCommand.sh"
 }

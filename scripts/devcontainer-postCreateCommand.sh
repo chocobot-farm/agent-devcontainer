@@ -23,7 +23,7 @@ ln -sf "$claude_json_target" /root/.claude.json
 
 # Sync the project environment into the container's .venv directory so that
 # extension settings are valid when the container is rebuilt. This is a no-op if the environment is already up to date.
-"$workspace/scripts/uv-sync.sh"
+"$workspace/scripts/devcontainer-uv-sync.sh"
 
 # Register and install the repository's Codex plugin after the workspace and
 # persistent ~/.codex volume are mounted. Both commands are idempotent, so a
