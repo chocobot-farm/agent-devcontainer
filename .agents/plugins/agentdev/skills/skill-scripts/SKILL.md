@@ -33,15 +33,19 @@ Apply this to every script under a skill's `scripts/` directory.
 
 ## Reserved Codes
 
-| Code | Name              | Meaning                                                                                                                                                                                                                                                                                                               |
-| ---- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `0`  | `SUCCESS`         | The script did what it was asked.                                                                                                                                                                                                                                                                                     |
-| `1`  | `SCRIPT_FAILURE`  | The script broke. **Never give `1` a workflow meaning** — `set -e`, a signal, and an unhandled error all produce it, so a deliberate `1` is indistinguishable from a crash. Deliberately reporting a breakage _as_ a breakage (`quit_by_code 1` when a delegate returns something impossible) is the one correct use. |
-| `2`  | `PREFLIGHT_ERROR` | Bad usage, or the environment cannot support the operation at all: not a repo, detached HEAD, missing required argument.                                                                                                                                                                                              |
-| `3`+ | script-specific   | Outcomes the caller must branch on. Number them in the order the workflow meets them.                                                                                                                                                                                                                                 |
+| Code  | Name              | Meaning                                                                                                                                                                                                                                                                                              |
+| ----- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0`   | `SUCCESS`         | The script did what it was asked.                                                                                                                                                                                                                                                                    |
+| `1`   | `SCRIPT_FAILURE`  | The script broke. **Never give `1` a workflow meaning** — `set -e` and unhandled errors produce it, so a deliberate `1` is indistinguishable from a crash. Deliberately reporting a breakage _as_ a breakage (`quit_by_code 1` when a delegate returns something impossible) is the one correct use. |
+| `2`   | `PREFLIGHT_ERROR` | Bad usage, or the environment cannot support the operation at all: not a repo, detached HEAD, missing required argument.                                                                                                                                                                             |
+| `3`+  | script-specific   | Outcomes the caller must branch on. Number them in the order the workflow meets them and stay at or below `125`.                                                                                                                                                                                     |
+| `129` | `SIGNAL_HUP`      | The process received HUP (`128 + 1`). The result is emitted before the signal is re-raised.                                                                                                                                                                                                          |
+| `130` | `SIGNAL_INT`      | The process received INT (`128 + 2`). The result is emitted before the signal is re-raised.                                                                                                                                                                                                          |
+| `143` | `SIGNAL_TERM`     | The process received TERM (`128 + 15`). The result is emitted before the signal is re-raised.                                                                                                                                                                                                        |
 
-Most scripts need only a handful; stay at or below `125` either way, since
-`126`, `127`, and `128+N` are shell-reserved and produced by the shell itself.
+Codes `126`, `127`, and `128+N` are shell-reserved. The canonical block uses
+the conventional `129`, `130`, and `143` statuses only for HUP, INT, and TERM;
+never override them with workflow meanings.
 
 ## Numbers Are Local, Names Are Shared
 
@@ -122,19 +126,23 @@ path and after `--help`. An uncaught failure still prints
 `RESULT=SCRIPT_FAILURE` through the `EXIT` trap, so a reader never sees a run
 with no verdict.
 
-Keep both traps from the canonical block:
+Keep the exit and signal traps from the canonical block:
 
 ```bash
 trap report_unhandled_exit EXIT
-trap 'exit 1' HUP INT TERM
+trap 'report_signal HUP 129' HUP
+trap 'report_signal INT 130' INT
+trap 'report_signal TERM 143' TERM
 ```
 
-The signal trap is not optional. Without it, Bash can enter the `EXIT` trap
+The signal traps are not optional. Without them, Bash can enter the `EXIT` trap
 after HUP, INT, or TERM with the status of the previous successful command;
 the process then terminates with `128 + signal` while printing
-`RESULT=SUCCESS`. Normalize those signals to exit `1` first, so the `EXIT`
-trap emits exactly one `RESULT=SCRIPT_FAILURE` and the numeric and named
-outcomes agree.
+`RESULT=SUCCESS`. `report_signal` emits the matching signal result, restores
+that signal's default action, and re-raises it. A shell caller observes status
+`129`, `130`, or `143`, and the operating system still records genuine signal
+termination rather than a normal `exit` with the same number. The later
+`EXIT` trap sees `result_emitted=1` and does not print a second result.
 
 **Only a top-level path may call `quit_by_code`.** A helper that runs inside
 `$( )` cannot: its `RESULT` line is captured into the variable instead of
@@ -271,6 +279,9 @@ Results (RESULT / exit code):
   GH_UNAVAILABLE    6  gh is missing, unauthenticated, or its API call failed
   PREFLIGHT_ERROR   2  Usage or preflight error (not a repo, detached HEAD)
   SCRIPT_FAILURE    1  Unhandled error
+  SIGNAL_HUP      129  Interrupted by HUP
+  SIGNAL_INT      130  Interrupted by INT
+  SIGNAL_TERM     143  Interrupted by TERM
 ```
 
 Order by the workflow, not by number: success, then the outcomes a caller acts
@@ -287,8 +298,8 @@ code as a secondary column, so the agent matches on the string it just read:
 | `MULTIPLE_PRS` | `4`  | **STOP.** Show the candidates and ask which ...   |
 ```
 
-State the reaction to `SCRIPT_FAILURE` and `PREFLIGHT_ERROR` too, even if it is
-just "STOP and report the blocker verbatim".
+State the reaction to `SCRIPT_FAILURE`, `PREFLIGHT_ERROR`, and the three signal
+results too, even if it is just "STOP and report the blocker verbatim".
 
 ## Definition of Done
 
@@ -296,7 +307,8 @@ just "STOP and report the blocker verbatim".
   outside `__common.sh`.
 - Exactly one `RESULT=` line reaches stdout, last; no lowercase or ad-hoc
   `RESULT=` values survive from an earlier convention.
-- HUP, INT, and TERM exit `1` and emit exactly one `RESULT=SCRIPT_FAILURE`.
+- HUP, INT, and TERM emit exactly one matching `SIGNAL_*` result, re-raise the
+  signal, and produce shell statuses `129`, `130`, and `143` respectively.
 - Diagnostics and remediation advice are on stderr, not stdout.
 - Metadata printed after streamed foreign stdout starts on its own line even
   when the foreign output is not newline-terminated.

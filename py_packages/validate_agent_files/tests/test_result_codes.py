@@ -9,44 +9,41 @@ import signal
 import subprocess
 
 
-def test_canonical_result_codes_report_failure_when_interrupted() -> None:
-    """Report a failure result when a signal interrupts the canonical helper."""
+def test_canonical_result_codes_preserve_terminating_signals() -> None:
+    """Name terminating signals while preserving their shell exit statuses."""
     # Arrange
     repository_root = Path(__file__).resolve().parents[3]
     result_codes = (
         repository_root / '.agents/plugins/agentdev/skills/skill-scripts/assets/result-codes.sh'
     )
-    outcomes: dict[str, tuple[int, str]] = {}
+    outcomes: dict[str, tuple[int, int, str]] = {}
 
     # Act
     for interrupt_signal in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM):
-        process = subprocess.Popen(
+        process = subprocess.run(
             [
                 'bash',
                 '-c',
-                'source "$1"; printf "READY\\n" >&2; while :; do :; done',
+                'source "$1"; kill -s "$2" "$$"',
                 'bash',
                 str(result_codes),
+                interrupt_signal.name,
             ],
             cwd=repository_root,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
+            check=False,
         )
-        try:
-            assert process.stderr is not None
-            assert process.stderr.readline() == 'READY\n'
-            process.send_signal(interrupt_signal)
-            stdout, _ = process.communicate(timeout=5)
-        finally:
-            if process.poll() is None:
-                process.kill()
-                process.wait()
-        assert process.returncode is not None
-        outcomes[interrupt_signal.name] = (process.returncode, stdout)
+        shell_status = 128 - process.returncode if process.returncode < 0 else process.returncode
+        outcomes[interrupt_signal.name] = (
+            process.returncode,
+            shell_status,
+            process.stdout,
+        )
 
     # Assert
     assert outcomes == {
-        interrupt_signal.name: (1, 'RESULT=SCRIPT_FAILURE\n')
-        for interrupt_signal in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM)
+        signal.SIGHUP.name: (-signal.SIGHUP, 129, 'RESULT=SIGNAL_HUP\n'),
+        signal.SIGINT.name: (-signal.SIGINT, 130, 'RESULT=SIGNAL_INT\n'),
+        signal.SIGTERM.name: (-signal.SIGTERM, 143, 'RESULT=SIGNAL_TERM\n'),
     }
