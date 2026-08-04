@@ -67,6 +67,7 @@ report_unhandled_exit() {
 }
 
 trap report_unhandled_exit EXIT
+trap 'exit 1' HUP INT TERM
 
 # require_codespace_auth below is shared by every script in this skill, so the
 # situation it reports is declared once, here: all four scripts name an

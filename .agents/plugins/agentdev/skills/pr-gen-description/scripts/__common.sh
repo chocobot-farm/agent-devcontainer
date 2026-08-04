@@ -63,6 +63,7 @@ report_unhandled_exit() {
 }
 
 trap report_unhandled_exit EXIT
+trap 'exit 1' HUP INT TERM
 
 require_git_repo() {
   if ! git rev-parse --show-toplevel >/dev/null 2>&1; then

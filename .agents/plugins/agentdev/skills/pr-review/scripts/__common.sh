@@ -60,6 +60,7 @@ report_unhandled_exit() {
 }
 
 trap report_unhandled_exit EXIT
+trap 'exit 1' HUP INT TERM
 
 require_arg() {
   local name="$1" value="$2"

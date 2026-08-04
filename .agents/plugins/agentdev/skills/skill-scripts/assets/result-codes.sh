@@ -66,5 +66,6 @@ report_unhandled_exit() {
 }
 
 trap report_unhandled_exit EXIT
+trap 'exit 1' HUP INT TERM
 
 # --- END result-code block ---

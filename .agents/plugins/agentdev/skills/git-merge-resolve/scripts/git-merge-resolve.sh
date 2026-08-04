@@ -66,6 +66,7 @@ report_unhandled_exit() {
 }
 
 trap report_unhandled_exit EXIT
+trap 'exit 1' HUP INT TERM
 
 # These numbers and names are shared with update-branch.sh, which execs this
 # script and passes its verdict straight through. Keep the two tables aligned.
