@@ -96,6 +96,11 @@ fi
 
 base_ref="${remote_name}/${base_branch}"
 
+if ! git rev-parse --verify --quiet "${base_ref}^{commit}" >/dev/null; then
+  print_error "Base branch '${base_ref}' was not found after fetching '${remote_name}'."
+  quit_by_code 2
+fi
+
 # Check if already up to date
 merge_base="$(git merge-base HEAD "${base_ref}")"
 base_sha="$(git rev-parse "${base_ref}")"

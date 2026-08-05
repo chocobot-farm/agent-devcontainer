@@ -3,6 +3,7 @@
 NEVER use "$TMPDIR" env variable.
 ALWAYS use "./.tmp" (relative to the repo root) for temporary files; create it if it does not exist.
 NEVER use GitHub API or GitHub MCP tools to update branch refs or push branch contents. Use local git branch workflows instead; if push authentication is unavailable, stop and report the blocker rather than updating the branch remotely via API.
+Commit at checkpoints as meaningful progress is achieved, rather than accumulating a whole task into one commit at the end.
 
 ## Best Practices for Agents
 
