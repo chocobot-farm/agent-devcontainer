@@ -10,8 +10,10 @@ which concluded that sharing the `.claude` catalog across repositories had "no
 mechanism that does not hurt". Three of the mechanisms it needed have since
 shipped.
 
-**Status:** spike complete and fully implemented. Specs `01` (F8), `02` (F5, F6,
-F9), and `03` (F4, the container half of F9) have all landed.
+**Status:** spike complete; specs `01` (F8), `02` (F5, F6, F9), and `03` (F4, the
+container half of F9) have all landed. One gap is open and unspecified: seeding
+the catalog into a container for **Codex**, whose own plugin system postdates this
+spike — see F9.
 
 ## Problem
 
@@ -179,6 +181,25 @@ the plugin (F2), what a consuming repository still copies is:
 `.devcontainer/devcontainer.json`, `.devcontainer/docker-compose.yml`,
 `AGENTS.md`, `.claude/settings.json`.
 
+#### Two of those settings are wrong in a copy
+
+`.devcontainer/devcontainer.json` sets both of these to the empty string in
+`containerEnv`, and **a project templated from this repository must delete both
+entries** so they are inherited from the image again:
+
+| Variable                      | Set by                                  | Consumed by                                                                  |
+| ----------------------------- | --------------------------------------- | ---------------------------------------------------------------------------- |
+| `CLAUDE_CODE_PLUGIN_SEED_DIR` | the image (`/opt/agentdev-seed/claude`) | Claude Code, to register the seeded marketplace at session start (F4)        |
+| `AGENTDEV_SEED_DIR`           | the image (`/opt/agentdev-seed`)        | `link-codex-seed-skills.sh`, to relink `$CODEX_HOME/skills` after mount (F9) |
+
+The blanking is correct here and only here: this repository _is_ the catalog's
+source, and a seeded marketplace overwrites the same-named entry at every session
+start — so leaving it on would mean editing the catalog in the workspace while
+both agents kept loading the frozen build-time copy. A consumer has the opposite
+need, and a copy that keeps the blanks silently gets no catalog at all, with no
+error to explain why. This is the one setting where inheriting the template's
+value is a bug rather than a default.
+
 Copier (`.copier-answers.yml` + `copier update`) is the only mainstream tool
 designed to replay upstream template changes onto a copy that has diverged, via
 a three-way merge. It is the right answer at scale and the wrong answer at four
@@ -196,18 +217,58 @@ are now pinned by tag-plus-digest, and `.github/renovate.json` bumps them as a
 single grouped pull request. Spec `02` added the `customManager` for the plugin `version`
 pin a consumer declares in `enabledPlugins`.
 
-### F9 — Codex does not understand Claude plugins (priority: medium, partly resolved)
+### F9 — Codex has its own plugin system now; only its seeding is unsolved (priority: medium, partly resolved)
 
-`.codex/skills` is a symlink to `../.claude/skills`, and `.codex/agents/*.md`
-are generated trampolines validated by `validate_agent_files`. Moving the
-canonical catalog into a plugin directory breaks both.
+As originally written, this finding said Codex does not understand Claude
+plugins: `.codex/skills` was a symlink to `../.claude/skills`, `.codex/agents/*.md`
+were generated trampolines validated by `validate_agent_files`, and moving the
+canonical catalog into a plugin directory broke both.
 
-The layout was chosen so the symlink could be re-pointed within this repository:
-`.codex/skills` now points at `../.agents/plugins/agentdev/skills`, the trampolines delegate to
-`.agents/plugins/agentdev/agents/*.agent.md`, and `validate_agent_files` validates the plugin
-layout. Spec `03` closed the container half: the image seeds the same skills
-outside `$HOME` and symlinks `~/.codex/skills` at them, so a volume mounted over
-the Codex home cannot shadow the catalog.
+**That premise no longer holds.** Codex shipped a plugin system of its own —
+marketplaces and plugins, `codex plugin marketplace add` and `codex plugin add`
+(verified on `codex-cli` 0.146.0). The catalog is now packaged for both agents
+from the same tree, and neither the symlink nor the trampolines exist: `.codex/`
+holds only a README and `setup-codex-cloud.sh`.
+
+|                      | Claude Code                                                     | Codex                                                               |
+| -------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Plugin manifest      | `.agents/plugins/agentdev/.claude-plugin/plugin.json`           | `.agents/plugins/agentdev/.codex-plugin/plugin.json`                |
+| Marketplace manifest | `.claude-plugin/marketplace.json`                               | `.agents/plugins/marketplace.json`                                  |
+| Registered state     | `known_marketplaces.json` + `enabledPlugins` in `settings.json` | `[marketplaces.*]` / `[plugins."*@*"]` in `$CODEX_HOME/config.toml` |
+| Plugin cache         | `~/.claude/plugins/cache/<mkt>/<plugin>/<version>`              | `$CODEX_HOME/plugins/cache/<mkt>/<plugin>`                          |
+| Build-time seed      | `CLAUDE_CODE_PLUGIN_SEED_DIR` (F4)                              | **none**                                                            |
+
+The in-repository half is therefore fully resolved, and by a better mechanism
+than re-pointing a symlink: `.devcontainer/scripts/reinstall-agentdev-codex.sh`
+registers this checkout as a local Codex marketplace at `postCreate`, the same
+way the Claude half installs from `.claude-plugin/marketplace.json`.
+
+**The container half is not.** Codex has no seed equivalent — no
+`CODEX_*_SEED_DIR`, and its marketplace registry, enablement flags, and plugin
+cache all live under `$CODEX_HOME`, which is exactly the path the `agentdev-codex`
+volume mounts over. There is no out-of-home location to point it at, so
+build-time plugin state cannot survive a container start the way the Claude seed
+does.
+
+Spec `03` predates the Codex plugin system and worked around it: it seeds
+`<seed>/codex/skills` outside `$HOME` and symlinks `$CODEX_HOME/skills` at it,
+restoring the link from `postCreate` after the volume mounts
+(`link-codex-seed-skills.sh`). This was never specified, and it is weaker than
+the Claude seed in three ways:
+
+- **Skills only.** The plugin's `agents/` do not travel; a seeded container gets
+  no `agentdev` agents in Codex.
+- **Invisible to Codex's own tooling.** The skills arrive as personal skills, so
+  `codex plugin list` does not show the catalog and there is no per-project
+  equivalent of `/plugin disable`.
+- **Load-bearing symlink.** Correctness depends on a lifecycle script re-running
+  after every volume mount, rather than on state the agent resolves itself.
+
+Closing this properly needs its own spec. The obvious candidate — run
+`codex plugin marketplace add` against a staged catalog at build time, as the
+Claude half already does — founders on the `$CODEX_HOME` shadowing above; the
+alternative is relocating `CODEX_HOME` out of `$HOME` entirely, which trades the
+problem for a persistence question about `auth.json`.
 
 ### F10 — Private marketplaces have a flaky background auto-update (priority: low)
 
@@ -226,6 +287,7 @@ constrains any future decision to make it private.
 | Rewriting 37 catalog path references (F6, done)              | High     |
 | Permanent skill namespacing (F5)                             | Medium   |
 | Teaching `validate_agent_files` the plugin layout (F9, done) | Medium   |
+| Codex containers get seeded skills but no seeded plugin (F9) | Medium   |
 | Catalog changes need an image rebuild to reach seeds (F4)    | Low      |
 | Four scaffolding files copied by hand (F7)                   | Low      |
 
@@ -234,7 +296,8 @@ constrains any future decision to make it private.
 - The catalog has exactly one source of truth, consumed by version rather than
   by copy. This is the whole point.
 - Every container gets the catalog with no clone, no network, no firewall
-  allowlist entry, and no per-repository configuration (F4).
+  allowlist entry, and no per-repository configuration (F4) — in full for Claude
+  Code, skills-only for Codex until F9's remaining half is specified.
 - Codespaces, cloud sessions, and routines are covered for the first time (F3).
 - A consuming project's `.claude/` shrinks to a settings block.
 - The general/project-specific boundary in `scripts/` is forced to become
@@ -248,5 +311,8 @@ constrains any future decision to make it private.
    of F9. **Landed**; spec file removed.
 3. `03-plugin-seed-in-image.md` — resolved the original problem. **Landed**;
    spec file removed.
+4. _Unwritten_ — seed the Codex plugin, not just its skills (F9). Blocked on
+   deciding what happens to `$CODEX_HOME` state under the `agentdev-codex`
+   volume; until then the skills symlink stands in.
 
 F7 is a decision, not a task: no spec.
