@@ -44,11 +44,52 @@ do not follow:
 Distribution failed as a single problem because it is three problems with
 different churn rates and different natural mechanisms.
 
-| Layer               | Contents                                                                                                         | Churn  | Mechanism                        |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------- |
-| 1. Environment      | `ansible/`, `docker/`, the published image                                                                       | Low    | GHCR image pinned by digest      |
-| 2. Agent catalog    | `.agents/plugins/agentdev/skills`, `.agents/plugins/agentdev/agents`, hooks, `.agents/plugins/agentdev/bin/*.sh` | High   | Claude Code plugin + marketplace |
-| 3. Repo scaffolding | `.devcontainer/`, `AGENTS.md`, `.claude/settings.json`                                                           | Medium | Manual copy (see F7)             |
+| Layer               | Contents                                                                                                         | Churn  | Mechanism                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------- |
+| 1. Environment      | `ansible/`, `docker/`, the published image                                                                       | Low    | GHCR image pinned by digest                                                 |
+| 2. Agent catalog    | `.agents/plugins/agentdev/skills`, `.agents/plugins/agentdev/agents`, hooks, `.agents/plugins/agentdev/bin/*.sh` | High   | Plugin + marketplace, staged in the image and installed at container create |
+| 3. Repo scaffolding | `.devcontainer/`, `AGENTS.md`, `.claude/settings.json`                                                           | Medium | Manual copy (see F7)                                                        |
+
+## How the catalog reaches a container
+
+The delivered mechanism, after spec `03`'s plugin seed was built and then
+replaced (F4). One catalog, one marketplace name, two agents, no
+per-repository configuration:
+
+```text
+image build      /opt/agentdev/                     staged copy: root-owned, read-only,
+  (ansible)        .claude-plugin/marketplace.json  outside $HOME so no volume shadows it
+                   .agents/plugins/marketplace.json
+                   .agents/plugins/agentdev/…
+
+postCreate       reinstall-agentdev-codex.sh  "$AGENTDEV_CATALOG_DIR"
+  (once)         reinstall-agentdev-claude.sh "$AGENTDEV_CATALOG_DIR" user
+                 → both agents resolve agentdev@agent-devcontainer to /opt/agentdev
+
+postStart        reinstall-agentdev-codex.sh        no argument → this checkout
+  (every start)  reinstall-agentdev-claude.sh       → both agents flip to the workspace
+```
+
+Three properties follow, and together they are why this replaced the seed:
+
+- **The image never installs anything.** It only stages files. Both agents record
+  installed plugins under `~/.claude` and `~/.codex`, which are mounted as
+  external named volumes, so anything installed at build time is shadowed for
+  every container after the first (F4).
+- **The workspace wins when it has something to say.** The same two scripts take
+  a catalog root as their first argument. `postStart` passes none, so a
+  repository that ships the catalog re-registers its own copy over the image's on
+  every container start — the development-mode override the seed could not
+  provide. In a project that ships no marketplace the scripts find no manifest
+  and exit quietly, leaving the image install standing.
+- **Both agents are treated identically.** Claude Code and Codex each have a
+  marketplace manifest and a plugin CLI; the two scripts differ only in which
+  binary they call and in Claude's installation scope (F9).
+
+Verified against a local image build: `/opt/agentdev` staged clean, both CLIs
+reporting `agentdev@agent-devcontainer` 3.0.0 installed and enabled with
+`--network none`, and the `postStart` pass flipping both from `/opt/agentdev` to
+the workspace with no duplicate marketplace left behind.
 
 ## Findings
 
@@ -98,6 +139,12 @@ commas:
 Repository-declared plugins also install at cloud-session start, so this covers
 Codespaces, cloud sessions, and routines — surfaces that neither a personal
 `~/.claude/skills` install nor a Docker volume reaches.
+
+Inside the `agent-desktop` image this composes with the container install rather
+than competing with it: that install is an ordinary user-scope
+`claude plugin install`, so a project declaration resolves the usual way. The
+seed this replaced did not behave that way — it overrode a declaration of the
+same name and had to be disabled first (F4).
 
 ### F4 — Plugin seeds exist for this case, and we deliberately do not use them (priority: none, resolved)
 
@@ -238,7 +285,8 @@ holds only a README and `setup-codex-cloud.sh`.
 | Marketplace manifest | `.claude-plugin/marketplace.json`                               | `.agents/plugins/marketplace.json`                                  |
 | Registered state     | `known_marketplaces.json` + `enabledPlugins` in `settings.json` | `[marketplaces.*]` / `[plugins."*@*"]` in `$CODEX_HOME/config.toml` |
 | Plugin cache         | `~/.claude/plugins/cache/<mkt>/<plugin>/<version>`              | `$CODEX_HOME/plugins/cache/<mkt>/<plugin>`                          |
-| Build-time seed      | `CLAUDE_CODE_PLUGIN_SEED_DIR` (F4)                              | **none**                                                            |
+| Install CLI          | `claude plugin marketplace add` / `install`                     | `codex plugin marketplace add` / `add`                              |
+| Build-time seed      | `CLAUDE_CODE_PLUGIN_SEED_DIR` — exists, unused (F4)             | **none**                                                            |
 
 The in-repository half is therefore fully resolved, and by a better mechanism
 than re-pointing a symlink: `.devcontainer/scripts/reinstall-agentdev-codex.sh`
