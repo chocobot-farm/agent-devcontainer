@@ -4,16 +4,18 @@ The agent catalog does not live here; it ships as the `agentdev` plugin under
 [`.agents/plugins/agentdev/`](../.agents/plugins/agentdev/README.md). What remains in this directory is the
 configuration this repository keeps for itself.
 
-| Path            | Purpose                                                                   |
-| --------------- | ------------------------------------------------------------------------- |
-| `settings.json` | Permissions, additional directories, known marketplaces, enabled plugins. |
+| Path            | Purpose                                                               |
+| --------------- | --------------------------------------------------------------------- |
+| `settings.json` | Permissions, additional directories, and enabled third-party plugins. |
 
 `settings.json` must be strict JSON: no comments and no trailing commas. Claude
 Code rejects the file outright if it does not parse, which silently drops every
-permission and the plugin registration with it.
+permission and plugin setting with it.
 
-This repository consumes its own plugin from the marketplace, which is the only
-way the consumer path stays tested.
+The devcontainer lifecycle installs the image-staged `agentdev` plugin after persistent
+volumes mount, then re-registers this checkout's marketplace during post-start so catalog
+development uses the workspace copy. `settings.json` does not need to declare that local
+installation.
 
 `*.local.json` is gitignored, so `settings.local.json` can hold machine-specific
 permissions without touching the shared configuration.

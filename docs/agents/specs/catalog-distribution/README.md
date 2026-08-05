@@ -16,6 +16,11 @@ plugin-seed mechanism was subsequently replaced by a staged catalog plus a
 `postCreate` install — see F4 for the two container-shape constraints that forced
 it, and F9 for why that change closed the Codex half at the same time.
 
+This file is the implementation decision record. Its original F7 four-file estimate
+predates the final lifecycle layout and is superseded by the persistent
+[repository structure](../../../repository-structure.md) and
+[manual template guide](../../../using-as-template.md).
+
 ## Problem
 
 `agent-devcontainer` is usable as an external devcontainer from an arbitrary
@@ -31,13 +36,13 @@ do not follow:
 
 ## Verdict
 
-| Question                                       | Answer                                                                  |
-| ---------------------------------------------- | ----------------------------------------------------------------------- |
-| Distribute the environment?                    | **Solved.** GHCR image, consumed by digest, kept current by Renovate.   |
-| Distribute the `.claude` catalog?              | **Yes — convert it to a plugin.** F8's blockers no longer hold.         |
-| Bake the catalog into the image?               | **Yes — staged, then installed by a lifecycle hook.** Not seeded (F4).  |
-| Distribute `.github/` workflows and actions?   | **No.** Out of scope by decision; they stay repository-local.           |
-| Template-sync the remaining scaffolding files? | **No.** Four files is below the threshold where Copier pays for itself. |
+| Question                                       | Answer                                                                    |
+| ---------------------------------------------- | ------------------------------------------------------------------------- |
+| Distribute the environment?                    | **Solved.** GHCR image, consumed by digest, kept current by Renovate.     |
+| Distribute the `.claude` catalog?              | **Yes — convert it to a plugin.** F8's blockers no longer hold.           |
+| Bake the catalog into the image?               | **Yes — staged, then installed by a lifecycle hook.** Not seeded (F4).    |
+| Reuse `.github/` workflows and actions?        | **Manually.** They are template starting points with publisher couplings. |
+| Template-sync the remaining scaffolding files? | **No automation.** Use the maintained manual inventory and guide.         |
 
 ## The three layers
 
@@ -48,7 +53,7 @@ different churn rates and different natural mechanisms.
 | ------------------- | ---------------------------------------------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------- |
 | 1. Environment      | `ansible/`, `docker/`, the published image                                                                       | Low    | GHCR image pinned by digest                                                 |
 | 2. Agent catalog    | `.agents/plugins/agentdev/skills`, `.agents/plugins/agentdev/agents`, hooks, `.agents/plugins/agentdev/bin/*.sh` | High   | Plugin + marketplace, staged in the image and installed at container create |
-| 3. Repo scaffolding | `.devcontainer/`, `AGENTS.md`, `.claude/settings.json`                                                           | Medium | Manual copy (see F7)                                                        |
+| 3. Repo scaffolding | Devcontainer runtime, agent config, tooling, and adaptable GitHub files                                          | Medium | Manual copy (see the persistent template guide)                             |
 
 ## How the catalog reaches a container
 
@@ -233,30 +238,22 @@ permission rules that match the plugin cache path, because the Bash tool rejects
 a command string containing an unexpanded `${...}` and so never sees the
 substituted form.
 
-### F7 — Scaffolding residue is four files, below the Copier threshold (priority: low)
+### F7 — The four-file scaffolding estimate was superseded (priority: low)
 
-With `.github/` excluded by decision and the general `scripts/*.sh` absorbed by
-the plugin (F2), what a consuming repository still copies is:
+At spike time, the estimated residue was
+`.devcontainer/devcontainer.json`, `.devcontainer/docker-compose.yml`, `AGENTS.md`,
+and `.claude/settings.json`. Later implementation moved lifecycle helpers into
+`.devcontainer/scripts/`, layered the image digest through `compose.pins.yml`, and made
+post-create installation responsible for activating the catalog after persistent volumes
+mount. The two visible devcontainer files are therefore no longer a complete copy unit.
 
-`.devcontainer/devcontainer.json`, `.devcontainer/docker-compose.yml`,
-`AGENTS.md`, `.claude/settings.json`.
+The current inventory also classifies root tooling, agent configuration, and adaptable
+GitHub files, and separates the optional image-building bundle from catalog/validator
+publisher source. See the persistent documentation linked above for the exact paths.
 
-None of the four needs editing after the copy. That is deliberate: an earlier
-design required a consumer to delete two `containerEnv` entries this repository
-sets to `""`, and a copy that kept them would have silently got no catalog with
-no error to explain why. The current mechanism (F4) removes the setting
-altogether — the `postStart` scripts detect whether the workspace ships a
-marketplace of its own and act accordingly, so template and consumer run the
-same configuration.
-
-Copier (`.copier-answers.yml` + `copier update`) is the only mainstream tool
-designed to replay upstream template changes onto a copy that has diverged, via
-a three-way merge. It is the right answer at scale and the wrong answer at four
-files: the `.jinja` suffixing, the answers file, and the added dependency cost
-more than the copying they replace.
-
-Revisit if consumer count grows past a handful, or if these four files start
-churning.
+The automation verdict remains unchanged: manual copying is the supported mechanism at
+the current scale. Revisit Copier or another synchronizer if consumer count or scaffolding
+churn makes manual comparison unreliable.
 
 ### F8 — Nothing rebuilds a consumer when the base image moves (priority: high, resolved)
 
@@ -327,7 +324,7 @@ constrains any future decision to make it private.
 | Teaching `validate_agent_files` the plugin layout (F9, done)   | Medium   |
 | Building the seed before discarding it for a staged copy (F4)  | Medium   |
 | Catalog changes need an image rebuild to reach containers (F4) | Low      |
-| Four scaffolding files copied by hand (F7)                     | Low      |
+| Template scaffolding is reviewed and copied manually (F7)      | Low      |
 
 ## Benefits summary
 

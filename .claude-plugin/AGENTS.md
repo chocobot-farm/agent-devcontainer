@@ -8,5 +8,5 @@ This directory publishes the catalog developed under `.agents/plugins/agentdev/`
   manifests.
 - `.claude/settings.json` is this repository's own strict-JSON Claude configuration; do not
   add comments or trailing commas to it.
-- This repository enables the plugin from the marketplace declared here through its own
-  `.claude/settings.json`.
+- The devcontainer lifecycle registers the marketplace declared here when this repository
+  is the active workspace; `.claude/settings.json` does not declare the local installation.
