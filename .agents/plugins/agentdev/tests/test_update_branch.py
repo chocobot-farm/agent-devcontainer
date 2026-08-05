@@ -45,15 +45,13 @@ def initialize_repository(path: Path, branch: str = 'fixture-feature') -> None:
 
 
 def test_update_branch_reports_declared_result_when_fetch_fails(
-    repo_tmp_path: Path,
+    plugin_root: Path,
+    plugin_tmp_path: Path,
 ) -> None:
     """A missing selected remote must produce the stable fetch-failure result."""
     # Arrange
-    repository_root = Path(__file__).resolve().parents[3]
-    script = (
-        repository_root / '.agents/plugins/agentdev/skills/update-branch/scripts/update-branch.sh'
-    )
-    mock_repository = repo_tmp_path / 'fixture-repository'
+    script = plugin_root / 'skills/update-branch/scripts/update-branch.sh'
+    mock_repository = plugin_tmp_path / 'fixture-repository'
     initialize_repository(mock_repository)
 
     # Act
@@ -73,16 +71,14 @@ def test_update_branch_reports_declared_result_when_fetch_fails(
 
 
 def test_update_branch_reports_preflight_error_when_base_branch_is_missing(
-    repo_tmp_path: Path,
+    plugin_root: Path,
+    plugin_tmp_path: Path,
 ) -> None:
     """A fetched remote without the selected base branch must fail preflight."""
     # Arrange
-    repository_root = Path(__file__).resolve().parents[3]
-    script = (
-        repository_root / '.agents/plugins/agentdev/skills/update-branch/scripts/update-branch.sh'
-    )
-    mock_repository = repo_tmp_path / 'fixture-repository'
-    remote_repository = repo_tmp_path / 'fixture-remote'
+    script = plugin_root / 'skills/update-branch/scripts/update-branch.sh'
+    mock_repository = plugin_tmp_path / 'fixture-repository'
+    remote_repository = plugin_tmp_path / 'fixture-remote'
     initialize_repository(mock_repository)
     initialize_repository(remote_repository, branch='fixture-trunk')
     subprocess.run(
