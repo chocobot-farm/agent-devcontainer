@@ -40,7 +40,7 @@ runs:
           - scripts/**
           # The whole catalog is seeded into the image, so any change to it
           # makes the published image stale until it is rebuilt.
-          - .agents/plugins/agentdev/**
+          - .agents/**
           - .claude-plugin/**
         YAML
           if [ -n "$EXTRA" ]; then
