@@ -26,12 +26,13 @@ ln -sf "$claude_json_target" /root/.claude.json
 # extension settings are valid when the container is rebuilt. This is a no-op if the environment is already up to date.
 "$script_dir/uv-sync.sh"
 
-# The agentdev-codex volume mounts over the ~/.codex/skills link the image creates,
-# so restore it now that the volume is in place. No-op in this repository, which
-# opts out of the seed because it is the catalog's source.
-"$script_dir/link-codex-seed-skills.sh"
-
-# Register and install the repository's Codex/Claude plugin after the workspace and
-# persistent ~/.codex and ~/.claude volumes are mounted.
-"$script_dir/reinstall-agentdev-codex.sh"
-"$script_dir/reinstall-agentdev-claude.sh"
+# Install the catalog staged in the image, now that the persistent ~/.codex and
+# ~/.claude volumes are mounted over what the image wrote under them. At user
+# scope for Claude, so it applies to every workspace opened in this container.
+# postStartCommand.sh re-registers this checkout on top when there is one.
+if [[ -n "${AGENTDEV_CATALOG_DIR:-}" && -d "$AGENTDEV_CATALOG_DIR" ]]; then
+    "$script_dir/reinstall-agentdev-codex.sh" "$AGENTDEV_CATALOG_DIR"
+    "$script_dir/reinstall-agentdev-claude.sh" "$AGENTDEV_CATALOG_DIR" user
+else
+    echo "No catalog staged in the image; skipping the image-scoped plugin install."
+fi

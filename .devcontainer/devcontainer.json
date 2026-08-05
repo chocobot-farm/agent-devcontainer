@@ -19,14 +19,6 @@
     // See .devcontainer/firewall-allowlist.txt for the allowed destinations.
     "ENABLE_FIREWALL": "false",
 
-    // This repository is the catalog's source, so it opts out of the copy seeded
-    // into the image. A seeded marketplace overwrites the same-named one at every
-    // session start, which would mean editing the catalog here while Claude and
-    // Codex kept loading the frozen build-time copy. Every other project should
-    // leave both of these inherited from the image.
-    "AGENTDEV_SEED_DIR": "",
-    "CLAUDE_CODE_PLUGIN_SEED_DIR": "",
-
     "DISPLAY": ":100",
     "DOCKER_HOST": "unix:///var/run/docker.sock",
     "DEVCONTAINER_ID": "${devcontainerId}",

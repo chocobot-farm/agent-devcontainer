@@ -23,6 +23,6 @@
   ansible.builtin.import_tasks: cc_filter.yml
   when: agentic_tools_cc_filter_install | bool
 
-- name: Seed the agent catalog into the image
-  ansible.builtin.import_tasks: seed_catalog.yml
-  when: agentic_tools_seed_plugins | bool
+- name: Stage the agent catalog into the image
+  ansible.builtin.import_tasks: stage_catalog.yml
+  when: agentic_tools_stage_catalog | bool

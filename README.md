@@ -65,19 +65,24 @@ if you want per-project isolation.
 
 ### The catalog ships with the image
 
-Claude Code reads `CLAUDE_CODE_PLUGIN_SEED_DIR` — set in the image environment,
-not in any `devcontainer.json` — registers the marketplace it finds there at
-session start, and uses the seeded plugin cache in place. No clone, no network,
-no firewall allowlist entry. Skills are namespaced by the plugin:
-`/agentdev:pr-open`, `/agentdev:pr-merge`, and so on. Codex sessions read the
-same catalog from `~/.codex/skills`.
+The image stages the catalog at `AGENTDEV_CATALOG_DIR` (`/opt/agentdev`), and the
+template's `postCreateCommand` installs it from there through each agent's own
+plugin CLI — `claude plugin install` at user scope and `codex plugin add`. No
+clone, no network, no firewall allowlist entry, and no per-repository
+configuration. Skills are namespaced by the plugin: `/agentdev:pr-open`,
+`/agentdev:pr-merge`, and so on. Codex gets the same catalog, agents included.
+
+The install happens in a lifecycle hook rather than during the image build
+because the `agentdev-claude` and `agentdev-codex` volumes mount over `~/.claude`
+and `~/.codex`, which is exactly where both agents record installed plugins. An
+install baked into the image would be hidden by those volumes for every container
+after the first.
 
 Consequences worth knowing:
 
-- **Updating the catalog means updating the image.** The seed is root-owned and
-  read-only, and Claude Code disables auto-update for it, so
-  `/plugin marketplace update` against it fails by design. Which version an image
-  carries is inspectable:
+- **Updating the catalog means updating the image.** The staged copy is
+  root-owned and read-only, and nothing rewrites it at runtime. Which version an
+  image carries is inspectable:
 
   ```bash
   docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.version.agentdev" }}' \
@@ -87,18 +92,15 @@ Consequences worth knowing:
 - **To run a different version than the image carries**, declare it in your
   project's `.claude/settings.json` as
   [`.agents/plugins/agentdev/README.md`](.agents/plugins/agentdev/README.md)
-  describes — but note the composition rule runs the other way: a declared
-  marketplace that already exists in the seed resolves to the seed copy.
-  Overriding a seeded version needs `/plugin disable` on the seeded plugin first.
-- **A project that is itself the catalog's source should opt out**, by setting
-  `AGENTDEV_SEED_DIR` and `CLAUDE_CODE_PLUGIN_SEED_DIR` to `""` in
-  `containerEnv`. This repository does exactly that in
-  [`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json); otherwise
-  the frozen build-time copy would shadow the catalog being edited.
-- **If you mount a volume over `~/.codex`**, it shadows the Codex half of the
-  seed — which is why the template's `postCreateCommand` runs
-  [`.devcontainer/scripts/link-codex-seed-skills.sh`](.devcontainer/scripts/link-codex-seed-skills.sh)
-  to restore the symlink once the volume is in place.
+  describes. Because the image install is an ordinary user-scope install, a
+  project declaration composes with it the usual way — nothing has to be disabled
+  first.
+- **A project that ships the catalog itself** — this repository, or a fork of it
+  — needs no opt-out. `postStartCommand` re-runs
+  [`reinstall-agentdev-claude.sh`](.devcontainer/scripts/reinstall-agentdev-claude.sh)
+  and its Codex counterpart with no arguments on every container start, which
+  re-registers the marketplace from the workspace over the image's copy. In any
+  other project those scripts find no marketplace manifest and exit quietly.
 
 ### Staying on the current image
 
@@ -167,11 +169,11 @@ build a leaner image, flip them off — they default to `false` in
 | `setup_user`                    | Create a non-root `devuser` (1001:1001) instead of running as root      |
 | `workspace_folder`              | Fallback workspace path baked into the image                            |
 
-The catalog seed rides on `install_agentic_tools` and is switched separately by
-`agentic_tools_seed_plugins`, which the desktop dockerfile turns on; the version
-it seeds comes from the `AGENTDEV_PLUGIN_VERSION` build argument.
+The staged catalog rides on `install_agentic_tools` and is switched separately by
+`agentic_tools_stage_catalog`, which the desktop dockerfile turns on; the version
+it stages comes from the `AGENTDEV_PLUGIN_VERSION` build argument.
 [`ansible/roles/agentic_tools/README.md`](ansible/roles/agentic_tools/README.md)
-documents the seed layout and the variables that shape it.
+documents the staged layout and the variables that shape it.
 
 ## Building locally
 
@@ -197,13 +199,13 @@ docker run --rm local/agent-desktop bash -lc '
   command -v xpra init-firewall.sh gnome-keyring-daemon'
 ```
 
-And check the seeded catalog:
+And check the staged catalog:
 
 ```bash
 docker run --rm local/agent-desktop bash -lc '
-  ls "$CLAUDE_CODE_PLUGIN_SEED_DIR/marketplaces" &&
-  ls "$CLAUDE_CODE_PLUGIN_SEED_DIR/cache"/*/* &&
-  ls "$AGENTDEV_SEED_DIR/codex/skills" | head -3'
+  cat "$AGENTDEV_CATALOG_DIR/.claude-plugin/marketplace.json" | jq -r .name &&
+  cat "$AGENTDEV_CATALOG_DIR/.agents/plugins/marketplace.json" | jq -r .name &&
+  ls "$AGENTDEV_CATALOG_DIR/.agents/plugins"/*/skills | head -3'
 ```
 
 Ansible alone, without a build:
