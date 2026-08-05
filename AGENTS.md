@@ -13,6 +13,7 @@ NEVER use GitHub API or GitHub MCP tools to update branch refs or push branch co
 4. **For yes/no and multiple-choice questions, prefer the assistant's structured-question tool** over free-text (VS Code Copilot: `vscode/askQuestions`; Claude Code: `AskUserQuestion`).
 5. **Validate the agent catalog after editing it**: `uv run validate_agent_files --recommend . --require-marketplace claude codex`.
 6. **Ansible changes** must pass `(cd ansible && uv run ansible-lint .)` and `(cd ansible && uv run ansible-playbook --syntax-check playbooks/setup-dev.yml)`. The real gate is a local image build — see the README.
+7. Keep devcontainer related scripts in `.devcontainer/scripts`
 
 ### When in Doubt
 
