@@ -113,6 +113,7 @@ jobs:
             - ansible/**
             - .agents/plugins/agentdev/bin/super-linter-defaults.sh
             - .agents/plugins/agentdev/bin/super-linter-local.sh
+            - .agents/plugins/agentdev/**/*.py
             - py_packages/**/*.py
             - scripts/**/*.py
             - scripts/validate-super-linter-tool-versions.sh
