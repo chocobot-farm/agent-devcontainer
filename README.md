@@ -51,13 +51,54 @@ runners and merged into a single manifest:
 wrapper PATH shim and the firewall allowlist lookup both read it, falling back to
 the `workspace_folder` baked in at build time.
 
+That is the whole setup: **the `agentdev` catalog ships inside the image**, so a
+project with no `.claude/` configuration at all still gets it. See
+[The catalog ships with the image](#the-catalog-ships-with-the-image) below.
+
 ### Option 2 — copy the template
 
-Copy `.devcontainer/` and `scripts/` into your repo, and enable the `agentdev`
-plugin (see [The agent catalog](#the-agent-catalog)) instead of copying the
-catalog. The compose file already wires up the shared agent-auth volumes, the MCP
-gateway sidecar, and worktree-safe mounts. Adjust `workspaceFolder` and the
-`agentdev-*` volume names if you want per-project isolation.
+Copy `.devcontainer/` and `scripts/` into your repo. The catalog already ships
+with the image, so there is nothing to copy and nothing to enable. The compose
+file already wires up the shared agent-auth volumes, the MCP gateway sidecar, and
+worktree-safe mounts. Adjust `workspaceFolder` and the `agentdev-*` volume names
+if you want per-project isolation.
+
+### The catalog ships with the image
+
+Claude Code reads `CLAUDE_CODE_PLUGIN_SEED_DIR` — set in the image environment,
+not in any `devcontainer.json` — registers the marketplace it finds there at
+session start, and uses the seeded plugin cache in place. No clone, no network,
+no firewall allowlist entry. Skills are namespaced by the plugin:
+`/agentdev:pr-open`, `/agentdev:pr-merge`, and so on. Codex sessions read the
+same catalog from `~/.codex/skills`.
+
+Consequences worth knowing:
+
+- **Updating the catalog means updating the image.** The seed is root-owned and
+  read-only, and Claude Code disables auto-update for it, so
+  `/plugin marketplace update` against it fails by design. Which version an image
+  carries is inspectable:
+
+  ```bash
+  docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.version.agentdev" }}' \
+    ghcr.io/plume-works/agent-desktop:edge
+  ```
+
+- **To run a different version than the image carries**, declare it in your
+  project's `.claude/settings.json` as
+  [`.agents/plugins/agentdev/README.md`](.agents/plugins/agentdev/README.md)
+  describes — but note the composition rule runs the other way: a declared
+  marketplace that already exists in the seed resolves to the seed copy.
+  Overriding a seeded version needs `/plugin disable` on the seeded plugin first.
+- **A project that is itself the catalog's source should opt out**, by setting
+  `AGENTDEV_SEED_DIR` and `CLAUDE_CODE_PLUGIN_SEED_DIR` to `""` in
+  `containerEnv`. This repository does exactly that in
+  [`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json); otherwise
+  the frozen build-time copy would shadow the catalog being edited.
+- **If you mount a volume over `~/.codex`**, it shadows the Codex half of the
+  seed — which is why the template's `postCreateCommand` runs
+  [`.devcontainer/scripts/link-codex-seed-skills.sh`](.devcontainer/scripts/link-codex-seed-skills.sh)
+  to restore the symlink once the volume is in place.
 
 ### Staying on the current image
 
@@ -126,6 +167,12 @@ build a leaner image, flip them off — they default to `false` in
 | `setup_user`                    | Create a non-root `devuser` (1001:1001) instead of running as root      |
 | `workspace_folder`              | Fallback workspace path baked into the image                            |
 
+The catalog seed rides on `install_agentic_tools` and is switched separately by
+`agentic_tools_seed_plugins`, which the desktop dockerfile turns on; the version
+it seeds comes from the `AGENTDEV_PLUGIN_VERSION` build argument.
+[`ansible/roles/agentic_tools/README.md`](ansible/roles/agentic_tools/README.md)
+documents the seed layout and the variables that shape it.
+
 ## Building locally
 
 The desktop image's build context is the repository root — the dockerfile
@@ -148,6 +195,15 @@ docker run --rm local/agent-desktop bash -lc '
   bun --version && node --version && uv --version &&
   gh --version | head -1 && cmake --version | head -1 && zizmor --version &&
   command -v xpra init-firewall.sh gnome-keyring-daemon'
+```
+
+And check the seeded catalog:
+
+```bash
+docker run --rm local/agent-desktop bash -lc '
+  ls "$CLAUDE_CODE_PLUGIN_SEED_DIR/marketplaces" &&
+  ls "$CLAUDE_CODE_PLUGIN_SEED_DIR/cache"/*/* &&
+  ls "$AGENTDEV_SEED_DIR/codex/skills" | head -3'
 ```
 
 Ansible alone, without a build:

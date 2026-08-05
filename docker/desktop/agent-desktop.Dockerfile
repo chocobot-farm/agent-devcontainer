@@ -11,6 +11,16 @@ FROM $FROM_IMAGE
 # provides the fallback baked into the image.
 ARG WORKSPACE_FOLDER=/workspaces/project
 
+# Version of the agentdev catalog seeded into the image. The catalog is seeded from
+# the build context, so this is a pin the build verifies rather than a version it
+# fetches: .claude-plugin/marketplace.json must declare exactly this version or the
+# provisioning fails. Bump both together when releasing the catalog.
+ARG AGENTDEV_PLUGIN_VERSION=3.0.0
+
+# Where the seeded catalog lives. Outside $HOME on purpose: ~/.claude and ~/.codex
+# are commonly mounted as volumes, which would shadow anything placed under them.
+ARG AGENTDEV_SEED_DIR=/opt/agentdev-seed
+
 # Provision the image with Ansible.
 #
 # The build context is the repository root, bind-mounted read-only rather than
@@ -31,7 +41,20 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
            install_docker=true \
            install_agentic_tools=true \
            install_devcontainer_firewall=true \
+           agentic_tools_seed_plugins=true \
+           agentic_tools_seed_source_dir=/provision \
+           agentic_tools_plugin_version=$AGENTDEV_PLUGIN_VERSION \
+           agentic_tools_seed_root=$AGENTDEV_SEED_DIR \
          "
+
+# Inherited by any consumer of this image, including one that writes its own
+# devcontainer.json and knows nothing about the seed. Claude Code registers the
+# seeded marketplaces at session start and uses the seeded cache in place; a
+# project that is itself the catalog's source opts out by setting this to "".
+ENV AGENTDEV_SEED_DIR=$AGENTDEV_SEED_DIR
+ENV CLAUDE_CODE_PLUGIN_SEED_DIR=$AGENTDEV_SEED_DIR/claude
+
+LABEL org.opencontainers.image.version.agentdev="$AGENTDEV_PLUGIN_VERSION"
 
 WORKDIR $WORKSPACE_FOLDER
 

@@ -10,8 +10,8 @@ which concluded that sharing the `.claude` catalog across repositories had "no
 mechanism that does not hurt". Three of the mechanisms it needed have since
 shipped.
 
-**Status:** spike complete. Specs `01` (F8) and `02` (F5, F6, F9) landed; `03` is
-written but not scheduled.
+**Status:** spike complete and fully implemented. Specs `01` (F8), `02` (F5, F6,
+F9), and `03` (F4, the container half of F9) have all landed.
 
 ## Problem
 
@@ -102,6 +102,17 @@ Codespaces, cloud sessions, and routines — surfaces that neither a personal
 mirroring `~/.claude/plugins` (`known_marketplaces.json`, `marketplaces/<name>/`,
 `cache/<marketplace>/<plugin>/<version>/`). At startup Claude Code registers the
 seeded marketplaces and uses the seeded caches in place, with no clone.
+
+Resolved by spec `03`: `agentic_tools` seeds the catalog at `/opt/agentdev-seed`
+during the image build and the image exports `CLAUDE_CODE_PLUGIN_SEED_DIR`.
+
+It seeds from the build context rather than cloning a published release, which
+the spec had assumed. Seeding from the context keeps the image and the catalog it
+carries on the same commit, keeps the build offline, and does not depend on a
+release existing. `AGENTDEV_PLUGIN_VERSION` therefore pins by assertion — the
+manifest must declare exactly that version or the build fails — rather than by
+selecting what to fetch, and Renovate does not manage it: it is this
+repository's own version, bumped by hand alongside the manifests at release.
 
 Consequences that make this the right fit here:
 
@@ -194,8 +205,9 @@ canonical catalog into a plugin directory breaks both.
 The layout was chosen so the symlink could be re-pointed within this repository:
 `.codex/skills` now points at `../.agents/plugins/agentdev/skills`, the trampolines delegate to
 `.agents/plugins/agentdev/agents/*.agent.md`, and `validate_agent_files` validates the plugin
-layout. Placing the catalog at `~/.codex/skills` for containers remains open and
-belongs to spec `03`.
+layout. Spec `03` closed the container half: the image seeds the same skills
+outside `$HOME` and symlinks `~/.codex/skills` at them, so a volume mounted over
+the Codex home cannot shadow the catalog.
 
 ### F10 — Private marketplaces have a flaky background auto-update (priority: low)
 
@@ -234,7 +246,7 @@ constrains any future decision to make it private.
    removed.
 2. `02-claude-catalog-plugin.md` — resolved F5, F6, and the in-repository half
    of F9. **Landed**; spec file removed.
-3. [`03-plugin-seed-in-image.md`](03-plugin-seed-in-image.md) — resolves the
-   original problem. Depends on `02`.
+3. `03-plugin-seed-in-image.md` — resolved the original problem. **Landed**;
+   spec file removed.
 
 F7 is a decision, not a task: no spec.

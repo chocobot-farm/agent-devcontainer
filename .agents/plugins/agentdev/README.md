@@ -10,7 +10,13 @@ so projects consume it by version instead of copying files around.
 
 ## Installing in Claude Code
 
-Add to your repository's `.claude/settings.json` — strict JSON, so no comments
+Working inside the `agent-desktop` devcontainer image, there is nothing to
+install: the catalog is seeded into the image and registered at session start,
+with no clone and no network. Updating it means updating the image — a seeded
+marketplace wins over a declaration of the same name, so running a different
+version there needs `/plugin disable` on the seeded plugin first.
+
+Everywhere else, add to your repository's `.claude/settings.json` — strict JSON, so no comments
 and no trailing commas (unlike `devcontainer.json`):
 
 ```json

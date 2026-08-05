@@ -26,6 +26,11 @@ ln -sf "$claude_json_target" /root/.claude.json
 # extension settings are valid when the container is rebuilt. This is a no-op if the environment is already up to date.
 "$script_dir/uv-sync.sh"
 
+# The agentdev-codex volume mounts over the ~/.codex/skills link the image creates,
+# so restore it now that the volume is in place. No-op in this repository, which
+# opts out of the seed because it is the catalog's source.
+"$script_dir/link-codex-seed-skills.sh"
+
 # Register and install the repository's Codex/Claude plugin after the workspace and
 # persistent ~/.codex and ~/.claude volumes are mounted.
 "$script_dir/reinstall-agentdev-codex.sh"

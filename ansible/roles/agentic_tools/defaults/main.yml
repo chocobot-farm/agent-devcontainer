@@ -18,3 +18,47 @@ agentic_tools_cc_filter_checksum: "{{ agentic_tools_cc_filter_checksums[system_a
 # Wire cc-filter into the user's Claude Code hooks (settings.json).
 agentic_tools_cc_filter_configure_hooks: true
 agentic_tools_cc_filter_claude_settings_path: "{{ user_home }}/.claude/settings.json"
+
+# Seed the agent catalog into the image, so a container built from it starts with
+# the catalog already available: no clone, no network, no firewall allowlist entry,
+# and no per-repository configuration.
+agentic_tools_seed_plugins: false
+
+# The catalog is seeded from the provisioning sources themselves, so the image and
+# the catalog it carries always come from the same commit. Point this at any tree
+# whose root holds a Claude Code marketplace manifest.
+agentic_tools_seed_source_dir: "{{ role_path }}/../../.."
+agentic_tools_seed_marketplace_manifest: .claude-plugin/marketplace.json
+agentic_tools_plugin_name: agentdev
+
+# Optional pin. When set, the manifest must declare exactly this version or the
+# build fails, which is what keeps the image reproducible and its label honest.
+agentic_tools_plugin_version: ""
+
+# The seed lives outside $HOME on purpose: ~/.claude and ~/.codex are commonly
+# mounted as volumes, which would shadow anything the image places under them.
+agentic_tools_seed_root: /opt/agentdev-seed
+agentic_tools_plugin_seed_dir: "{{ agentic_tools_seed_root }}/claude"
+agentic_tools_codex_skills_seed_dir: "{{ agentic_tools_seed_root }}/codex/skills"
+
+# Directories 0755, files 0644, and anything already executable stays executable
+# so the scripts the plugin ships in bin/ keep working.
+agentic_tools_seed_mode: "u=rwX,go=rX"
+
+agentic_tools_claude_bin: /usr/local/bin/claude
+
+# Claude Code registers a seeded marketplace on its own but never enables a plugin
+# by itself, so the image also declares the plugin in the user's settings.
+agentic_tools_seed_enable_plugin: true
+agentic_tools_seed_claude_settings_path: "{{ user_home }}/.claude/settings.json"
+
+# Codex has no seed mechanism; it reads personal skills from $CODEX_HOME/skills.
+agentic_tools_seed_codex_skills: true
+agentic_tools_seed_codex_skills_link: "{{ user_home }}/.codex/skills"
+
+# Build scratch directories that must never survive into the image.
+agentic_tools_seed_prune_names:
+  - __pycache__
+  - .pytest_cache
+  - .ruff_cache
+  - .tmp

@@ -1,5 +1,7 @@
 # The agent-desktop build context is the repository root; keep it small.
-# Only ansible/ and docker/ are actually consumed by the build.
+# Only ansible/, docker/, and the catalog the build seeds into the image
+# (.claude-plugin/ plus the plugin tree it publishes under .agents/) are
+# actually consumed by the build.
 .git
 .github
 .claude
