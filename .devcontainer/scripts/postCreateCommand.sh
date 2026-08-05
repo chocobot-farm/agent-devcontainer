@@ -26,9 +26,11 @@ ln -sf "$claude_json_target" /root/.claude.json
 # extension settings are valid when the container is rebuilt. This is a no-op if the environment is already up to date.
 "$script_dir/uv-sync.sh"
 
-# Install the catalog staged in the image, now that the persistent ~/.codex and
-# ~/.claude volumes are mounted over what the image wrote under them. At user
-# scope for Claude, so it applies to every workspace opened in this container.
+# Install the catalog staged in the image. This has to happen here rather than
+# during the image build: the persistent ~/.claude and ~/.codex volumes mount over
+# where both agents record installed plugins, so a build-time install would be
+# shadowed for every container whose volume already exists. At user scope for
+# Claude, so it applies to every workspace opened in this container;
 # postStartCommand.sh re-registers this checkout on top when there is one.
 if [[ -n "${AGENTDEV_CATALOG_DIR:-}" && -d "$AGENTDEV_CATALOG_DIR" ]]; then
     "$script_dir/reinstall-agentdev-codex.sh" "$AGENTDEV_CATALOG_DIR"
