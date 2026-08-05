@@ -26,12 +26,5 @@ where = ["."]
 include = ["validate_agent_files*"]
 exclude = ["tests*"]
 
-# The package is releasable on its own, so its test suite must be runnable from
-# this directory without the repository that develops it. Configuring pytest here
-# rather than inheriting a parent's configuration is what makes that true.
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = [
-  "slow: marks tests that exercise long-running or integration-heavy behavior",
-  "integration: marks tests that exercise integrated behavior",
-]
