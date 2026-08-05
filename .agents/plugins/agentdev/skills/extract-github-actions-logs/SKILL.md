@@ -23,6 +23,9 @@ Use the bundled helper script to parse GitHub Actions URLs:
 
 - [parse-actions-url.sh](./scripts/parse-actions-url.sh)
 
+The last line of its stdout is always `RESULT=<NAME>`; match on that name, not on
+a bare number.
+
 Always verify authentication first:
 
 ```bash
@@ -41,8 +44,9 @@ Do not continue until `gh auth status` succeeds.
 
 1. Verify `gh` authentication with `gh auth status`.
 2. If the user provides a GitHub Actions URL, parse it with the helper script.
-3. Identify the repository, run ID, and optional job ID from the helper's shell-safe `REPO=`, `RUN_ID=`, and `JOB_ID=` output.
-4. Fetch logs with `gh`.
+3. Read the helper's `RESULT` line and handle it with the table below.
+4. On `SUCCESS`, identify the repository, run ID, and optional job ID from the helper's shell-safe `REPO=`, `RUN_ID=`, and `JOB_ID=` output.
+5. Fetch logs with `gh`.
 
 Use these commands:
 
@@ -59,9 +63,18 @@ ${CLAUDE_SKILL_DIR}/scripts/parse-actions-url.sh --url '<github-actions-url>'
 ${CLAUDE_SKILL_DIR}/scripts/parse-actions-url.sh --url '<github-actions-url>' --format command --log
 ```
 
-If the URL is a run URL, fetch the whole run log.
+Handle its result:
 
-If the URL is a job URL, fetch the job log.
+| RESULT            | Exit | Meaning                                                                                            | Action                                                                                                                                            |
+| ----------------- | ---- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SUCCESS`         | `0`  | The URL was parsed                                                                                 | Continue with the printed `REPO`, `RUN_ID`, and — when present — `JOB_ID`, or with the generated command.                                         |
+| `UNSUPPORTED_URL` | `3`  | The input is not a GitHub Actions run or job URL                                                   | Do not retry the same URL. Ask the user for a run or job URL, or locate the run with `gh run list --repo <owner>/<repo>` and use its ID directly. |
+| `PREFLIGHT_ERROR` | `2`  | Bad usage: missing or unknown option, bad `--format`, `--grep-failures` without `--format command` | Fix the invocation reported on stderr and retry.                                                                                                  |
+| `SCRIPT_FAILURE`  | `1`  | The script broke                                                                                   | **STOP.** Report the blocker verbatim; do not retry or work around it.                                                                            |
+
+If the parsed URL is a run URL (no `JOB_ID`), fetch the whole run log.
+
+If it is a job URL (`JOB_ID` present), fetch the job log.
 
 If the user wants only the failure lines, filter the job log:
 

@@ -1,6 +1,6 @@
 ---
 name: create-skill
-description: Create, update, or review repository skills in the agentdev plugin catalog with concise discovery descriptions, progressive disclosure, optional Codex UI metadata, and validation. Use when adding or refining a SKILL.md, diagnosing discovery, or packaging a repeatable agent workflow.
+description: Create, update, or review repository skills in the agentdev plugin catalog with concise discovery descriptions, progressive disclosure, and validation. Use when adding or refining a SKILL.md, diagnosing discovery, or packaging a repeatable agent workflow.
 ---
 
 # Create Repository Skills
@@ -92,16 +92,19 @@ when they make a recurring choice unambiguous.
 Use relative Markdown links for bundled resources. Keep an instruction in one
 place; link to its detailed explanation instead of duplicating it.
 
-## Add Optional Codex UI Metadata
+## Prefer Portable Frontmatter
 
-When the skill is intended for Codex's UI, add `agents/openai.yaml`. Keep it
-outside `SKILL.md` frontmatter. Set a human-facing display name, a 25–64
-character short description, and a one-sentence `default_prompt` that names
-the skill as `$<skill-name>`. Include it in the independent Skill Creator
-validation pass so it remains aligned with the skill.
+Do not create platform-specific skill metadata by default. `SKILL.md`
+frontmatter is the portable source for a skill's name and discovery description,
+and it is sufficient for normal Codex discovery, implicit selection, and
+explicit invocation.
 
-Do not add icons, colors, MCP dependencies, or policy fields unless the user
-has supplied the associated requirement or asset.
+Add a platform-specific metadata file only when the user explicitly requires a
+capability that `SKILL.md` frontmatter cannot express, such as disabling
+implicit invocation, declaring tool dependencies, or supplying required UI
+assets. Keep that exceptional metadata narrowly scoped to the unmet requirement;
+do not duplicate the skill name, description, or instructions merely to provide
+alternate presentation copy.
 
 ## Validate and Iterate
 
@@ -129,5 +132,6 @@ has supplied the associated requirement or asset.
 - The body is concise, actionable, and routes detailed material to directly
   linked resources.
 - Every bundled file has a purpose, and scripts have been exercised.
-- Findings from proportionate independent validation are addressed, and any
-  optional `agents/openai.yaml` matches the current skill.
+- Findings from proportionate independent validation are addressed, and no
+  platform-specific metadata exists without an explicit unsupported-by-frontmatter
+  requirement.

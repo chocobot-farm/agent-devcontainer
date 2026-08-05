@@ -9,10 +9,13 @@ print_error() {
   printf 'ERROR: %s\n' "$*" >&2
 }
 
+# shellcheck source=/dev/null
+source "${skill_script_dir}/../../../bin/result-codes.sh"
+
 require_git_repo() {
   if ! git rev-parse --show-toplevel >/dev/null 2>&1; then
     print_error "This script must be run inside a Git repository."
-    exit 2
+    quit_by_code 2
   fi
 }
 

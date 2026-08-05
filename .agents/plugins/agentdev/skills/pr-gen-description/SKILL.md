@@ -39,6 +39,9 @@ Use this helper instead of retyping inline git commands:
 - [review-git-changes.sh](scripts/review-git-changes.sh) prints the branch,
   working tree status, diff stat, patch, and commit log for the change set.
 
+The last line of stdout is always `RESULT=<NAME>`; match on that name, not on a
+bare number.
+
 ## Workflow
 
 ### Step 1: Analyze Git Changes
@@ -54,6 +57,15 @@ Pass `--base-ref <ref>` when the caller supplies a base other than
 The script compares against the merge base rather than a raw `origin/main..HEAD`
 range: when the branch and its base have diverged, PR review shows the changes
 introduced by the head branch since that common ancestor.
+
+Handle the result:
+
+| RESULT            | Exit | Meaning                                                                  | Action                                                                                                                             |
+| ----------------- | ---- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `SUCCESS`         | `0`  | The change report was printed                                            | Continue with Step 2.                                                                                                              |
+| `NO_CHANGES`      | `3`  | Nothing to describe: no working tree changes and no commits in the range | **STOP.** Follow the **No changes** edge case instead of writing a description.                                                    |
+| `PREFLIGHT_ERROR` | `2`  | Bad usage, not a repo, no commits, or an unknown ref                     | **STOP.** Fix the reported error — usually a wrong `--base-ref` or `--range`, or a base ref that has not been fetched — and rerun. |
+| `SCRIPT_FAILURE`  | `1`  | The script broke                                                         | **STOP.** Report the blocker verbatim; do not retry or reconstruct the analysis with ad-hoc `git` commands.                        |
 
 Categorize: new, modified, deleted, renamed.
 
@@ -101,7 +113,9 @@ Ensure completeness, technical accuracy, valid links, and that testing matches a
 
 ## Edge Cases
 
-- **No changes**: Report error, check branch/commits
+- **No changes**: the script reports `NO_CHANGES` and notes the empty change
+  set on stderr. Report that there is nothing to describe and check the branch
+  and commit range with the caller.
 - **Too many changes**: Summarize categories, detail significant only
 - **No tests**: Warn incomplete testing section
 - **Multiple unrelated changes**: Suggest splitting PRs

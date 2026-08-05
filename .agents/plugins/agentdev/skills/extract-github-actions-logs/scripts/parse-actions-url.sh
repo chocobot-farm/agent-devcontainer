@@ -2,10 +2,21 @@
 
 set -euo pipefail
 
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
 url=""
 format="fields"
 include_log=0
 grep_failures=0
+
+print_error() {
+  printf 'ERROR: %s\n' "$*" >&2
+}
+
+# shellcheck source=/dev/null
+source "${script_dir}/../../../bin/result-codes.sh"
+
+RESULT_CODES+=("3=UNSUPPORTED_URL")
 
 usage() {
   cat <<'EOF'
@@ -21,9 +32,17 @@ Options:
   --grep-failures      Append the standard failure grep filter in command mode.
   -h, --help           Show this help text.
 
-Exit codes:
-  0  Success
-  2  Invalid arguments or unsupported URL
+Output:
+  RESULT is always the last line of stdout.
+  --format fields   key=value lines: REPO, RUN_ID, and JOB_ID for a job URL
+  --format command  one shell-quoted gh command line
+
+Results (RESULT / exit code):
+  SUCCESS          0  The URL was parsed and the requested output printed
+  UNSUPPORTED_URL  3  The URL is not a GitHub Actions run or job URL
+  PREFLIGHT_ERROR  2  Usage error: missing or unknown option, bad --format,
+                      or --grep-failures without --format command
+  SCRIPT_FAILURE   1  Unhandled error
 
 Examples:
   parse-actions-url.sh --url 'https://github.com/<owner>/<repo>/actions/runs/12345678901'
@@ -34,12 +53,12 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --url)
-      [[ $# -ge 2 ]] || { echo "Missing value for --url" >&2; exit 2; }
+      [[ $# -ge 2 ]] || { print_error "Missing value for --url"; quit_by_code 2; }
       url="$2"
       shift 2
       ;;
     --format)
-      [[ $# -ge 2 ]] || { echo "Missing value for --format" >&2; exit 2; }
+      [[ $# -ge 2 ]] || { print_error "Missing value for --format"; quit_by_code 2; }
       format="$2"
       shift 2
       ;;
@@ -53,30 +72,30 @@ while [[ $# -gt 0 ]]; do
       ;;
     -h|--help)
       usage
-      exit 0
+      quit_by_code 0
       ;;
     *)
-      echo "Unknown argument: $1" >&2
+      print_error "Unknown argument: $1"
       usage >&2
-      exit 2
+      quit_by_code 2
       ;;
   esac
 done
 
 if [[ -z "$url" ]]; then
-  echo "Missing required --url argument" >&2
+  print_error "Missing required --url argument"
   usage >&2
-  exit 2
+  quit_by_code 2
 fi
 
 if [[ "$format" != "fields" && "$format" != "command" ]]; then
-  echo "Unsupported --format value: $format" >&2
-  exit 2
+  print_error "Unsupported --format value: $format"
+  quit_by_code 2
 fi
 
 if [[ "$grep_failures" -eq 1 && "$format" != "command" ]]; then
-  echo "--grep-failures requires --format command" >&2
-  exit 2
+  print_error "--grep-failures requires --format command"
+  quit_by_code 2
 fi
 
 if [[ "$url" =~ ^https://github\.com/([^/]+)/([^/]+)/actions/runs/([0-9]+)(/attempts/[0-9]+)?(/job/([0-9]+))?([?#].*)?$ ]]; then
@@ -84,8 +103,8 @@ if [[ "$url" =~ ^https://github\.com/([^/]+)/([^/]+)/actions/runs/([0-9]+)(/atte
   run_id="${BASH_REMATCH[3]}"
   job_id="${BASH_REMATCH[6]:-}"
 else
-  echo "invalid GitHub Actions URL: $url" >&2
-  exit 2
+  print_error "Not a GitHub Actions run or job URL: $url"
+  quit_by_code 3
 fi
 
 if [[ "$format" == "fields" ]]; then
@@ -94,7 +113,7 @@ if [[ "$format" == "fields" ]]; then
   if [[ -n "$job_id" ]]; then
     printf 'JOB_ID=%q\n' "$job_id"
   fi
-  exit 0
+  quit_by_code 0
 fi
 
 command=(gh run view "$run_id" --repo "$repo")
@@ -113,3 +132,5 @@ if [[ "$grep_failures" -eq 1 ]]; then
 else
   printf '%s\n' "$rendered"
 fi
+
+quit_by_code 0

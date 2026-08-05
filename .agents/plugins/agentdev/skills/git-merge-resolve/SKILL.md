@@ -54,12 +54,8 @@ Options:
 - `--message <text>` sets the merge commit message.
 - `-h` or `--help` displays usage.
 
-Exit codes:
-
-- `0`: merge completed successfully
-- `1`: merge conflicts require resolution
-- `2`: usage, repository, ref, or working-tree preflight failed
-- `3`: source ref is already merged into `HEAD`
+The last line of stdout is always `RESULT=<NAME>`; match on that name, not on a
+bare number.
 
 Do not run the script when Git already reports an in-progress merge. Continue
 with the conflict-resolution workflow instead.
@@ -87,10 +83,13 @@ ${CLAUDE_SKILL_DIR}/scripts/git-merge-resolve.sh <source-ref>
 
 Handle its result:
 
-- **Exit 0**: continue with Workflow 4 for required validation.
-- **Exit 1**: continue with Workflow 3.
-- **Exit 3**: report that the source is already merged; make no changes.
-- **Exit 2**: fix the reported preflight error before retrying.
+| RESULT               | Exit | Meaning                                      | Action                                                                                                   |
+| -------------------- | ---- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `SUCCESS`            | `0`  | The merge commit was created                 | Continue with Workflow 4 for the required reformat and validation.                                       |
+| `ALREADY_UP_TO_DATE` | `3`  | The source ref is already merged into `HEAD` | Report that the source is already merged; make no changes.                                               |
+| `MERGE_CONFLICTS`    | `4`  | The merge stopped on conflicted paths        | Continue with Workflow 3.                                                                                |
+| `PREFLIGHT_ERROR`    | `2`  | Bad usage, not a repo, bad ref, dirty tree   | **STOP.** Fix the reported error before retrying. Do not discard or stash changes without user approval. |
+| `SCRIPT_FAILURE`     | `1`  | The script broke                             | **STOP.** Report the blocker verbatim; do not retry or work around it.                                   |
 
 ## Workflow 3: Resolve Conflicts
 
