@@ -114,7 +114,10 @@ alternate presentation copy.
    Ask it to perform full validation, then report concrete corrections or that the capability
    is unavailable. Apply the relevant findings yourself.
 2. Test bundled scripts with representative inputs. Use `./.tmp/` for
-   temporary artifacts; never use `$TMPDIR`.
+   temporary artifacts; never use `$TMPDIR`. Beyond exercising a script by hand,
+   pin the outcomes a caller branches on with a test in the plugin's `tests/`
+   directory, resolving the script from the plugin root — see
+   `/agentdev:skill-scripts` for the shape.
 3. Forward-test a new, complex, or high-risk skill with realistic prompts when
    feasible. Give an independent evaluator only the task and relevant
    artifacts—not the intended answer or diagnosis. For an existing skill,
@@ -131,7 +134,8 @@ alternate presentation copy.
 - `SKILL.md` has only `name` and `description` in valid frontmatter.
 - The body is concise, actionable, and routes detailed material to directly
   linked resources.
-- Every bundled file has a purpose, and scripts have been exercised.
+- Every bundled file has a purpose, and scripts have been exercised. A bundled
+  script's result and exit code are pinned by a test in the plugin's `tests/`.
 - Findings from proportionate independent validation are addressed, and no
   platform-specific metadata exists without an explicit unsupported-by-frontmatter
   requirement.

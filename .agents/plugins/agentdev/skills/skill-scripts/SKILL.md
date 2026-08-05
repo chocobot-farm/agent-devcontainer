@@ -316,8 +316,36 @@ code as a secondary column, so the agent matches on the string it just read:
 State the reaction to `SCRIPT_FAILURE`, `PREFLIGHT_ERROR`, and the three signal
 results too, even if it is just "STOP and report the blocker verbatim".
 
+## Pin the Contract With a Test
+
+The `RESULT=` value and its exit code are a contract a `SKILL.md` decision table
+branches on, so a silent change to either breaks a caller that never runs the
+script directly. Pin the outcomes an agent acts on with a test in the plugin's
+`tests/` directory.
+
+Resolve the script from the `plugin_root` fixture — `plugin_root / 'bin/...'` or
+`plugin_root / 'skills/<name>/scripts/<script>.sh'` — never through a path that
+climbs out of the plugin, which resolves nowhere once the plugin is installed
+into a cache. Use `plugin_tmp_path` for scratch fixtures, and assert on the pair
+that forms the contract:
+
+```python
+assert (completed.returncode, completed.stdout.splitlines()[-1]) == (
+    6,
+    'RESULT=FETCH_FAILED',
+)
+```
+
+Drive the script through a mock world rather than a live one: a throwaway `git`
+repository built in the fixture directory, or stub `git`/`gh` executables placed
+first on `PATH`. The three tests already in `tests/` show both shapes, plus the
+signal-status case. These tests live with the plugin, not with any package that
+happens to sit beside it in the developing repository.
+
 ## Definition of Done
 
+- Every result an agent branches on is pinned by a test in the plugin's
+  `tests/`, resolving the script through `plugin_root`.
 - Every skill loads the sole result-code implementation from the plugin's
   shared `bin/result-codes.sh`; none copies or inlines its helpers.
 - Every terminal path exits through `quit_by_code`; no bare `exit N` remains

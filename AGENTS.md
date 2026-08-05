@@ -12,7 +12,7 @@ Commit at checkpoints as meaningful progress is achieved, rather than accumulati
 2. **Scope test runs narrowly** while iterating: `uv run pytest <path>::<test_name>`, `bun test <path>`. Run the full suite only when asked.
 3. **Escalate to a container when the host lacks the toolchain — never give up after a local failure.** If `uv` or `bun` is missing, or a command needs the provisioned image, escalate in this order: (a) Docker daemon available → use the `/agentdev:microvm-sandbox` skill to run the command through `devcontainer exec`; (b) no Docker daemon → use the `/agentdev:remote-codespace-session` skill to run it on a GitHub Codespace over SSH. Only report a blocker if both escalation paths are unavailable (e.g. no `gh` auth).
 4. **For yes/no and multiple-choice questions, prefer the assistant's structured-question tool** over free-text (VS Code Copilot: `vscode/askQuestions`; Claude Code: `AskUserQuestion`).
-5. **Validate the agent catalog after editing it**: `uv run validate_agent_files --recommend . --require-marketplace claude codex`.
+5. **Validate the agent catalog after editing it**: `uv run validate_agent_files --recommend . --require-marketplace claude codex`. After editing a script the plugin ships, also run `uv run pytest .agents/plugins/agentdev/tests`.
 6. **Ansible changes** must pass `(cd ansible && uv run ansible-lint .)` and `(cd ansible && uv run ansible-playbook --syntax-check playbooks/setup-dev.yml)`. The real gate is a local image build — see the README.
 7. Keep devcontainer related scripts in `.devcontainer/scripts`
 
@@ -31,6 +31,16 @@ Consult the **[Principal Engineer](/.agents/plugins/agentdev/agents/principal-en
 
 ### Python Testing
 
+**There are two separate suites. Put a new test in the right one:**
+
+| Suite                             | Tests                                                                   | Anchors on           |
+| --------------------------------- | ----------------------------------------------------------------------- | -------------------- |
+| `py_packages/<pkg>/tests/`        | the package's own library and CLI behavior                              | its own package root |
+| `.agents/plugins/agentdev/tests/` | the behavior of scripts the plugin ships (`bin/`, a skill's `scripts/`) | the plugin root      |
+
+- **Testing a script the plugin ships → plugin tests. Testing validator behavior → package tests.** The two are never mixed. A validator test that reaches into `.agents/plugins/agentdev/` is in the wrong suite, and so is a plugin-script test that lives under `py_packages/`
+- **Neither suite may reference a path outside its own root.** `py_packages/validate_agent_files` is released to PyPI, so its tests must pass from an extracted sdist that knows nothing about this repository — verify with `cd py_packages/validate_agent_files && uv run --isolated --extra dev pytest`. The plugin's tests must pass from a consumer's plugin cache, so they resolve scripts through the `plugin_root` fixture rather than spelling out `.agents/plugins/agentdev/...`
+- Each suite configures its own scratch fixture (`package_tmp_path`, `plugin_tmp_path`) and carries its own `.gitignore`, because the repository's root ignore rules do not travel with a published package or an installed plugin
 - **Always use `pytest`** — never `unittest`
 - Prefer multiple smaller, focused test files over large monolithic ones
 - **Tests must not depend on this repository's own identity.** Build fixtures from mock data — a made-up marketplace name, plugin name, org, and paths — never the real values from `marketplace.json`, `plugin.json`, or a shipped catalog directory. A rename of something this repository publishes must never require a test edit; if it does, the test was asserting identity instead of behavior
@@ -57,7 +67,7 @@ Consult the **[Principal Engineer](/.agents/plugins/agentdev/agents/principal-en
 
 ## Catalog Locations
 
-- **Claude** (canonical source of truth): the `agentdev` plugin — `.agents/plugins/agentdev/agents/`, `.agents/plugins/agentdev/skills/`, `.agents/plugins/agentdev/hooks/`, `.agents/plugins/agentdev/bin/`. Skills are namespaced: `/agentdev:<skill-name>`
+- **Claude** (canonical source of truth): the `agentdev` plugin — `.agents/plugins/agentdev/agents/`, `.agents/plugins/agentdev/skills/`, `.agents/plugins/agentdev/hooks/`, `.agents/plugins/agentdev/bin/`, `.agents/plugins/agentdev/tests/`. Skills are namespaced: `/agentdev:<skill-name>`
 - **Codex**: the same `.agents/plugins/agentdev/` tree, packaged by `.agents/plugins/agentdev/.codex-plugin/plugin.json`; Codex discovers `.agents/plugins/agentdev/agents/` and `.agents/plugins/agentdev/skills/` directly
 - **This repository's own config**: `.claude/settings.json` only; it enables the plugin from the marketplace declared in `.claude-plugin/marketplace.json`. `settings.json` is strict JSON — no comments, no trailing commas
 

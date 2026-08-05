@@ -174,6 +174,7 @@ section is about developing it here.
 | Path                                       | Role                                                                   |
 | ------------------------------------------ | ---------------------------------------------------------------------- |
 | `.agents/plugins/agentdev/`                | Canonical agents, skills, hooks, and `bin/` scripts.                   |
+| `.agents/plugins/agentdev/tests/`          | The plugin's own tests for the scripts it ships.                       |
 | `.agents/plugins/agentdev/.claude-plugin/` | Packages the catalog for Claude Code.                                  |
 | `.agents/plugins/agentdev/.codex-plugin/`  | Packages the same catalog for Codex.                                   |
 | `.claude-plugin/marketplace.json`          | Publishes the plugin so other repositories can consume it.             |
@@ -212,8 +213,22 @@ CI enforces the last two commands; run them before pushing a catalog change:
 ```bash
 uv sync --all-groups
 uv run validate_agent_files --recommend . --require-marketplace claude codex
-uv run pytest py_packages
+uv run pytest   # both suites: py_packages/ and .agents/plugins/agentdev/tests/
 ```
+
+The two test suites are separate on purpose and stay that way. `py_packages/validate_agent_files/tests/`
+covers a package that is released to PyPI, so it must pass with no knowledge of this
+repository — check that directly with:
+
+```bash
+cd py_packages/validate_agent_files && uv run --isolated --extra dev pytest
+```
+
+`.agents/plugins/agentdev/tests/` covers the behavior of the scripts the plugin ships — `bin/`
+helpers and the `scripts/` bundled with individual skills. It resolves them through a
+`plugin_root` fixture rather than a repository-relative path, so the suite also passes from a
+consumer's plugin cache. A test that exercises a shipped script belongs here, never in the
+package.
 
 ## Repository layout
 
@@ -228,12 +243,13 @@ scripts/         devcontainer lifecycle hooks and repository plumbing
 .agents/plugins/agentdev/  the agentdev plugin: agents, skills, hooks, bin/  (canonical)
   .claude-plugin/  Claude Code package manifest
   .codex-plugin/   Codex package manifest
+  tests/           the plugin's tests for the scripts it ships
 .claude-plugin/  marketplace manifest publishing the plugin
 .agents/plugins/ repo-local Codex marketplace
 plugins/         marketplace links to canonical plugin sources
 .claude/         this repository's own settings.json
 .codex/          repository-specific Codex setup
-py_packages/     validate_agent_files — the agent-catalog validator
+py_packages/     validate_agent_files — the agent-catalog validator (standalone, PyPI-releasable)
 .github/         composite docker actions + CI, reformat, and validation workflows
 ```
 
