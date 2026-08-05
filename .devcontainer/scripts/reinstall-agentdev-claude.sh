@@ -2,7 +2,7 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "$script_dir/.." && pwd)"
+repo_root="$(cd "$script_dir/../.." && pwd)"
 
 marketplace_json="$repo_root/.claude-plugin/marketplace.json"
 marketplace_name="$(jq -er '.name' "$marketplace_json")"

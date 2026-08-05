@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -exuo pipefail
 
-workspace="${DEV_WORKSPACE_FOLDER:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+workspace="${DEV_WORKSPACE_FOLDER:-$(cd "$script_dir/../.." && pwd)}"
 
 # Named volumes are created root-owned by the daemon; make sure the container
 # user owns the mount points it writes to.
@@ -23,10 +24,9 @@ ln -sf "$claude_json_target" /root/.claude.json
 
 # Sync the project environment into the container's .venv directory so that
 # extension settings are valid when the container is rebuilt. This is a no-op if the environment is already up to date.
-"$workspace/scripts/devcontainer-uv-sync.sh"
+"$script_dir/uv-sync.sh"
 
-# Register and install the repository's Codex plugin after the workspace and
-# persistent ~/.codex volume are mounted. Both commands are idempotent, so a
-# rebuild also refreshes the local plugin cache from the canonical plugin tree.
-codex plugin marketplace add "$workspace"
-codex plugin add agentdev@agent-devcontainer
+# Register and install the repository's Codex/Claude plugin after the workspace and
+# persistent ~/.codex and ~/.claude volumes are mounted.
+"$script_dir/reinstall-agentdev-codex.sh"
+"$script_dir/reinstall-agentdev-claude.sh"

@@ -102,7 +102,7 @@ exiting non-zero if either check goes the wrong way.
 
 ## Reaching the Xpra desktop
 
-`scripts/devcontainer-postStartCommand.sh` starts Xpra in the background on
+`.devcontainer/scripts/postStartCommand.sh` starts Xpra in the background on
 display `:100`. The HTML5 client port is derived per devcontainer as
 `14500 + cksum(DEVCONTAINER_ID) % 100`, so parallel worktrees never collide;
 `forwardPorts` covers the whole `14500-14599` range. Open the forwarded port in a

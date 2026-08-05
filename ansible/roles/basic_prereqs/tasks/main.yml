@@ -17,7 +17,7 @@
       # Required on the remote end for the remote-codespace-session skill's
       # dirty-tree sync path (`rsync -e ssh ...`); rsync must exist on both ends.
       - rsync
-      # GNOME Keyring Secret Service stack. scripts/devcontainer-setup-keyring.sh
+      # GNOME Keyring Secret Service stack. .devcontainer/scripts/setup-keyring.sh
       # brings up a headless org.freedesktop.secrets so `gh auth login` has
       # somewhere to persist its token; it skips silently when these are absent.
       - dbus-x11

@@ -207,10 +207,10 @@
       }
     }
   },
-  "postCreateCommand": "./scripts/devcontainer-postCreateCommand.sh",
+  "postCreateCommand": "./.devcontainer/scripts/postCreateCommand.sh",
   "postAttachCommand": {
     "git config": "git config --global gpg.ssh.program ssh-keygen",
-    "python-venv": "./scripts/devcontainer-uv-sync.sh"
+    "python-venv": "./.devcontainer/scripts/uv-sync.sh"
   },
-  "postStartCommand": "./scripts/devcontainer-postStartCommand.sh"
+  "postStartCommand": "./.devcontainer/scripts/postStartCommand.sh"
 }

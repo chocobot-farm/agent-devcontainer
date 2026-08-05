@@ -85,7 +85,7 @@ codex plugin add agentdev@agent-devcontainer
 ```
 
 Put this bootstrap in the image entrypoint, not this repository's
-`scripts/devcontainer-postCreateCommand.sh`. External consumers do not inherit
+`.devcontainer/scripts/postCreateCommand.sh`. External consumers do not inherit
 that script. The entrypoint runs after Docker has mounted any persistent
 `/root/.codex` volume, so Codex writes its configuration and mutable installed
 cache to the mounted state while the shared immutable plugin directory stays
@@ -191,7 +191,7 @@ Add a small bootstrap helper owned by the role and call it from
 7. make no network request.
 
 Remove the repository-specific Codex install commands from
-`scripts/devcontainer-postCreateCommand.sh` after the entrypoint owns this
+`.devcontainer/scripts/postCreateCommand.sh` after the entrypoint owns this
 responsibility. Keeping both paths would hide image-seed regressions in this
 repository while external consumers still fail.
 

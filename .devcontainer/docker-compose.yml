@@ -89,7 +89,7 @@ services:
       # always directory-backed (mounting one straight at a file path materializes an
       # empty directory there instead, breaking Claude Code's read/write of that file).
       # It's persisted as a plain file inside the agentdev-claude volume instead, with
-      # scripts/devcontainer-postCreateCommand.sh symlinking ~/.claude.json to it.
+      # .devcontainer/scripts/postCreateCommand.sh symlinking ~/.claude.json to it.
       - agentdev-claude:/root/.claude
       - agentdev-codex:/root/.codex
 
