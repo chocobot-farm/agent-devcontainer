@@ -1,0 +1,9 @@
+# This package is released on its own, so the ignore rules of the repository
+# that develops it do not follow it. Everything its own tooling generates has to
+# be ignored from here.
+.tmp/
+__pycache__/
+.pytest_cache/
+*.egg-info/
+build/
+dist/
