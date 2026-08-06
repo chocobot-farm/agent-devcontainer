@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -exuo pipefail
 
-workspace="${DEV_WORKSPACE_FOLDER:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+workspace="${DEV_WORKSPACE_FOLDER:-$(cd "$script_dir/../.." && pwd)}"
 
 # Named volumes are created root-owned by the daemon; make sure the container
 # user owns the mount points it writes to.
@@ -23,10 +24,17 @@ ln -sf "$claude_json_target" /root/.claude.json
 
 # Sync the project environment into the container's .venv directory so that
 # extension settings are valid when the container is rebuilt. This is a no-op if the environment is already up to date.
-"$workspace/scripts/uv-sync.sh"
+"$script_dir/uv-sync.sh"
 
-# Register and install the repository's Codex plugin after the workspace and
-# persistent ~/.codex volume are mounted. Both commands are idempotent, so a
-# rebuild also refreshes the local plugin cache from the canonical plugin tree.
-codex plugin marketplace add "$workspace"
-codex plugin add agentdev@agent-devcontainer
+# Install the catalog staged in the image. This has to happen here rather than
+# during the image build: the persistent ~/.claude and ~/.codex volumes mount over
+# where both agents record installed plugins, so a build-time install would be
+# shadowed for every container whose volume already exists. At user scope for
+# Claude, so it applies to every workspace opened in this container;
+# postStartCommand.sh re-registers this checkout on top when there is one.
+if [[ -n "${AGENTDEV_CATALOG_DIR:-}" && -d "$AGENTDEV_CATALOG_DIR" ]]; then
+    "$script_dir/reinstall-agentdev-codex.sh" "$AGENTDEV_CATALOG_DIR"
+    "$script_dir/reinstall-agentdev-claude.sh" "$AGENTDEV_CATALOG_DIR" user
+else
+    echo "No catalog staged in the image; skipping the image-scoped plugin install."
+fi

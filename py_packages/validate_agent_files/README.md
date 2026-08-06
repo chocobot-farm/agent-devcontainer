@@ -12,7 +12,7 @@ pip install -e .
 
 ```bash
 validate_agent_files                     # Validate skills, agents, and prompts under .
-validate_agent_files .agents/plugins/agentdev/skills .agents/plugins/agentdev/agents
+validate_agent_files <plugin>/skills <plugin>/agents         # Validate specific directories
 validate_agent_files --kind skills       # Validate only skill files
 validate_agent_files --kind agents       # Validate only agent files
 validate_agent_files --kind prompts      # Validate only prompt files
@@ -46,10 +46,14 @@ validate_agent_files . --require-marketplace claude codex   # Require both ecosy
   and `codex` (`.agents/plugins/marketplace.json`, `.codex-plugin/plugin.json`) — the
   marketplace manifest must exist and parse, every plugin it references must be on disk, and
   each of those plugins must carry a definition that parses, declares a `name` and `version`,
-  and names the same plugin the marketplace publishes. This repository promises both, so its
-  CI runs `--require-marketplace claude codex`.
+  and names the same plugin the marketplace publishes. A repository that promises to publish
+  for both ecosystems names both in CI: `--require-marketplace claude codex`.
 - Local validation still checks repository-specific rules such as duplicate skill names,
   cross-references, agent handoffs, and prompt `#file:` references.
+- The test suite is self-contained: run `pytest` from this directory. Its fixtures describe a
+  fictional repository (see `tests/mock_catalog.py`), and nothing in `tests/` may reference a
+  path outside this package — the tool is general, so its tests must not encode the identity
+  or layout of whichever repository happens to develop it.
 - When a validated path sits inside a Claude Code plugin, its manifests are checked in every
   mode: the plugin manifest and its marketplace entry must parse and agree on `version`, the
   Claude and Codex manifests must describe the same release, and no skill body may contain a

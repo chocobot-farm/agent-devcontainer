@@ -69,6 +69,9 @@ jobs:
       - name: Test validate_agent_files
         run: pytest py_packages/validate_agent_files/tests
 
+      - name: Test agentdev plugin scripts
+        run: pytest .agents/plugins/agentdev/tests
+
       - name: Validate Agent Files
         run: validate_agent_files --recommend . --require-marketplace claude codex
 

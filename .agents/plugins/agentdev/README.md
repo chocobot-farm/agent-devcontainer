@@ -10,7 +10,13 @@ so projects consume it by version instead of copying files around.
 
 ## Installing in Claude Code
 
-Add to your repository's `.claude/settings.json` — strict JSON, so no comments
+Working inside the `agent-desktop` devcontainer image, there is nothing to do:
+the catalog is staged in the image and installed at user scope when the container
+is created, with no clone and no network. It is an ordinary install, so updating
+it means updating the image, and a project that declares its own marketplace
+composes with it the usual way.
+
+Everywhere else, add to your repository's `.claude/settings.json` — strict JSON, so no comments
 and no trailing commas (unlike `devcontainer.json`):
 
 ```json
@@ -112,6 +118,18 @@ which ones you use, you will need `git`, an authenticated `gh` CLI, Docker (for
 [devcontainer image](https://github.com/plume-works/agent-devcontainer) ships
 all of them preinstalled, but the plugin works in any environment that has the
 tools a given skill needs.
+
+## Tests
+
+The plugin carries its own suite in `tests/`, covering the observable behavior of the
+scripts it ships — the `bin/` helpers and the `scripts/` bundled with individual skills,
+including their exit codes and `RESULT=` lines. Run it with `pytest tests` from this
+directory; it needs `pytest`, `git`, and `bash`.
+
+The tests resolve everything they exercise through a `plugin_root` fixture, so they pass
+from an installed copy of the plugin as readily as from the repository that develops it.
+A test for a script this plugin ships belongs here, not in the test suite of whatever
+package happens to live alongside it.
 
 ## Contributing
 

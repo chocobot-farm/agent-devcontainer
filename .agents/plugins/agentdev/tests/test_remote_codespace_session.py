@@ -10,18 +10,15 @@ import subprocess
 
 
 def test_codespace_exec_separates_metadata_from_unterminated_remote_stdout(
-    repo_tmp_path: Path,
+    plugin_root: Path,
+    plugin_tmp_path: Path,
 ) -> None:
     """Remote output without a newline must not absorb the exit-code key."""
     # Arrange
-    repository_root = Path(__file__).resolve().parents[3]
-    script = (
-        repository_root
-        / '.agents/plugins/agentdev/skills/remote-codespace-session/scripts/codespace-exec.sh'
-    )
-    mock_bin = repo_tmp_path / 'bin'
+    script = plugin_root / 'skills/remote-codespace-session/scripts/codespace-exec.sh'
+    mock_bin = plugin_tmp_path / 'bin'
     mock_bin.mkdir()
-    mock_repository = repo_tmp_path / 'repository'
+    mock_repository = plugin_tmp_path / 'repository'
     (mock_repository / '.tmp').mkdir(parents=True)
     (mock_repository / '.tmp' / 'codespace-name').write_text('fixture-codespace\n')
 
@@ -62,7 +59,7 @@ esac
     # Act
     completed = subprocess.run(
         [str(script), 'printf', 'foo'],
-        cwd=repository_root,
+        cwd=plugin_root,
         env=environment,
         check=False,
         capture_output=True,

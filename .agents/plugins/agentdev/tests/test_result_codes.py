@@ -9,11 +9,10 @@ import signal
 import subprocess
 
 
-def test_canonical_result_codes_preserve_terminating_signals() -> None:
+def test_canonical_result_codes_preserve_terminating_signals(plugin_root: Path) -> None:
     """Name terminating signals while preserving their shell exit statuses."""
     # Arrange
-    repository_root = Path(__file__).resolve().parents[3]
-    result_codes = repository_root / '.agents/plugins/agentdev/bin/result-codes.sh'
+    result_codes = plugin_root / 'bin/result-codes.sh'
     outcomes: dict[str, tuple[int, int, str]] = {}
 
     # Act
@@ -27,7 +26,7 @@ def test_canonical_result_codes_preserve_terminating_signals() -> None:
                 str(result_codes),
                 interrupt_signal.name,
             ],
-            cwd=repository_root,
+            cwd=plugin_root,
             capture_output=True,
             text=True,
             check=False,

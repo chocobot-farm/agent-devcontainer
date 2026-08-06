@@ -38,7 +38,10 @@ runs:
           - ansible/**
           - docker/**
           - scripts/**
-          - .agents/plugins/agentdev/bin/**
+          # The whole catalog is seeded into the image, so any change to it
+          # makes the published image stale until it is rebuilt.
+          - .agents/plugins/**
+          - .claude-plugin/**
         YAML
           if [ -n "$EXTRA" ]; then
             printf '%s\n' "$EXTRA"

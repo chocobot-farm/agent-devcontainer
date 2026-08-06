@@ -51,13 +51,56 @@ runners and merged into a single manifest:
 wrapper PATH shim and the firewall allowlist lookup both read it, falling back to
 the `workspace_folder` baked in at build time.
 
+That is the whole setup: **the `agentdev` catalog ships inside the image**, so a
+project with no `.claude/` configuration at all still gets it. See
+[The catalog ships with the image](#the-catalog-ships-with-the-image) below.
+
 ### Option 2 — copy the template
 
-Copy `.devcontainer/` and `scripts/` into your repo, and enable the `agentdev`
-plugin (see [The agent catalog](#the-agent-catalog)) instead of copying the
-catalog. The compose file already wires up the shared agent-auth volumes, the MCP
-gateway sidecar, and worktree-safe mounts. Adjust `workspaceFolder` and the
-`agentdev-*` volume names if you want per-project isolation.
+Copy `.devcontainer/` and `scripts/` into your repo. The catalog already ships
+with the image, so there is nothing to copy and nothing to enable. The compose
+file already wires up the shared agent-auth volumes, the MCP gateway sidecar, and
+worktree-safe mounts. Adjust `workspaceFolder` and the `agentdev-*` volume names
+if you want per-project isolation.
+
+### The catalog ships with the image
+
+The image stages the catalog at `AGENTDEV_CATALOG_DIR` (`/opt/agentdev`), and the
+template's `postCreateCommand` installs it from there through each agent's own
+plugin CLI — `claude plugin install` at user scope and `codex plugin add`. No
+clone, no network, no firewall allowlist entry, and no per-repository
+configuration. Skills are namespaced by the plugin: `/agentdev:pr-open`,
+`/agentdev:pr-merge`, and so on. Codex gets the same catalog, agents included.
+
+The install happens in a lifecycle hook rather than during the image build
+because the `agentdev-claude` and `agentdev-codex` volumes mount over `~/.claude`
+and `~/.codex`, which is exactly where both agents record installed plugins. An
+install baked into the image would be hidden by those volumes for every container
+after the first.
+
+Consequences worth knowing:
+
+- **Updating the catalog means updating the image.** The staged copy is
+  root-owned and read-only, and nothing rewrites it at runtime. Which version an
+  image carries is inspectable:
+
+  ```bash
+  docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.version.agentdev" }}' \
+    ghcr.io/plume-works/agent-desktop:edge
+  ```
+
+- **To run a different version than the image carries**, declare it in your
+  project's `.claude/settings.json` as
+  [`.agents/plugins/agentdev/README.md`](.agents/plugins/agentdev/README.md)
+  describes. Because the image install is an ordinary user-scope install, a
+  project declaration composes with it the usual way — nothing has to be disabled
+  first.
+- **A project that ships the catalog itself** — this repository, or a fork of it
+  — needs no opt-out. `postStartCommand` re-runs
+  [`reinstall-agentdev-claude.sh`](.devcontainer/scripts/reinstall-agentdev-claude.sh)
+  and its Codex counterpart with no arguments on every container start, which
+  re-registers the marketplace from the workspace over the image's copy. In any
+  other project those scripts find no marketplace manifest and exit quietly.
 
 ### Staying on the current image
 
@@ -102,7 +145,7 @@ exiting non-zero if either check goes the wrong way.
 
 ## Reaching the Xpra desktop
 
-`scripts/devcontainer-postStartCommand.sh` starts Xpra in the background on
+`.devcontainer/scripts/postStartCommand.sh` starts Xpra in the background on
 display `:100`. The HTML5 client port is derived per devcontainer as
 `14500 + cksum(DEVCONTAINER_ID) % 100`, so parallel worktrees never collide;
 `forwardPorts` covers the whole `14500-14599` range. Open the forwarded port in a
@@ -126,6 +169,12 @@ build a leaner image, flip them off — they default to `false` in
 | `setup_user`                    | Create a non-root `devuser` (1001:1001) instead of running as root      |
 | `workspace_folder`              | Fallback workspace path baked into the image                            |
 
+The staged catalog rides on `install_agentic_tools` and is switched separately by
+`agentic_tools_stage_catalog`, which the desktop dockerfile turns on; the version
+it stages comes from the `AGENTDEV_PLUGIN_VERSION` build argument.
+[`ansible/roles/agentic_tools/README.md`](ansible/roles/agentic_tools/README.md)
+documents the staged layout and the variables that shape it.
+
 ## Building locally
 
 The desktop image's build context is the repository root — the dockerfile
@@ -148,6 +197,15 @@ docker run --rm local/agent-desktop bash -lc '
   bun --version && node --version && uv --version &&
   gh --version | head -1 && cmake --version | head -1 && zizmor --version &&
   command -v xpra init-firewall.sh gnome-keyring-daemon'
+```
+
+And check the staged catalog:
+
+```bash
+docker run --rm local/agent-desktop bash -lc '
+  cat "$AGENTDEV_CATALOG_DIR/.claude-plugin/marketplace.json" | jq -r .name &&
+  cat "$AGENTDEV_CATALOG_DIR/.agents/plugins/marketplace.json" | jq -r .name &&
+  ls "$AGENTDEV_CATALOG_DIR/.agents/plugins"/*/skills | head -3'
 ```
 
 Ansible alone, without a build:
@@ -174,6 +232,7 @@ section is about developing it here.
 | Path                                       | Role                                                                   |
 | ------------------------------------------ | ---------------------------------------------------------------------- |
 | `.agents/plugins/agentdev/`                | Canonical agents, skills, hooks, and `bin/` scripts.                   |
+| `.agents/plugins/agentdev/tests/`          | The plugin's own tests for the scripts it ships.                       |
 | `.agents/plugins/agentdev/.claude-plugin/` | Packages the catalog for Claude Code.                                  |
 | `.agents/plugins/agentdev/.codex-plugin/`  | Packages the same catalog for Codex.                                   |
 | `.claude-plugin/marketplace.json`          | Publishes the plugin so other repositories can consume it.             |
@@ -212,8 +271,22 @@ CI enforces the last two commands; run them before pushing a catalog change:
 ```bash
 uv sync --all-groups
 uv run validate_agent_files --recommend . --require-marketplace claude codex
-uv run pytest py_packages
+uv run pytest   # both suites: py_packages/ and .agents/plugins/agentdev/tests/
 ```
+
+The two test suites are separate on purpose and stay that way. `py_packages/validate_agent_files/tests/`
+covers a package that is released to PyPI, so it must pass with no knowledge of this
+repository — check that directly with:
+
+```bash
+cd py_packages/validate_agent_files && uv run --isolated --extra dev pytest
+```
+
+`.agents/plugins/agentdev/tests/` covers the behavior of the scripts the plugin ships — `bin/`
+helpers and the `scripts/` bundled with individual skills. It resolves them through a
+`plugin_root` fixture rather than a repository-relative path, so the suite also passes from a
+consumer's plugin cache. A test that exercises a shipped script belongs here, never in the
+package.
 
 ## Repository layout
 
@@ -228,12 +301,13 @@ scripts/         devcontainer lifecycle hooks and repository plumbing
 .agents/plugins/agentdev/  the agentdev plugin: agents, skills, hooks, bin/  (canonical)
   .claude-plugin/  Claude Code package manifest
   .codex-plugin/   Codex package manifest
+  tests/           the plugin's tests for the scripts it ships
 .claude-plugin/  marketplace manifest publishing the plugin
 .agents/plugins/ repo-local Codex marketplace
 plugins/         marketplace links to canonical plugin sources
 .claude/         this repository's own settings.json
 .codex/          repository-specific Codex setup
-py_packages/     validate_agent_files — the agent-catalog validator
+py_packages/     validate_agent_files — the agent-catalog validator (standalone, PyPI-releasable)
 .github/         composite docker actions + CI, reformat, and validation workflows
 ```
 

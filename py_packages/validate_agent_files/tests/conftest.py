@@ -29,10 +29,10 @@ import pytest
 
 
 @pytest.fixture
-def repo_tmp_path():
-    """Create an isolated temporary directory under the repository root."""
-    repo_root = Path(__file__).resolve().parents[3]
-    temp_path = repo_root / '.tmp' / f'pytest-{uuid4().hex}'
+def package_tmp_path():
+    """Create an isolated temporary directory under this package's own root."""
+    package_root = Path(__file__).resolve().parents[1]
+    temp_path = package_root / '.tmp' / f'pytest-{uuid4().hex}'
     temp_path.mkdir(parents=True)
     try:
         yield temp_path
@@ -133,9 +133,3 @@ def mock_logger(monkeypatch):
         messages.append(msg)
 
     return log
-
-
-def pytest_configure(config):
-    """Configure pytest with custom settings."""
-    config.addinivalue_line('markers', 'slow: mark test as slow to run')
-    config.addinivalue_line('markers', 'integration: mark test as integration test')

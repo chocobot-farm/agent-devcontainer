@@ -130,12 +130,12 @@ def test_validate_agent_files_validates_each_provided_path(
 
 
 def test_validate_agent_files_detects_duplicate_skills_across_provided_files(
-    repo_tmp_path: Path, capsys, monkeypatch
+    package_tmp_path: Path, capsys, monkeypatch
 ) -> None:
     """Individually supplied skills should share one uniqueness catalog."""
     monkeypatch.setattr('validate_agent_files.core.skills_ref_validate', lambda _: [])
-    first_skill = repo_tmp_path / 'first' / 'SKILL.md'
-    second_skill = repo_tmp_path / 'second' / 'SKILL.md'
+    first_skill = package_tmp_path / 'first' / 'SKILL.md'
+    second_skill = package_tmp_path / 'second' / 'SKILL.md'
     _write_valid_skill(first_skill.parent, 'duplicate-skill')
     _write_valid_skill(second_skill.parent, 'duplicate-skill')
 
