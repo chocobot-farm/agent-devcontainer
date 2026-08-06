@@ -140,7 +140,7 @@ The `.github/` tree is template-related, but it is mixed rather than copy-ready:
 | `.github/pull_request_template.md`            | Template  | General pull request structure.                                                                                                   |
 | `.github/renovate.json`                       | Customize | Contains image-publisher and catalog-release assumptions in addition to the consumer image pin.                                   |
 | `.github/workflows/primary-checks.yml`        | Customize | Calls both reformatting and the optional image-building CI workflow.                                                              |
-| `.github/workflows/reformat.yml`              | Customize | References catalog-owned helper scripts and this repository's excluded tool-version check.                                        |
+| `.github/workflows/reformat.yml`              | Customize | Calls `super-linter-env.sh` from the catalog and this repository's excluded tool-version check; both must be replaced inline.     |
 | `.github/workflows/validate-agent-files.yml`  | Customize | Tests publisher sources and uses local validator packaging; consumers run validator-dependent CI through `agent-desktop` instead. |
 | `.github/actions/log-debug-stats/`            | Template  | Reusable GitHub API diagnostic action.                                                                                            |
 | `.github/actions/setup-python-venv/`          | Customize | Reusable for uv projects after the consumer lockfile/project metadata is established.                                             |
@@ -197,8 +197,11 @@ These paths stay in this repository but are deleted from a normal full template 
 | `docs/agents/specs/`                             | Historical spikes and implementation records, including catalog distribution.                                |
 
 After deleting `py_packages/validate_agent_files/`, remove the now-empty `py_packages/`
-wrapper as well. `validate_agent_files` itself remains available from the `agent-desktop`
-image and can still be used locally or by CI that executes through the image.
+wrapper and its standalone `LICENSE` as well. `scripts/` holds nothing but the tool-version
+check, so it disappears with it.
+
+`validate_agent_files` itself remains available from the `agent-desktop` image and can still
+be used locally or by CI that executes through the image.
 
 ## Generated and local-only state
 

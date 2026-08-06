@@ -66,10 +66,13 @@ scripts/validate-super-linter-tool-versions.sh
 docs/agents/specs/
 ```
 
+`scripts/` holds nothing else, so it disappears with its one file; delete the empty
+directory rather than leaving it behind. The same applies to the `py_packages/` wrapper and
+its standalone `LICENSE` once `validate_agent_files` is gone.
+
 The catalog is not lost. The published image stages it at `/opt/agentdev`, and the retained
 post-create scripts install it through the Claude and Codex plugin CLIs. The validator
-source is also unnecessary: assume `validate_agent_files` is available from
-`agent-desktop`.
+source is also unnecessary: `validate_agent_files` is available from `agent-desktop`.
 
 Do not delete `.claude/` or `.codex/`; those are project-facing configuration. Do not delete
 the root `AGENTS.md` or `CLAUDE.md`; publisher-only instructions were split into the source
@@ -106,15 +109,19 @@ In `pyproject.toml`:
 
 1. replace the publisher project name, version, and description;
 2. remove `validate_agent_files` from the development dependency list;
-3. remove the editable `validate_agent_files` entry from `[tool.uv.sources]`;
-4. remove `.agents/plugins/agentdev/tests` and `py_packages` from pytest `testpaths`;
-5. remove `ansible` and `ansible-lint` when the optional image bundle is not retained; and
-6. add only the dependencies and test paths the consuming project actually owns.
+3. remove the editable `validate_agent_files` entry from `[tool.uv.sources]`, and delete the
+   now-empty `[tool.uv.sources]` table;
+4. remove `toml`, `pydantic`, and `python-frontmatter` — they exist for the validator
+   package, not for the development environment;
+5. remove `.agents/plugins/agentdev/tests` and `py_packages` from pytest `testpaths`. If
+   that empties the list, delete the whole `[tool.pytest.ini_options]` table rather than
+   leaving `testpaths = []`, which makes a bare `pytest` collect nothing;
+6. remove `ansible` and `ansible-lint` when the optional image bundle is not retained; and
+7. add only the dependencies and test paths the consuming project actually owns.
 
 Regenerate `uv.lock` after those edits, then run `uv sync --all-groups --all-extras`.
 
-The validator command remains available from the image. Do not add the deleted local
-package back merely to make it importable from this repository.
+Do not add the deleted local package back merely to make it importable from this repository.
 
 ### 5. Adapt pre-commit and lint configuration
 
@@ -122,17 +129,31 @@ Review `.pre-commit-config.yaml` hook by hook:
 
 1. keep the general whitespace, Prettier, clang-format, ruff, ShellCheck, Gitleaks,
    Actionlint, and Zizmor hooks that match the project;
-2. remove the Ansible hook when the optional image bundle is absent;
+2. remove the Ansible hook when the optional image bundle is absent, and the clang-format
+   and Hadolint hooks when the project has no C/C++ and no Dockerfile;
 3. remove publisher-only catalog path patterns;
-4. when agent-file validation is retained, invoke the image-provided
-   `validate_agent_files` command rather than the deleted local package; and
-5. update file selectors for the consuming project's source layout.
+4. when agent-file validation is retained, invoke the image-provided `validate_agent_files`
+   command rather than the deleted local package;
+5. the `zizmor` hook is `language: system` and expects `zizmor` on `PATH`, which holds
+   inside the development image and not on a bare host. A project that does not run
+   Super-Linter should point the hook at the pinned `zizmorcore/zizmor-pre-commit`
+   repository instead, so `pre-commit run --all-files` works anywhere; and
+6. update file selectors for the consuming project's source layout.
 
 In `.ruff.toml`, remove `validate_agent_files` and `mock_catalog` from
-`known-first-party`, then add the consuming project's own first-party packages. Review the
-Ansible patterns in `.prettierignore` if the optional bundle was deleted. The remaining
-lint configuration is still template content even when a particular language is not yet
-present; unused file selectors simply match nothing.
+`known-first-party`, then add the consuming project's own first-party packages. Leaving the
+publisher names in place is not cosmetic: the project's own modules get sorted as
+third-party imports, and the isort pass silently enforces the wrong grouping.
+
+Set `target-version` to the project's real floor. The supplied value is `py312`, which is
+this repository's floor rather than a default.
+
+Review the Ansible patterns in `.prettierignore` if the optional bundle was deleted, and add
+any directory holding verbatim third-party captures — a formatter must not rewrite content
+whose whole point is that it matches an upstream byte for byte.
+
+The remaining lint configuration is still template content even when a particular language
+is not yet present; unused file selectors simply match nothing.
 
 ### 6. Review the devcontainer configuration
 
@@ -189,17 +210,29 @@ The `.github/` tree is a starting point, not a copy-and-run contract.
 
 #### Primary checks and reformatting
 
-In `.github/workflows/primary-checks.yml`, keep the reformat call and remove the image CI
-call unless the optional image bundle is retained.
+In `.github/workflows/primary-checks.yml`, keep the reformat call and remove the `ci` job
+unless the optional image bundle is retained. That job is the only consumer of the
+`clean_build` `workflow_dispatch` input, so remove the input with it.
+
+In `.github/actions/paths-filter/action.yml`, the built-in filter is named `image` and lists
+the publisher's build inputs. Delete the `ansible/**`, `docker/**`, `scripts/**`,
+`.agents/plugins/agentdev/**`, and `.claude-plugin/**` entries; keep `.devcontainer/**` and
+`.github/actions/**` so the retained workflows still trigger.
 
 In `.github/workflows/reformat.yml`:
 
 1. remove catalog, validator-source, Ansible, and excluded tool-version paths that no longer
    exist;
 2. remove the `scripts/validate-super-linter-tool-versions.sh` step;
-3. replace repository-relative catalog helper paths with commands available in the chosen
-   CI environment, or express the required Super-Linter environment directly; and
+3. replace the two `./.agents/plugins/agentdev/bin/super-linter-env.sh` calls; and
 4. update formatter path filters for the consuming project.
+
+Step 3 is the only one with real work in it. Both steps write the Super-Linter environment
+into `$GITHUB_ENV`, and the helper is nothing but a sequence of `NAME=value` lines — one set
+for the autofix pass, one for the check pass, differing in the `FIX_*` values and in four
+`VALIDATE_*` flags for linters that cannot autofix. Inline those two blocks into the
+workflow as heredocs and drop `VALIDATE_ANSIBLE` and `ANSIBLE_DIRECTORY` if the optional
+bundle is gone. Nothing else in the workflow depends on the catalog.
 
 The current workflow references publisher files under `.agents/` and `scripts/`; it will
 fail if copied and pruned without these edits.
@@ -207,17 +240,18 @@ fail if copied and pruned without these edits.
 #### Agent-file validation
 
 Retain agent-file validation only for agent files the consuming repository owns. Adapt
-`.github/workflows/validate-agent-files.yml` so validator-dependent jobs execute through
-the digest-pinned `agent-desktop` image. Remove:
+`.github/workflows/validate-agent-files.yml` so validator-dependent jobs execute through the
+digest-pinned `agent-desktop` image: give the job a `container.image` carrying the same
+tag-plus-digest as `compose.pins.yml`, never the moving `edge` tag. Remove:
 
 - tests for `py_packages/validate_agent_files/tests`;
 - tests for `.agents/plugins/agentdev/tests`;
-- publisher marketplace requirements; and
+- the `--require-marketplace claude codex` argument, which asserts publisher manifests a
+  consumer does not have; and
 - path filters for deleted catalog/package source.
 
-Run the image-provided `validate_agent_files` command against the consumer's actual agent
-files. Pin the CI image by tag plus digest, just like `compose.pins.yml`; do not silently
-follow the moving `edge` tag.
+A project that ships no skills or agents of its own should delete the workflow and the
+`validate-agent-files` pre-commit hook outright.
 
 #### Renovate
 
@@ -258,15 +292,21 @@ Run these checks from the new repository:
    uv run pre-commit run --all-files
    ```
 
-4. Create or rebuild the devcontainer and confirm the post-create and post-start commands
+4. Generate the host-specific Compose environment and check the derived workspace name:
+
+   ```bash
+   ./.devcontainer/devcontainer-init.sh && cat .devcontainer/.env
+   ```
+
+5. Create or rebuild the devcontainer and confirm the post-create and post-start commands
    finish successfully.
-5. Confirm Claude and Codex list `agentdev@agent-devcontainer` after starting new sessions.
-6. When agent files are present, run the image-provided validator against their actual
+6. Confirm Claude and Codex list `agentdev@agent-devcontainer` after starting new sessions.
+7. When agent files are present, run the image-provided validator against their actual
    locations.
-7. Enable the firewall only after checking the project allowlist, then rebuild/restart and
+8. Enable the firewall only after checking the project allowlist, then rebuild/restart and
    verify required network destinations still work.
-8. Open the forwarded Xpra port and confirm the desktop starts.
-9. Run the adapted GitHub workflows on a branch before making them required checks.
+9. Open the forwarded Xpra port and confirm the desktop starts.
+10. Run the adapted GitHub workflows on a branch before making them required checks.
 
 ## Workflow B: add the template to an existing repository
 
@@ -285,6 +325,17 @@ compose.pins.yml
 Do not copy only the two visible devcontainer configuration files. The lifecycle hooks,
 feature lock, allowlist, Compose environment setup, and plugin installers are direct
 dependencies.
+
+Then adapt the project-owned values from [step 6 of Workflow A](#6-review-the-devcontainer-configuration),
+and add these to the existing `.gitignore` before the first container start:
+
+```text
+.devcontainer/.env
+.devcontainer/local.env
+```
+
+`devcontainer-init.sh` generates the first file on every start. Without the ignore rules it
+lands in the next commit, carrying the host's absolute paths with it.
 
 ### 2. Merge agent-facing configuration
 
@@ -326,6 +377,24 @@ Do not overwrite an existing project manifest, lockfile, ignore file, or lint co
 Transfer the supplied dependencies, hooks, and rules that the project wants, then regenerate
 the lockfile. Preserve a valid root uv project because the supplied post-create hook runs
 `uv sync`.
+
+Two collisions are worth naming, because both fail silently:
+
+- **`.ruff.toml` outranks `pyproject.toml`.** Ruff reads the first configuration it finds and
+  stops. Dropping this file into a repository that configures ruff under `[tool.ruff]`
+  disables that block entirely — line length, `target-version`, selected rules, and all — with
+  no warning. Merge the two into `.ruff.toml` and delete the `[tool.ruff]` tables, or keep
+  the project's `pyproject.toml` configuration and do not copy this file. Confirm which one
+  won with `ruff check --show-settings <path> | head -3`, which prints the resolved settings
+  path.
+- **Copy only the linter configuration that has a matching hook, and vice versa.** A
+  `.clang-format` with no C++ is inert, but a clang-format hook with no `.clang-format` is a
+  failing hook. The same holds for Ansible and Hadolint.
+
+Where the project vendors verbatim third-party files, exclude them in `.prettierignore` and
+in ruff's `extend-exclude` before running the hooks for the first time. Adopting the
+formatters rewrites everything they can reach, including snapshots whose value is that they
+are unmodified.
 
 ### 4. Merge GitHub configuration
 
