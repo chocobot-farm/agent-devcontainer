@@ -259,13 +259,14 @@ Retain `.github/renovate.json`, but review every rule:
 
 1. keep Docker dependency management for `compose.pins.yml` so the development image does
    not become stale;
-2. remove the catalog-release custom manager unless the consumer explicitly pins a catalog
-   version in Claude settings;
-3. remove the image-publisher self-build/automerge explanation when the project consumes
+2. remove the image-publisher self-build/automerge explanation when the project consumes
    rather than publishes the image;
-4. remove the publisher-only Super-Linter synchronization rule if its excluded script and
+3. remove the publisher-only Super-Linter synchronization rule if its excluded script and
    release process are not retained; and
-5. update organization, repository, and branch assumptions.
+4. update organization, repository, and branch assumptions.
+
+The catalog needs no Renovate rule of its own: the devcontainer reinstalls the bundled
+catalog on start, so its version follows the image pin rather than a separate one.
 
 ### 9. Verify the copied project
 
