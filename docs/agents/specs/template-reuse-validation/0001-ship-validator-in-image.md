@@ -1,6 +1,37 @@
 # 0001 — Install `validate_agent_files` into `agent-desktop`
 
-Status: Not started.
+Status: Implemented.
+
+## Decisions taken
+
+The two open choices in the constraints below were resolved as follows.
+
+**Install source: a wheel built from the repository build context**, not PyPI.
+`https://pypi.org/pypi/validate-agent-files/json` returns 404, so publishing would have been
+new work — name reservation, a release workflow, trusted publishing — before this could
+land at all. Building from the context keeps release coupling inside this repository and
+matches how the catalog is already staged. It inherits the recorded constraint: the image
+build only works while `py_packages/validate_agent_files/` is present, which
+`docs/repository-structure.md` and `docs/using-as-template.md` now state for the validator
+as well as the catalog.
+
+**Version: the package moved from `0.0.0` to `1.0.0`**, pinned by
+`VALIDATE_AGENT_FILES_VERSION` in `docker/desktop/agent-desktop.Dockerfile` and surfaced as
+the `org.opencontainers.image.version.validate-agent-files` label. The role reads the version
+back from the installed distribution and fails the build on a mismatch, so the pin describes
+what the image carries rather than what the source claimed.
+
+**Installer: `ansible/roles/validate_agent_files/`**, a new role rather than a task file
+inside `agentic_tools`, so it keeps one responsibility, its own `install_validate_agent_files`
+toggle, and its own variables. It runs directly after `uv_setup`, which it depends on.
+`uv tool install` puts the single entry point at `/usr/local/bin/validate_agent_files` and
+the environment at `/opt/uv-tools/validate-agent-files/`, touching neither the system
+interpreter nor any project environment.
+
+One thing worth recording for anyone repeating this: the build context is bind-mounted
+read-only and `setuptools.build_meta` writes `*.egg-info` into the source tree while
+preparing metadata, so building in place fails with `Operation not permitted`. The role
+copies the source to a temporary directory first.
 
 ## Problem
 

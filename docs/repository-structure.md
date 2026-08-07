@@ -172,13 +172,16 @@ Keep these paths together only when a project needs to build a customized develo
 - the matching image paths and job invocation in the shared GitHub files.
 
 This is the source used to publish `agent-desktop`, not a generic derivative-image template.
-The current desktop Dockerfile sets `agentic_tools_stage_catalog=true` and reads
-`.claude-plugin/` plus `.agents/` from the build context. A full template copy deletes those
-publisher sources, so the optional image bundle cannot build unchanged afterward. A project
+The current desktop Dockerfile reads publisher-only source from the build context twice: it
+sets `agentic_tools_stage_catalog=true` for `.claude-plugin/` plus `.agents/`, and
+`install_validate_agent_files=true` for `py_packages/validate_agent_files/`. A full template
+copy deletes both, so the optional image bundle cannot build unchanged afterward. A project
 retaining the bundle must explicitly choose one of these manual directions:
 
-1. retain the catalog publisher source too and keep building this repository's full image;
-2. stop staging a local catalog and adapt the image build accordingly; or
+1. retain the publisher source too and keep building this repository's full image;
+2. stop staging a local catalog and stop building the validator — set
+   `agentic_tools_stage_catalog=false` and `install_validate_agent_files=false`, and adapt
+   the image build accordingly; or
 3. create a derivative build based on the published `agent-desktop` image.
 
 The repository currently implements the first direction. The other two are customization
@@ -200,8 +203,10 @@ After deleting `py_packages/validate_agent_files/`, remove the now-empty `py_pac
 wrapper and its standalone `LICENSE` as well. `scripts/` holds nothing but the tool-version
 check, so it disappears with it.
 
-`validate_agent_files` itself remains available from the `agent-desktop` image and can still
-be used locally or by CI that executes through the image.
+`validate_agent_files` itself remains available from the `agent-desktop` image, which
+installs it at `/usr/local/bin/validate_agent_files` as an isolated `uv` tool
+(`ansible/roles/validate_agent_files/`). It can still be used locally or by CI that executes
+through the image, with no `uv run` prefix and no copy of the package source.
 
 ## Generated and local-only state
 
