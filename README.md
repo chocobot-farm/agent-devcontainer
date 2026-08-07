@@ -160,7 +160,7 @@ Manage it directly with `/start-xpra.sh --background`, `--stop`, or
 
 ## Provisioning knobs
 
-`docker/desktop/agent-desktop.Dockerfile` enables all four capability roles. To
+`docker/desktop/agent-desktop.Dockerfile` enables every capability role. To
 build a leaner image, flip them off — they default to `false` in
 `ansible/playbooks/group_vars/all.yml`:
 
@@ -169,6 +169,7 @@ build a leaner image, flip them off — they default to `false` in
 | `install_xpra`                  | Xpra + xpra-html5 + VirtualGL + mesa/Xvfb (the largest single addition) |
 | `install_docker`                | Docker CE, CLI, buildx, compose (installed, daemon not started)         |
 | `install_agentic_tools`         | Claude Code, Codex, MCP inspector                                       |
+| `install_validate_agent_files`  | The `validate_agent_files` CLI, on `PATH` as an isolated `uv` tool      |
 | `install_devcontainer_firewall` | `init-firewall.sh` + sudoers entry (still runtime-gated)                |
 | `setup_user`                    | Create a non-root `devuser` (1001:1001) instead of running as root      |
 | `workspace_folder`              | Fallback workspace path baked into the image                            |
@@ -179,11 +180,19 @@ it stages comes from the `AGENTDEV_PLUGIN_VERSION` build argument.
 [`ansible/roles/agentic_tools/README.md`](ansible/roles/agentic_tools/README.md)
 documents the staged layout and the variables that shape it.
 
+`install_validate_agent_files` works the same way: the package is built from
+`py_packages/validate_agent_files/` in the build context, and the
+`VALIDATE_AGENT_FILES_VERSION` build argument is a pin the build verifies against
+the version it actually installs. Bump it together with the package's
+`pyproject.toml`.
+[`ansible/roles/validate_agent_files/README.md`](ansible/roles/validate_agent_files/README.md)
+documents the install layout.
+
 ## Building locally
 
 The desktop image's build context is the repository root — the dockerfile
-bind-mounts the whole context at `/provision` so Ansible can read both `ansible/`
-and `docker/bin/gh`.
+bind-mounts the whole context at `/provision` so Ansible can read `ansible/`,
+`docker/bin/gh`, the catalog, and the validator package.
 
 ```bash
 docker build -t local/ubuntu-ansible docker/ansible
@@ -200,7 +209,8 @@ Then smoke it:
 docker run --rm local/agent-desktop bash -lc '
   bun --version && node --version && uv --version &&
   gh --version | head -1 && cmake --version | head -1 && zizmor --version &&
-  command -v xpra init-firewall.sh gnome-keyring-daemon'
+  command -v xpra init-firewall.sh gnome-keyring-daemon validate_agent_files &&
+  validate_agent_files --help >/dev/null'
 ```
 
 And check the staged catalog:
@@ -279,7 +289,7 @@ uv run pytest   # both suites: py_packages/ and .agents/plugins/agentdev/tests/
 ```
 
 The two test suites are separate on purpose and stay that way. `py_packages/validate_agent_files/tests/`
-covers a package that is released to PyPI, so it must pass with no knowledge of this
+covers a package that is released independently, so it must pass with no knowledge of this
 repository — check that directly with:
 
 ```bash

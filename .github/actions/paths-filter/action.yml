@@ -42,6 +42,9 @@ runs:
           # makes the published image stale until it is rebuilt.
           - .agents/plugins/**
           - .claude-plugin/**
+          # The validator is built from source into the image, so the same
+          # applies to it.
+          - py_packages/validate_agent_files/**
         YAML
           if [ -n "$EXTRA" ]; then
             printf '%s\n' "$EXTRA"

@@ -1,6 +1,7 @@
 # The agent-desktop build context is the repository root; keep it small.
-# Only ansible/, docker/, and the catalog the build seeds into the image
-# (.claude-plugin/ plus the plugin tree it publishes under .agents/) are
+# Only ansible/, docker/, the catalog the build seeds into the image
+# (.claude-plugin/ plus the plugin tree it publishes under .agents/), and
+# py_packages/validate_agent_files/ (built into the image as a uv tool) are
 # actually consumed by the build.
 .git
 .github
@@ -9,7 +10,11 @@
 .devcontainer
 .tmp
 .venv
-py_packages
 node_modules
 **/__pycache__
 **/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.tmp
+# Editable-install metadata: stale by definition and confuses the wheel build.
+**/*.egg-info

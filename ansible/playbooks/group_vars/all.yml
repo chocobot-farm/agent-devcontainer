@@ -20,6 +20,11 @@ install_xpra: false
 # Claude Code, Codex, and the MCP inspector.
 install_agentic_tools: false
 
+# The validate_agent_files CLI, built from py_packages/validate_agent_files/ in the
+# provisioning sources. Turn it off when building from a tree that does not carry
+# that package.
+install_validate_agent_files: false
+
 # Egress firewall. Installing it only places init-firewall.sh and its sudoers
 # entry in the image; ENABLE_FIREWALL=true at container start actually applies it.
 install_devcontainer_firewall: false

@@ -72,7 +72,9 @@ its standalone `LICENSE` once `validate_agent_files` is gone.
 
 The catalog is not lost. The published image stages it at `/opt/agentdev`, and the retained
 post-create scripts install it through the Claude and Codex plugin CLIs. The validator
-source is also unnecessary: `validate_agent_files` is available from `agent-desktop`.
+source is also unnecessary: the image installs `validate_agent_files` at
+`/usr/local/bin/validate_agent_files`, so the command works in the devcontainer with no
+`uv run` prefix. Confirm it with `command -v validate_agent_files`.
 
 Do not delete `.claude/` or `.codex/`; those are project-facing configuration. Do not delete
 the root `AGENTS.md` or `CLAUDE.md`; publisher-only instructions were split into the source
@@ -133,7 +135,10 @@ Review `.pre-commit-config.yaml` hook by hook:
    and Hadolint hooks when the project has no C/C++ and no Dockerfile;
 3. remove publisher-only catalog path patterns;
 4. when agent-file validation is retained, invoke the image-provided `validate_agent_files`
-   command rather than the deleted local package;
+   command rather than the deleted local package — change the hook's
+   `entry: uv run validate_agent_files` to `entry: validate_agent_files`, keeping
+   `language: system`. The hook then requires the development image, like the `zizmor` hook
+   below;
 5. the `zizmor` hook is `language: system` and expects `zizmor` on `PATH`, which holds
    inside the development image and not on a bare host. A project that does not run
    Super-Linter should point the hook at the pinned `zizmorcore/zizmor-pre-commit`
@@ -216,8 +221,9 @@ unless the optional image bundle is retained. That job is the only consumer of t
 
 In `.github/actions/paths-filter/action.yml`, the built-in filter is named `image` and lists
 the publisher's build inputs. Delete the `ansible/**`, `docker/**`, `scripts/**`,
-`.agents/plugins/agentdev/**`, and `.claude-plugin/**` entries; keep `.devcontainer/**` and
-`.github/actions/**` so the retained workflows still trigger.
+`.agents/plugins/**`, `.claude-plugin/**`, and `py_packages/validate_agent_files/**`
+entries; keep `.devcontainer/**` and `.github/actions/**` so the retained workflows still
+trigger.
 
 In `.github/workflows/reformat.yml`:
 
@@ -249,6 +255,32 @@ tag-plus-digest as `compose.pins.yml`, never the moving `edge` tag. Remove:
 - the `--require-marketplace claude codex` argument, which asserts publisher manifests a
   consumer does not have; and
 - path filters for deleted catalog/package source.
+
+What remains is a job that needs no Python setup at all, because the image already carries
+the validator:
+
+```yaml
+jobs:
+  validate-agent-files:
+    runs-on: ubuntu-latest
+    container:
+      # Same tag-plus-digest as compose.pins.yml. Never the moving `edge` tag.
+      image: ghcr.io/plume-works/agent-desktop:edge@sha256:<digest>
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - run: validate_agent_files --ci .
+```
+
+`--ci` prints nothing when everything passes and the full report when anything fails, so a
+green run stays quiet in the log. Add `--verbose` if the report is wanted either way.
+
+Keep the digest in step with `compose.pins.yml` so CI and the devcontainer validate with the
+same version — Renovate already bumps that file.
 
 A project that ships no skills or agents of its own should delete the workflow and the
 `validate-agent-files` pre-commit hook outright.
@@ -429,13 +461,18 @@ Also retain the image job in `primary-checks.yml` and the corresponding image pa
 shared filter action.
 
 Before running the build, inspect `docker/desktop/agent-desktop.Dockerfile`. Its current
-Ansible invocation enables `agentic_tools_stage_catalog` and points it at the repository
-build context. After the normal publisher-source deletion, the required `.agents/` and
-`.claude-plugin/` trees do not exist. Choose explicitly whether to:
+Ansible invocation reads publisher source from the repository build context twice: it
+enables `agentic_tools_stage_catalog` for `.agents/` and `.claude-plugin/`, and
+`install_validate_agent_files` for `py_packages/validate_agent_files/`. After the normal
+publisher-source deletion, none of those trees exist and the build fails with an explicit
+message from each role. Choose explicitly whether to:
 
 - retain those publisher trees and continue building the complete image;
-- alter the retained build so it does not stage a local catalog; or
-- construct a derivative from the published `agent-desktop` image.
+- alter the retained build so it stages no local catalog and builds no validator — set
+  `agentic_tools_stage_catalog=false` and `install_validate_agent_files=false`, and drop the
+  `AGENTDEV_PLUGIN_VERSION` and `VALIDATE_AGENT_FILES_VERSION` pins and labels with them; or
+- construct a derivative from the published `agent-desktop` image, which already carries
+  both.
 
 Only the first option is implemented by this repository today. Treat the other options as
 project-owned image work and update the CI path filters, image names, GHCR permissions,

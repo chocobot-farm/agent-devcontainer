@@ -56,6 +56,11 @@ The documented direction is correct and stays as written — installing the pack
 image is the follow-up work that makes it true. Until that lands, a consumer following the
 guide has no validator. Tracked separately; see `0001-ship-validator-in-image.md`.
 
+**Resolved.** `ansible/roles/validate_agent_files/` now builds the package from the
+provisioning sources and installs it as a `uv` tool at
+`/usr/local/bin/validate_agent_files`, gated by `install_validate_agent_files`, which
+`docker/desktop/agent-desktop.Dockerfile` turns on. The spec records the decisions.
+
 ### P2 — `.ruff.toml` silently disables a project's `[tool.ruff]` block
 
 Ruff resolves the first configuration file it finds and stops. A repository that adopts the

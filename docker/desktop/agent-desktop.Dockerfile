@@ -21,6 +21,13 @@ ARG AGENTDEV_PLUGIN_VERSION=3.0.0
 # are commonly mounted as volumes, which would shadow anything placed under them.
 ARG AGENTDEV_CATALOG_DIR=/opt/agentdev
 
+# Version of the validate_agent_files CLI installed into the image. Like the catalog
+# version this is a pin the build verifies rather than one it fetches: the package is
+# built from the build context, and provisioning fails unless the version it installs
+# is exactly this. Bump it together with
+# py_packages/validate_agent_files/pyproject.toml.
+ARG VALIDATE_AGENT_FILES_VERSION=1.0.0
+
 # Provision the image with Ansible.
 #
 # The build context is the repository root, bind-mounted read-only rather than
@@ -41,10 +48,13 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
            install_docker=true \
            install_agentic_tools=true \
            install_devcontainer_firewall=true \
+           install_validate_agent_files=true \
            agentic_tools_stage_catalog=true \
            agentic_tools_catalog_source_dir=/provision \
            agentic_tools_plugin_version=$AGENTDEV_PLUGIN_VERSION \
            agentic_tools_catalog_root=$AGENTDEV_CATALOG_DIR \
+           validate_agent_files_source_dir=/provision/py_packages/validate_agent_files \
+           validate_agent_files_version=$VALIDATE_AGENT_FILES_VERSION \
          "
 
 # Inherited by any consumer of this image, including one that writes its own
@@ -55,6 +65,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 ENV AGENTDEV_CATALOG_DIR=$AGENTDEV_CATALOG_DIR
 
 LABEL org.opencontainers.image.version.agentdev="$AGENTDEV_PLUGIN_VERSION"
+LABEL org.opencontainers.image.version.validate-agent-files="$VALIDATE_AGENT_FILES_VERSION"
 
 WORKDIR $WORKSPACE_FOLDER
 
