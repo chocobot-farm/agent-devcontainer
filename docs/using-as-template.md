@@ -273,13 +273,14 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - run: validate_agent_files --recommend --ci .
+      - run: validate_agent_files --ci .
 ```
 
-`--ci` drops colors and produces structured output; `--recommend` adds improvement
-suggestions and can be omitted for a stricter, quieter run. Keep the digest in step with
-`compose.pins.yml` so CI and the devcontainer validate with the same version — Renovate
-already bumps that file.
+`--ci` prints nothing when everything passes and the full report when anything fails, so a
+green run stays quiet in the log. Add `--verbose` if the report is wanted either way.
+
+Keep the digest in step with `compose.pins.yml` so CI and the devcontainer validate with the
+same version — Renovate already bumps that file.
 
 A project that ships no skills or agents of its own should delete the workflow and the
 `validate-agent-files` pre-commit hook outright.
