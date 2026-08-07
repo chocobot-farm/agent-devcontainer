@@ -12,13 +12,12 @@ Commit at checkpoints as meaningful progress is achieved, rather than accumulati
 2. **Scope test runs narrowly** while iterating: `uv run pytest <path>::<test_name>`, `bun test <path>`. Run the full suite only when asked.
 3. **Escalate to a container when the host lacks the toolchain — never give up after a local failure.** If `uv` or `bun` is missing, or a command needs the provisioned image, escalate in this order: (a) Docker daemon available → use the `/agentdev:microvm-sandbox` skill to run the command through `devcontainer exec`; (b) no Docker daemon → use the `/agentdev:remote-codespace-session` skill to run it on a GitHub Codespace over SSH. Only report a blocker if both escalation paths are unavailable (e.g. no `gh` auth).
 4. **For yes/no and multiple-choice questions, prefer the assistant's structured-question tool** over free-text (VS Code Copilot: `vscode/askQuestions`; Claude Code: `AskUserQuestion`).
-5. **Validate the agent catalog after editing it**: `uv run validate_agent_files --recommend . --require-marketplace claude codex`. After editing a script the plugin ships, also run `uv run pytest .agents/plugins/agentdev/tests`.
-6. **Ansible changes** must pass `(cd ansible && uv run ansible-lint .)` and `(cd ansible && uv run ansible-playbook --syntax-check playbooks/setup-dev.yml)`. The real gate is a local image build — see the README.
-7. Keep devcontainer related scripts in `.devcontainer/scripts`
+5. Keep devcontainer-related scripts in `.devcontainer/scripts`.
 
 ### When in Doubt
 
-Consult the **[Principal Engineer](/.agents/plugins/agentdev/agents/principal-engineer.agent.md)** agent for architecture, design decisions, and implementation strategies.
+Consult the **Principal Engineer** agent supplied by the `agentdev` catalog for architecture,
+design decisions, and implementation strategies.
 
 ## Coding Conventions
 
@@ -31,21 +30,12 @@ Consult the **[Principal Engineer](/.agents/plugins/agentdev/agents/principal-en
 
 ### Python Testing
 
-**There are two separate suites. Put a new test in the right one:**
-
-| Suite                             | Tests                                                                   | Anchors on           |
-| --------------------------------- | ----------------------------------------------------------------------- | -------------------- |
-| `py_packages/<pkg>/tests/`        | the package's own library and CLI behavior                              | its own package root |
-| `.agents/plugins/agentdev/tests/` | the behavior of scripts the plugin ships (`bin/`, a skill's `scripts/`) | the plugin root      |
-
-- **Testing a script the plugin ships → plugin tests. Testing validator behavior → package tests.** The two are never mixed. A validator test that reaches into `.agents/plugins/agentdev/` is in the wrong suite, and so is a plugin-script test that lives under `py_packages/`
-- **Neither suite may reference a path outside its own root.** `py_packages/validate_agent_files` is released to PyPI, so its tests must pass from an extracted sdist that knows nothing about this repository — verify with `cd py_packages/validate_agent_files && uv run --isolated --extra dev pytest`. The plugin's tests must pass from a consumer's plugin cache, so they resolve scripts through the `plugin_root` fixture rather than spelling out `.agents/plugins/agentdev/...`
-- Each suite configures its own scratch fixture (`package_tmp_path`, `plugin_tmp_path`) and carries its own `.gitignore`, because the repository's root ignore rules do not travel with a published package or an installed plugin
-- **Always use `pytest`** — never `unittest`
-- Prefer multiple smaller, focused test files over large monolithic ones
-- **Tests must not depend on this repository's own identity.** Build fixtures from mock data — a made-up marketplace name, plugin name, org, and paths — never the real values from `marketplace.json`, `plugin.json`, or a shipped catalog directory. A rename of something this repository publishes must never require a test edit; if it does, the test was asserting identity instead of behavior
-- **Keep the mock data in one shared module per test package** (for `validate_agent_files`, `tests/mock_catalog.py`) and import the constants and builders from it, so a fixture change lands in one file. Add the module to `known-first-party` in `.ruff.toml` so import sorting groups it with the package under test
-- Values that belong to the _contract_ rather than to an identity — well-known manifest locations, CLI flags, the package's own entry points — should be imported from the code under test instead of restated as literals, so a contract change fails loudly in one place
+- **Always use `pytest`** — never `unittest`.
+- Prefer multiple smaller, focused test files over large monolithic ones.
+- Keep fixtures independent of repository identity when the behavior under test is meant to
+  work in other repositories or installed packages.
+- Import values that belong to the tested contract from the code under test instead of
+  restating them as literals.
 
 ### Shell
 
@@ -57,21 +47,6 @@ Consult the **[Principal Engineer](/.agents/plugins/agentdev/agents/principal-en
 - Follow the C++ Core Guidelines with modern C++ (C++17 or later): RAII for resource management, value semantics by default, smart pointers instead of raw pointers, standard library containers and algorithms
 - Make ownership explicit in API design; focus on correctness first, then optimize with evidence
 - Formatting is `clang-format` per [.clang-format](.clang-format)
-
-### Ansible
-
-- One responsibility per role. Prefix role variables with the role name (`dev_tools_*`, `agentic_tools_*`); the shared facts `workspace_folder`, `user_home`, and `dev_user` are the documented exceptions
-- Roles must be independently runnable. Do not rely on a `register:` from another role without tolerating it being undefined
-- Pin every external download with a version **and** a per-architecture checksum, as `dev_tools` does for `zizmor`
-- Read paths that vary per consuming project from the environment at runtime (`DEV_WORKSPACE_FOLDER`) with `workspace_folder` as the fallback. Never hardcode a workspace path
-
-## Catalog Locations
-
-- **Claude** (canonical source of truth): the `agentdev` plugin — `.agents/plugins/agentdev/agents/`, `.agents/plugins/agentdev/skills/`, `.agents/plugins/agentdev/hooks/`, `.agents/plugins/agentdev/bin/`, `.agents/plugins/agentdev/tests/`. Skills are namespaced: `/agentdev:<skill-name>`
-- **Codex**: the same `.agents/plugins/agentdev/` tree, packaged by `.agents/plugins/agentdev/.codex-plugin/plugin.json`; Codex discovers `.agents/plugins/agentdev/agents/` and `.agents/plugins/agentdev/skills/` directly
-- **This repository's own config**: `.claude/settings.json` only; it enables the plugin from the marketplace declared in `.claude-plugin/marketplace.json`. `settings.json` is strict JSON — no comments, no trailing commas
-
-Update `.agents/plugins/agentdev/` sources directly. Never write a repository-relative catalog path inside the plugin — use `${CLAUDE_SKILL_DIR}/...` for a path within a skill and a namespaced invocation for a sibling skill. No link inside the plugin may resolve outside the plugin root: the catalog ships to the plugin cache of whatever repository enables it, so a `../../../../../AGENTS.md` link silently supplies this repository's conventions to a consumer instead of theirs. Describe per-repository files (`AGENTS.md`, lint configuration, the pull request template) in prose so they are resolved at runtime; the validator enforces this across every markdown file a plugin ships, including `references/` pages and the plugin README, for Claude and Codex packages alike. Keep the Claude and Codex plugin manifest versions aligned when releasing the shared catalog.
 
 **Edit `AGENTS.md`; `CLAUDE.md` only includes it (`@AGENTS.md`), so changes there cover all agents.**
 

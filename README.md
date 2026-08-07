@@ -5,8 +5,10 @@ agent-driven development. Python + Node, Docker-in-Docker, an Xpra remote
 desktop, Claude Code and Codex preinstalled, an opt-in egress firewall, and a
 curated catalog of agents and skills.
 
-Nothing in here is project-specific — point your repo at the published image, or
-copy the template in and go.
+The runtime is project-agnostic. This publishing repository also contains image,
+catalog, validator, and CI source that a consuming project does not need. Point an
+existing devcontainer at the published image for the environment, or follow the
+[manual template guide](docs/using-as-template.md) for the complete setup.
 
 ## What's in the image
 
@@ -37,7 +39,7 @@ runners and merged into a single manifest:
 ```jsonc
 // .devcontainer/devcontainer.json
 {
-  "image": "ghcr.io/plume-works/agent-desktop:edge@sha256:fd10e509373a3ba461f323b4f15b053c468e59c907ef5d8f4be02966fb400a74",
+  "image": "ghcr.io/plume-works/agent-desktop:edge@sha256:dfd576e3ad4afb6b3b5dfae01582bd88f4542d7bab528eae36be158931fe001d",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:4.0.0": {},
   },
@@ -51,17 +53,18 @@ runners and merged into a single manifest:
 wrapper PATH shim and the firewall allowlist lookup both read it, falling back to
 the `workspace_folder` baked in at build time.
 
-That is the whole setup: **the `agentdev` catalog ships inside the image**, so a
-project with no `.claude/` configuration at all still gets it. See
-[The catalog ships with the image](#the-catalog-ships-with-the-image) below.
+That is the whole setup for the development environment. The catalog is staged in
+the image but must be installed after user volumes are mounted. Use the lifecycle
+scripts from Option 2 when the existing project should receive it automatically.
 
 ### Option 2 — copy the template
 
-Copy `.devcontainer/` and `scripts/` into your repo. The catalog already ships
-with the image, so there is nothing to copy and nothing to enable. The compose
-file already wires up the shared agent-auth volumes, the MCP gateway sidecar, and
-worktree-safe mounts. Adjust `workspaceFolder` and the `agentdev-*` volume names
-if you want per-project isolation.
+The template surface is broader than the two visible devcontainer files: lifecycle
+scripts, the feature lock, digest pin, MCP configuration, agent settings, tooling,
+and adaptable GitHub workflows all participate. Use the
+[step-by-step manual guide](docs/using-as-template.md) for either a full repository
+copy or a selective copy into an existing project. The complete classified inventory
+is in [Repository structure](docs/repository-structure.md).
 
 ### The catalog ships with the image
 
@@ -119,9 +122,10 @@ example:
 }
 ```
 
-This repository's own [`.github/renovate.json`](.github/renovate.json) is the
-reference implementation, including how it groups the `agent-desktop` and
-`ubuntu-ansible` digest bumps into a single pull request.
+This repository's own [`.github/renovate.json`](.github/renovate.json) shows how
+the consumer pin is discovered and why it lives outside the image-build path filter.
+It also contains publisher-specific rules that a copied project must review; see the
+[manual template guide](docs/using-as-template.md#renovate).
 
 #### Renovate dashboard
 
@@ -219,7 +223,7 @@ uv run ansible-playbook --syntax-check playbooks/setup-dev.yml
 ## The agent catalog
 
 The catalog ships as the `agentdev` Claude Code and Codex plugin in [`.agents/plugins/agentdev/`](.agents/plugins/agentdev/) —
-four agents (Principal Engineer plus the TDD Red/Green/Refactor trio) and 21
+four agents (Principal Engineer plus the TDD Red/Green/Refactor trio) and 24
 skills covering git, pull requests, review, CI log extraction, formatting, and
 container/Codespace escalation. **[`.agents/plugins/agentdev/README.md`](.agents/plugins/agentdev/README.md) documents
 what it contains and how to enable it in another repository**; the rest of this
@@ -229,16 +233,16 @@ section is about developing it here.
 
 `.agents/plugins/agentdev/` is canonical. Everything else is derived:
 
-| Path                                       | Role                                                                   |
-| ------------------------------------------ | ---------------------------------------------------------------------- |
-| `.agents/plugins/agentdev/`                | Canonical agents, skills, hooks, and `bin/` scripts.                   |
-| `.agents/plugins/agentdev/tests/`          | The plugin's own tests for the scripts it ships.                       |
-| `.agents/plugins/agentdev/.claude-plugin/` | Packages the catalog for Claude Code.                                  |
-| `.agents/plugins/agentdev/.codex-plugin/`  | Packages the same catalog for Codex.                                   |
-| `.claude-plugin/marketplace.json`          | Publishes the plugin so other repositories can consume it.             |
-| `.agents/plugins/marketplace.json`         | Publishes the repo-local Codex marketplace entry.                      |
-| `plugins/agentdev`                         | Resolves that entry to the canonical `.agents/plugins/agentdev/` tree. |
-| `.claude/settings.json`                    | This repository enabling its own plugin from the marketplace.          |
+| Path                                            | Role                                                                         |
+| ----------------------------------------------- | ---------------------------------------------------------------------------- |
+| `.agents/plugins/agentdev/`                     | Canonical agents, skills, hooks, and `bin/` scripts.                         |
+| `.agents/plugins/agentdev/tests/`               | The plugin's own tests for the scripts it ships.                             |
+| `.agents/plugins/agentdev/.claude-plugin/`      | Packages the catalog for Claude Code.                                        |
+| `.agents/plugins/agentdev/.codex-plugin/`       | Packages the same catalog for Codex.                                         |
+| `.claude-plugin/marketplace.json`               | Publishes the plugin so other repositories can consume it.                   |
+| `.agents/plugins/marketplace.json`              | Publishes the repo-local Codex marketplace entry.                            |
+| `.devcontainer/scripts/reinstall-agentdev-*.sh` | Registers the image or workspace marketplace after persistent volumes mount. |
+| `.claude/settings.json`                         | Repository permissions and enabled third-party Claude plugins.               |
 
 ### Editing rules
 
@@ -262,11 +266,11 @@ section is about developing it here.
 ### Iterating and validating
 
 ```bash
-claude --plugin-dir ./plugin   # override the installed copy for a session
-claude plugin validate ./plugin
+claude --plugin-dir ./.agents/plugins/agentdev
+claude plugin validate ./.agents/plugins/agentdev
 ```
 
-CI enforces the last two commands; run them before pushing a catalog change:
+Run the repository validator and both test suites before pushing a catalog change:
 
 ```bash
 uv sync --all-groups
@@ -290,26 +294,11 @@ package.
 
 ## Repository layout
 
-```
-.devcontainer/   devcontainer.json, compose (devcontainer + mcp-gateway), init, firewall allowlist
-docker/
-  ansible/       ubuntu-ansible base image
-  desktop/       agent-desktop image, entrypoint, Xpra launcher
-  bin/gh         transparent gh auth wrapper baked onto PATH
-ansible/         inventories + setup-dev.yml + 18 roles
-scripts/         devcontainer lifecycle hooks and repository plumbing
-.agents/plugins/agentdev/  the agentdev plugin: agents, skills, hooks, bin/  (canonical)
-  .claude-plugin/  Claude Code package manifest
-  .codex-plugin/   Codex package manifest
-  tests/           the plugin's tests for the scripts it ships
-.claude-plugin/  marketplace manifest publishing the plugin
-.agents/plugins/ repo-local Codex marketplace
-plugins/         marketplace links to canonical plugin sources
-.claude/         this repository's own settings.json
-.codex/          repository-specific Codex setup
-py_packages/     validate_agent_files — the agent-catalog validator (standalone, PyPI-releasable)
-.github/         composite docker actions + CI, reformat, and validation workflows
-```
+[Repository structure](docs/repository-structure.md) is the persistent inventory of
+the live tree, including the default template surface, files that require manual
+customization, the optional image-building bundle, publisher-only source, and generated
+state. The [template guide](docs/using-as-template.md) turns that inventory into manual
+full-copy and selective-copy procedures.
 
 ## License
 
