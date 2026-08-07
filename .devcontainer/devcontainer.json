@@ -24,6 +24,12 @@
     "DEVCONTAINER_ID": "${devcontainerId}",
     "DEV_WORKSPACE_FOLDER": "/workspaces/${localWorkspaceFolderBasename}",
 
+    // Claude Code resolves .credentials.json from this directory, independently of
+    // ~/.claude. It points at the shared agentdev-claude-auth volume so authentication
+    // survives a rebuild and is shared with every other worktree, while nothing else in
+    // ~/.claude is.
+    "CLAUDE_SECURESTORAGE_CONFIG_DIR": "/root/.claude-auth",
+
     "UV_CACHE_DIR": "/uv/cache",
     "UV_PYTHON_INSTALL_DIR": "/uv/python",
     "UV_PROJECT_ENVIRONMENT": "/uv/venvs/${localWorkspaceFolderBasename}/"
@@ -48,8 +54,24 @@
       "source": "agentdev-cache",
       "target": "/workspaces/${localWorkspaceFolderBasename}/.cache",
       "type": "volume"
+    },
+    {
+      // Claude's plugins, marketplaces, sessions and ~/.claude.json. Declared here
+      // rather than in docker-compose.yml so Compose prefixes it per project: this
+      // state records absolute workspace paths, so worktrees sharing one copy fight
+      // over the marketplace registry and the plugin cache. Only the credentials are
+      // shared, via the agentdev-claude-auth volume in docker-compose.yml.
+      //
+      // ~/.claude.json is a single file, not a directory, and Docker named volumes are
+      // always directory-backed (mounting one straight at a file path materializes an
+      // empty directory there instead, breaking Claude Code's read/write of that file).
+      // It's persisted as a plain file inside this volume instead, with
+      // .devcontainer/scripts/postCreateCommand.sh symlinking ~/.claude.json to it.
+      "source": "agentdev-claude",
+      "target": "/root/.claude",
+      "type": "volume"
     }
-    // agentdev-claude and agentdev-codex are mounted via docker-compose.yml
+    // agentdev-claude-auth and agentdev-codex are mounted via docker-compose.yml
     // (top-level `volumes:` with explicit `name:`) so they're shared across every
     // devcontainer instance instead of being isolated per compose project.
   ],
