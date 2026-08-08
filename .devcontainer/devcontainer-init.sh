@@ -21,7 +21,7 @@ fi
 # authentication can be shared by every local worktree. Declare them as
 # external in Compose to avoid ownership warnings, and create them here so a
 # first-ever devcontainer startup still has everything it needs.
-docker volume create agentdev-claude >/dev/null
+docker volume create agentdev-claude-auth >/dev/null
 docker volume create agentdev-codex >/dev/null
 
 gitdir=$(realpath "$(git rev-parse --git-common-dir)")
