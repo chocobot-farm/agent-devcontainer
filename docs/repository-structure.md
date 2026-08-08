@@ -75,7 +75,7 @@ two root companions:
 | `.devcontainer/scripts/setup-keyring.sh`             | Starts and persists the headless keyring used by authenticated tooling.                                          |
 | `.devcontainer/scripts/firewall.sh`                  | Activates the image-provided egress firewall when enabled.                                                       |
 | `.devcontainer/scripts/configure-codex.py`           | Sets devcontainer-only Codex sandbox and approval policy.                                                        |
-| `.devcontainer/scripts/link-codex-auth.sh`           | Persists Codex's `auth.json` in the shared `agents-auth` volume and symlinks it into place.                      |
+| `.devcontainer/scripts/link-codex-auth.sh`           | Persists Codex's `auth.json` in the shared `agentdev-agents-auth` volume and symlinks it into place.             |
 | `.devcontainer/scripts/reinstall-agentdev-claude.sh` | Installs the staged Claude plugin and overrides it with a workspace marketplace when present.                    |
 | `.devcontainer/scripts/reinstall-agentdev-codex.sh`  | Performs the equivalent Codex marketplace/plugin installation.                                                   |
 | `compose.pins.yml`                                   | Supplies the Renovate-managed tag-plus-digest image override referenced by `devcontainer.json`.                  |

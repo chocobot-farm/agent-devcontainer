@@ -93,7 +93,7 @@ services:
       # The rest of each agent's state records absolute workspace paths and is mounted
       # per instance instead; see the agentdev-claude and agentdev-codex mounts in
       # devcontainer.json.
-      - agents-auth:/root/.agents-auth
+      - agentdev-agents-auth:/root/.agents-auth
 
     command: ['sleep', 'infinity']
 
@@ -101,6 +101,6 @@ volumes:
   # `name:` pins the literal Docker volume name so it's shared across every
   # devcontainer instance (worktrees, Codespaces, etc), instead of Compose's
   # default per-project name prefix isolating each instance's auth state.
-  agents-auth:
-    name: agents-auth
+  agentdev-agents-auth:
+    name: agentdev-agents-auth
     external: true

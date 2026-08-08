@@ -44,7 +44,7 @@ Before pruning files, record:
 - whether it will publish a custom development image; and
 - whether agent authentication/configuration should remain shared with other local projects.
 
-The supplied configuration uses the literal Docker volume `agents-auth`, mounted at
+The supplied configuration uses the literal Docker volume `agentdev-agents-auth`, mounted at
 `/root/.agents-auth` with one subdirectory per agent. Keeping it shares Claude Code's and
 Codex's credentials only — nothing else — across this project, its worktrees, and other
 projects using the same volume name. That is the default behavior supplied here. The rest

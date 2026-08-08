@@ -4,7 +4,7 @@ set -euo pipefail
 # Codex has no equivalent of Claude Code's CLAUDE_SECURESTORAGE_CONFIG_DIR:
 # CODEX_HOME is the single root for all of Codex's state (config, auth, logs,
 # sessions, plugins), so only auth.json itself can be shared, not a whole
-# directory. Persist it as a plain file inside the shared agents-auth volume and
+# directory. Persist it as a plain file inside the shared agentdev-agents-auth volume and
 # symlink it into place, the same trick postCreateCommand.sh already uses for
 # ~/.claude.json.
 #

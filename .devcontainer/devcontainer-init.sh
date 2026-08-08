@@ -21,7 +21,7 @@ fi
 # authentication can be shared by every local worktree. Declare it as external
 # in Compose to avoid ownership warnings, and create it here so a first-ever
 # devcontainer startup still has everything it needs.
-docker volume create agents-auth >/dev/null
+docker volume create agentdev-agents-auth >/dev/null
 
 gitdir=$(realpath "$(git rev-parse --git-common-dir)")
 echo "GIT_REPO=$gitdir" >> "$script_dir/.env"

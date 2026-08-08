@@ -11,7 +11,7 @@ sudo chown -R root:root \
     /uv
 
 # Both agents' credential setup below needs their subdirectory of the shared
-# agents-auth volume to exist first.
+# agentdev-agents-auth volume to exist first.
 mkdir -p /root/.agents-auth/claude /root/.agents-auth/codex
 chmod 700 /root/.agents-auth/claude /root/.agents-auth/codex
 

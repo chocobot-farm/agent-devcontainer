@@ -81,7 +81,7 @@ and `~/.codex`, which is exactly where both agents record installed plugins. An
 install baked into the image would be hidden by those volumes for every container
 after the first. Both volumes are scoped per devcontainer instance, so the
 install also runs once per worktree rather than once per machine; only each
-agent's credentials are shared across worktrees, via the separate `agents-auth`
+agent's credentials are shared across worktrees, via the separate `agentdev-agents-auth`
 volume.
 
 Consequences worth knowing:

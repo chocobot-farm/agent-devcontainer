@@ -25,7 +25,7 @@
     "DEV_WORKSPACE_FOLDER": "/workspaces/${localWorkspaceFolderBasename}",
 
     // Claude Code resolves .credentials.json from this directory, independently of
-    // ~/.claude. It points at the shared agents-auth volume (Claude's subdirectory of
+    // ~/.claude. It points at the shared agentdev-agents-auth volume (Claude's subdirectory of
     // it) so authentication survives a rebuild and is shared with every other worktree,
     // while nothing else in ~/.claude is.
     "CLAUDE_SECURESTORAGE_CONFIG_DIR": "/root/.agents-auth/claude",
@@ -60,7 +60,7 @@
       // rather than in docker-compose.yml so Compose prefixes it per project: this
       // state records absolute workspace paths, so worktrees sharing one copy fight
       // over the marketplace registry and the plugin cache. Only the credentials are
-      // shared, via the agents-auth volume in docker-compose.yml.
+      // shared, via the agentdev-agents-auth volume in docker-compose.yml.
       //
       // ~/.claude.json is a single file, not a directory, and Docker named volumes are
       // always directory-backed (mounting one straight at a file path materializes an
@@ -77,13 +77,13 @@
       // for the same reason as agentdev-claude: this state records absolute
       // workspace paths, so worktrees sharing one copy fight over the marketplace
       // registry (see reinstall-agentdev-codex.sh). Only auth.json is shared, via
-      // the agents-auth volume in docker-compose.yml and
+      // the agentdev-agents-auth volume in docker-compose.yml and
       // .devcontainer/scripts/link-codex-auth.sh.
       "source": "agentdev-codex",
       "target": "/root/.codex",
       "type": "volume"
     }
-    // agents-auth is mounted via docker-compose.yml (top-level `volumes:` with
+    // agentdev-agents-auth is mounted via docker-compose.yml (top-level `volumes:` with
     // explicit `name:`) so it's shared across every devcontainer instance instead
     // of being isolated per compose project.
   ],
